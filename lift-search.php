@@ -382,7 +382,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				Lift_Batch_Queue::queue_all();
 
 				$status_messages[] = "New search domains take approximately 30-45 minutes to become active. Once your search domain is 
-                    available on Cloudsearch, Lift will complete it's configuration, index all posts on your site, and 
+                    available on CloudSearch, Lift will complete it's configuration, index all posts on your site, and 
                     queue up new posts to be synced periodically.";
 			}
 
@@ -413,7 +413,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		}
 
 		/**
-		 * cron hook to send an IndexDocuments request to Cloudsearch. cron
+		 * cron hook to send an IndexDocuments request to CloudSearch. cron
 		 * is unscheduled when the documents are indexed successfully.
 		 *
 		 */

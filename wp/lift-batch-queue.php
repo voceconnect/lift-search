@@ -111,7 +111,7 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 		}
 
         /**
-         * count of posts in the queue to be sent to Cloudsearch
+         * count of posts in the queue to be sent to CloudSearch
          * 
          * @return int 
          */
