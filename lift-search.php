@@ -347,14 +347,14 @@ if ( !class_exists( 'Lift_Search' ) ) {
 						$status_messages[] = 'There was an error creating an index for your domain.';
 						$error = true;
 
-						Lift_Search::EventLog( 'Cloud_Config_Request::LoadSchema (http success)', $r, array( 'error' ) );
+						Lift_Search::event_log( 'Cloud_Config_Request::LoadSchema (http success)', $r, array( 'error' ) );
 					}
 				} else {
 					$status_message = 'There was an error creating an index for your domain.';
 					$status_messages[] = $status_message;
 					$error = true;
 
-					Lift_Search::EventLog( 'Cloud_Config_Request::LoadSchema', $status_message, array( 'error' ) );
+					Lift_Search::event_log( 'Cloud_Config_Request::LoadSchema', $status_message, array( 'error' ) );
 				}
 
 				$r = Cloud_Config_Request::UpdateServiceAccessPolicies( $domain, Cloud_Config_Request::GetDefaultServiceAccessPolicy( $domain ) );
@@ -365,14 +365,14 @@ if ( !class_exists( 'Lift_Search' ) ) {
 					$status_messages[] = 'Service Access Policies could not be set. You will need to use the AWS Console to set them for this search domain.';
 					$error = true;
 
-					Lift_Search::EventLog( 'Cloud_Config_Request::UpdateServiceAccessPolicies', $r, array( 'error' ) );
+					Lift_Search::event_log( 'Cloud_Config_Request::UpdateServiceAccessPolicies', $r, array( 'error' ) );
 				}
 			} else {
 				$status_message = 'There was an error creating your domain. Please make sure the domain name follows the rules above and try again.';
 				$status_messages[] = $status_message;
 				$error = true;
 
-				Lift_Search::EventLog( 'Cloud_Config_Request::CreateDomain', $status_message, array('error' ) );
+				Lift_Search::event_log( 'Cloud_Config_Request::CreateDomain', $status_message, array('error' ) );
 			}
 
 			if ( !$error ) {
@@ -676,7 +676,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @param type $tags
 		 * @return boolean 
 		 */
-		public static function EventLog($message, $error, $tags = array()){
+		public static function event_log($message, $error, $tags = array()){
 			if(function_exists('voce_error_log')){
 				return voce_error_log( $message, $error, array_merge(array( 'lift-search'), (array) $tags) );
 			} else {
