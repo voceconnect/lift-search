@@ -334,7 +334,7 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 							if ( isset( $e->errors[0]['code'] ) && 500 == $e->errors[0]['code'] ) {
 								break;
 							}
-							voce_error_log( 'Batch Add Error ' . time(), json_encode( $e ), array( 'lift-search', 'batch-add', 'error' ) );
+							Lift_Search::EventLog( 'Batch Add Error ' . time(), json_encode( $e ), array( 'batch-add', 'error' ) );
 
 							//@todo log error, stop cron? --- update_option( self::$search_semaphore, 1 );
 
@@ -346,7 +346,7 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 
 			if( ! self::ready_for_batch( Lift_Search::get_search_domain() ) ){
 				delete_transient( self::BATCH_LOCK );
-				voce_error_log( 'CloudSearch Not Ready for Batch ' . time(), 'The search domain is either currently processing, needs indexing, or your domain does not have indexes set up.', array( 'lift-search', 'send-queue', 'response-false', 'notice' ) );
+				Lift_Search::EventLog( 'CloudSearch Not Ready for Batch ' . time(), 'The search domain is either currently processing, needs indexing, or your domain does not have indexes set up.', array( 'send-queue', 'response-false', 'notice' ) );
 				return;
 			}
 			//send the batch
@@ -365,12 +365,12 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 					$log_title = "Post Queue Send Error ";
 					$tag = 'error';
 				}
-				voce_error_log( $log_title . time(), json_encode( $r ), array( 'lift-search', 'send-queue', 'response-true', $tag ) );
+				Lift_Search::EventLog( $log_title . time(), json_encode( $r ), array( 'send-queue', 'response-true', $tag ) );
 
 				//@todo delete sent queued items
 			} else {
 				$messages = $cloud_api->getErrorMessages();
-				voce_error_log( 'Post Queue Error ' . time(), $messages, array( 'lift-search', 'send-queue', 'response-false', 'error' ) );
+				Lift_Search::EventLog( 'Post Queue Error ' . time(), $messages, array( 'send-queue', 'response-false', 'error' ) );
 			}
 			wp_cache_delete('lift_update_queue_count');
 			delete_transient( self::BATCH_LOCK );
