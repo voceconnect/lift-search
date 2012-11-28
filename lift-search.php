@@ -678,7 +678,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 */
 		public static function EventLog($message, $error, $tags = array()){
 			if(function_exists('voce_error_log')){
-				return voce_error_log( $message, $error, array_merge(array( 'lift-search'), $tags) );
+				return voce_error_log( $message, $error, array_merge(array( 'lift-search'), (array) $tags) );
 			} else {
 				return false;
 			}
