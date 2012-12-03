@@ -120,7 +120,7 @@ if ( !class_exists( 'Lift_Health' ) ) {
 		}
         
         /**
-         * use the config API to get the Cloudsearch domain/index status
+         * use the config API to get the CloudSearch domain/index status
          * 
          * @return array 
          */
@@ -130,11 +130,11 @@ if ( !class_exists( 'Lift_Health' ) ) {
             if ( ! $domain ) {
                 return array(
                     'errors' => true,
-                    'reason' => 'Domain has been deleted or the Cloudsearch API request failed.',
+                    'reason' => 'Domain has been deleted or the CloudSearch API request failed.',
                     'severity' => 2,
                     'status' => array(
                         'fatal' => true,
-                        'text' => 'Domain has been deleted or the Cloudsearch API request failed',
+                        'text' => 'Domain has been deleted or the CloudSearch API request failed',
                     ),
                 );
             }
@@ -156,25 +156,25 @@ if ( !class_exists( 'Lift_Health' ) ) {
             
             if ( $deleting ) {
                 $severity = 2;
-                $reason = 'Cloudsearch domain being deleted';
+                $reason = 'CloudSearch domain being deleted';
                 $text = 'being deleted';
             } else if ( $needs_indexing || $processing  ) {
                 if ( 0 == $search_instance_count ) {
                     $severity = 1;
-                    $reason = 'Cloudsearch domain loading';
+                    $reason = 'CloudSearch domain loading';
                     $text = 'loading';
                 } else if ( $needs_indexing ) {
                     $severity = 1;
-                    $reason = 'Cloudsearch domain needs indexing';
+                    $reason = 'CloudSearch domain needs indexing';
                     $text = 'needs indexing';
                 } else {
                     $severity = 1;
-                    $reason = 'Cloudsearch domain processing';
+                    $reason = 'CloudSearch domain processing';
                     $text = 'processing';
                 }
             } else if ( $pending ) {
                 $severity = 1;
-                $reason = 'Cloudsearch domain pending';
+                $reason = 'CloudSearch domain pending';
                 $text = 'pending';
             }
             

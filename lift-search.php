@@ -1,7 +1,7 @@
 <?php
 /*
   Plugin Name: Lift Search
-  Version: 1.0
+  Version: 1.0.1
   Plugin URI: http://getliftsearch.com/
   Description: Improves WordPress search using Amazon CloudSearch
   Author: Voce Platforms
@@ -347,14 +347,14 @@ if ( !class_exists( 'Lift_Search' ) ) {
 						$status_messages[] = 'There was an error creating an index for your domain.';
 						$error = true;
 
-						voce_error_log( 'Cloud_Config_Request::LoadSchema (http success)', $r, array( 'lift-search', 'error' ) );
+						Lift_Search::event_log( 'Cloud_Config_Request::LoadSchema (http success)', $r, array( 'error' ) );
 					}
 				} else {
 					$status_message = 'There was an error creating an index for your domain.';
 					$status_messages[] = $status_message;
 					$error = true;
 
-					voce_error_log( 'Cloud_Config_Request::LoadSchema', $status_message, array( 'lift-search', 'error' ) );
+					Lift_Search::event_log( 'Cloud_Config_Request::LoadSchema', $status_message, array( 'error' ) );
 				}
 
 				$r = Cloud_Config_Request::UpdateServiceAccessPolicies( $domain, Cloud_Config_Request::GetDefaultServiceAccessPolicy( $domain ) );
@@ -365,14 +365,14 @@ if ( !class_exists( 'Lift_Search' ) ) {
 					$status_messages[] = 'Service Access Policies could not be set. You will need to use the AWS Console to set them for this search domain.';
 					$error = true;
 
-					voce_error_log( 'Cloud_Config_Request::UpdateServiceAccessPolicies', $r, array( 'lift-search', 'error' ) );
+					Lift_Search::event_log( 'Cloud_Config_Request::UpdateServiceAccessPolicies', $r, array( 'error' ) );
 				}
 			} else {
 				$status_message = 'There was an error creating your domain. Please make sure the domain name follows the rules above and try again.';
 				$status_messages[] = $status_message;
 				$error = true;
 
-				voce_error_log( 'Cloud_Config_Request::CreateDomain', $status_message, array( 'lift-search', 'error' ) );
+				Lift_Search::event_log( 'Cloud_Config_Request::CreateDomain', $status_message, array('error' ) );
 			}
 
 			if ( !$error ) {
@@ -382,7 +382,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				Lift_Batch_Queue::queue_all();
 
 				$status_messages[] = "New search domains take approximately 30-45 minutes to become active. Once your search domain is 
-                    available on Cloudsearch, Lift will complete it's configuration, index all posts on your site, and 
+                    available on CloudSearch, Lift will complete it's configuration, index all posts on your site, and 
                     queue up new posts to be synced periodically.";
 			}
 
@@ -413,7 +413,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		}
 
 		/**
-		 * cron hook to send an IndexDocuments request to Cloudsearch. cron
+		 * cron hook to send an IndexDocuments request to CloudSearch. cron
 		 * is unscheduled when the documents are indexed successfully.
 		 *
 		 */
@@ -668,6 +668,20 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			$html .= $pages;
 
 			return $html;
+		}
+		
+		/**
+		 * Log Events
+		 * @param type $message
+		 * @param type $tags
+		 * @return boolean 
+		 */
+		public static function event_log($message, $error, $tags = array()){
+			if(function_exists('voce_error_log')){
+				return voce_error_log( $message, $error, array_merge(array( 'lift-search'), (array) $tags) );
+			} else {
+				return false;
+			}
 		}
 
 	}

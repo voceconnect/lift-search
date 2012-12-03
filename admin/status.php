@@ -60,7 +60,7 @@ $domain = Lift_Search::get_search_domain();
 							</tr>
 						</table>
 					</div>
-					<h3>Cloudsearch Index Sync</h3>
+					<h3>CloudSearch Index Sync</h3>
 					<div class="clr"></div>
 					<hr/>
 					<div class="alignright width-30">
@@ -107,7 +107,7 @@ $domain = Lift_Search::get_search_domain();
         
         <div id="lift-remote-status">
             <p>
-                Amazon Cloudsearch search domain status for <i><?php echo esc_html( $domain ); ?></i>: 
+                Amazon CloudSearch search domain status for <i><?php echo esc_html( $domain ); ?></i>: 
                 <b><?php echo esc_html( strtoupper( $remote_domain_status_text ) ); ?></b><?php if ( $remote_domain_status && ! ( isset( $remote_domain_status['fatal'] ) ) && $remote_domain_status['needs_indexing'] ) : ?>
                 <a href="<?php echo admin_url( 'options-general.php?page=' . Lift_Search::ADMIN_STATUS_PAGE . '&lift-indexdocuments' ); ?>" class="button">Index Now</a><?php endif; ?>.
                 <?php if ( ! isset( $remote_domain_status['fatal'] ) ) : ?>

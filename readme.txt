@@ -3,11 +3,11 @@ Contributors: voceplatforms
 Tags: search, cloudsearch, amazon, aws
 Requires at least: 3.4.2
 Tested up to: 3.5
-Stable tag: 1.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Improves WordPress search using Amazon Cloudsearch.
+Improves WordPress search using Amazon CloudSearch.
 
 == Description ==
 
@@ -19,7 +19,7 @@ Minimum requirements:
 
 * WordPress Version 3.4.2
 * PHP Version 5.3
-* Amazon Web Services account with Cloudsearch enabled
+* Amazon Web Services account with CloudSearch enabled
 
 == Installation ==
 
@@ -30,7 +30,7 @@ Minimum requirements:
 
 * WordPress Version 3.4.2
 * PHP Version 5.3
-* Amazon Web Services account with Cloudsearch enabled
+* Amazon Web Services account with CloudSearch enabled
 
 1. Upload the `lift-search` directory to the `/wp-content/plugins/` directory
 
@@ -51,7 +51,7 @@ like the domain created for you. Click the link and the plugin will create and
 configure everything for you.
 
 7. Once the tests are successful, you're now ready to go. Click "View Lift 
-Search Dashboard". Once Cloudsearch is ready, Lift will begin to index your site. 
+Search Dashboard". Once CloudSearch is ready, Lift will begin to index your site. 
 This can take a few hours depending on the amount of content on your site.
 
 == Frequently Asked Questions ==
@@ -60,7 +60,7 @@ This can take a few hours depending on the amount of content on your site.
 
 * WordPress Version 3.4.2
 * PHP Version 5.3
-* Amazon Web Services account with Cloudsearch enabled
+* Amazon Web Services account with CloudSearch enabled
 
 = Does Lift support WordPress multisite? =
 Multisite is supported with each site in the network having it's own search
@@ -69,11 +69,11 @@ may be added at a later date if there is interest.
 
 = How much does Lift cost? =
 There is no charge for the plugin. The only charges you incur are for usage of 
-Amazon Cloudsearch. You can [learn more](http://aws.amazon.com/cloudsearch/pricing/) about expected costs at Amazon's
+Amazon CloudSearch. You can [learn more](http://aws.amazon.com/cloudsearch/pricing/) about expected costs at Amazon's
 Clousearch site.
 
 = Does Lift support languages other than English? =
-Currently, Amazon Cloudsearch only supports indexing documents in English. Once
+Currently, Amazon CloudSearch only supports indexing documents in English. Once
 other languages are supported, Lift will be updated. Also, a future update will
 add li8n support for the setup and status pages.
 
@@ -91,5 +91,8 @@ The Query Parameter to enter (step #8) is "s".
 
 == Changelog ==
 
-= 0.1 =
+= 1.0.1 =
+* Fix CloudSearch capitalization
+
+= 1.0 =
 * Initial release
