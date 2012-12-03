@@ -93,6 +93,7 @@ The Query Parameter to enter (step #8) is "s".
 
 = 1.0.1 =
 * Fix CloudSearch capitalization
+* Refactor error logging
 
 = 1.0 =
 * Initial release
