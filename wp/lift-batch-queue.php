@@ -244,12 +244,25 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 		}
         
         /**
-         * is the domain ready for a batch. has to exist and not require indexing
+         * is the batch locked?
+         * 
+         * @return bool 
+         */
+        public static function is_batch_locked() {
+            $locked = get_transient( self::BATCH_LOCK );
+            
+            return $locked;
+        }
+
+
+        /**
+         * is the domain ready for a batch. has to exist and be in a good state
          * 
          * @param string $domain_name
          * @return boolean 
          */
         public static function ready_for_batch( $domain_name ){
+            
             $domains = Cloud_Config_Request::GetDomains(array($domain_name));
             if ( $domains ) {
                 $ds = $domains->DescribeDomainsResponse->DescribeDomainsResult->DomainStatusList;
@@ -271,6 +284,12 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 		 * @todo Add locking
 		 */
 		public static function send_next_batch() {
+            if( ! self::ready_for_batch( Lift_Search::get_search_domain() ) ){
+				delete_transient( self::BATCH_LOCK );
+				Lift_Search::event_log( 'CloudSearch Not Ready for Batch ' . time(), 'The batch is locked or the search domain is either currently processing, needs indexing, or your domain does not have indexes set up.', array( 'send-queue', 'response-false', 'notice' ) );
+				return;
+			}
+            
 			$lock_key = md5( uniqid( microtime() . mt_rand(), true ) );
 			if ( !get_transient( self::BATCH_LOCK ) ) {
 				set_transient( self::BATCH_LOCK, $lock_key, 300 );
@@ -344,11 +363,6 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 				}
 			}
 
-			if( ! self::ready_for_batch( Lift_Search::get_search_domain() ) ){
-				delete_transient( self::BATCH_LOCK );
-				Lift_Search::event_log( 'CloudSearch Not Ready for Batch ' . time(), 'The search domain is either currently processing, needs indexing, or your domain does not have indexes set up.', array( 'send-queue', 'response-false', 'notice' ) );
-				return;
-			}
 			//send the batch
 			$cloud_api = Lift_Search::get_search_api();
 
