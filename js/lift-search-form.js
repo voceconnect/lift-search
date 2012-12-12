@@ -42,7 +42,8 @@ var LiftSearchForm = (function (document, jQuery) {
 			e.preventDefault();
 			setValue(this);
 			if(options.submitOnClick === true){
-				submitForm($('form#lift-search'));
+				console.log($(this).closest('form'));
+				submitForm($(this).closest('form'));
 			}
 		});
 	};
@@ -125,7 +126,7 @@ var hideDefaultForm;
  **/
 hideDefaultForm = function hideDefaultForm(){
 	"use strict";
-	var css = 'fieldset.lift-filters, .lift-submit { display: none; }',
+	var css = '.lift-search-form-filters, .lift-submit, .lift-hidden { display: none; }',
 	head = document.getElementsByTagName('head')[0],
 	style = document.createElement('style');
 
