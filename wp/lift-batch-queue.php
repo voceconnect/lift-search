@@ -131,7 +131,7 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 				'posts_per_page' => 10,
 				'paged' => max( 1, $page ),
 				'post_status' => 'any',
-				'orderby' => 'date',
+				'orderby' => 'ID',
 				'order' => 'DESC'
 			);
 			$query = new WP_Query( $args );			

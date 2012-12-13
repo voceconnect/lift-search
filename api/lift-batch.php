@@ -122,7 +122,7 @@ class Lift_Batch {
 					$this->add_document( $documents[$i] );
 				} catch ( Lift_Batch_Exception $e ) {
 					$this->errors[] = array(
-                        'code' => 300,
+                        'code' => 400,
 						'message' => sprintf( 'Failed adding document at index %s', $i ),
 						'failedIndex' => $i
 					);
@@ -137,6 +137,89 @@ class Lift_Batch {
             );
 			throw new Lift_Batch_Exception( $this->errors );
 		}
+	}
+
+	/**
+	 * @method filter_where
+	 * @param string $where
+	 * @return string $where
+	 */
+	public static function filter_where( $where = '' ) {
+		global $wpdb;
+		$where .= sprintf( " AND %s.ID >= %d", $wpdb->posts, get_transient( 'lift-filter-where-' . getmypid() ) );
+		return $where;
+	}
+
+	/**
+	 * Args:
+	 * 
+	 * p				- post ID to remove
+	 * posts_per_page	- size of batch (default 500, max 1000)
+	 * start_from		- post ID to start removing from (default is lowest post ID)
+	 * 
+	 * @method delete_document
+	 * @param array $args
+	 * @return array $$response
+	 */
+	public function delete_document( $args = array() ) {
+		$q_args = array(
+			'posts_per_page' => 500,
+			'post_type' => 'lift_queued_document',
+			'fields' => 'ids',
+			'orderby' => 'ID',
+			'order' => 'ASC'
+		);
+
+		// change batch size
+		if ( array_key_exists('posts_per_page', $args) ) {
+			$posts_per_page = (int)$args['posts_per_page'] == -1 ? 999999999 : (int)$args['posts_per_page'];
+			$q_args['posts_per_page'] = min( 1000, max( 1, $posts_per_page ) );
+		}
+
+		// remove batch starting from specific ID
+		if ( array_key_exists('start_from', $args) ) {
+			if ( $q_args['posts_per_page'] > 1 ) {
+				$from_id = (int)$args['start_from'];
+
+				set_transient( 'lift-filter-where-' . getmypid(), $from_id );
+				add_filter( 'posts_where', array( __CLASS__, 'filter_where' ) );
+			}
+			else {
+				$args['p'] = (int)$args['start_from'];
+			}
+		}
+
+		// remove specific ID
+		if ( array_key_exists('p', $args) ) {
+			$q_args['p'] = (int)$args['p'];
+		}
+
+		$q = new WP_Query($q_args);
+
+		// remove fiter data, if necessary
+		remove_filter( 'posts_where', array( __CLASS__, 'filter_where' ) );
+		delete_transient( 'lift-filter-where-' . getmypid() );
+
+
+		$deleted = array();
+		$not_deleted = array();
+
+		if ($q->have_posts()) {
+			foreach ($q->posts as $post_id) {
+				if ($p = wp_delete_post($post_id)){
+					$deleted[] = $post_id;
+				} else {
+					$not_deleted[] = $post_id;
+				}
+			}
+		}
+
+		$response['success'] = (bool) (!$not_deleted);
+		$response['error'] = (bool) ($not_deleted);
+		$response['deleted'] = $deleted;
+		$response['failed'] = $not_deleted;
+
+		return $response;
 	}
 
 	/**
