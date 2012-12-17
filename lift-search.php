@@ -271,7 +271,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			$domain = strtolower( trim( $_POST['domain'] ) );
 
 			$error = false;
-			$new_domain = true;
 			$replacing_domain = ( self::get_search_domain() != $domain );
 
 			try {
@@ -299,8 +298,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 						self::__set_setting( self::SEARCH_DOMAIN, $domain );
 					}
-
-					$new_domain = false;
 				} else {
 					$status_message = 'Domain could not be found. <span class="">Would you like to <a id="lift-create-domain" data-domain="' . esc_attr( $domain ) . '" href="#">create this domain with Lift\'s default indexes</a>?</span>';
 					$error = true;
@@ -311,7 +308,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				$error = true;
 			}
 
-			if ( !$error && ( $new_domain || $replacing_domain ) ) {
+			if ( !$error && $replacing_domain ) {
 				// mark setup complete
 				update_option( self::INITIAL_SETUP_COMPLETE_OPTION, 1 );
 				Lift_Batch_Queue::enable_cron();
