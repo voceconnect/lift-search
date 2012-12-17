@@ -42,7 +42,6 @@ var LiftSearchForm = (function (document, jQuery) {
 			e.preventDefault();
 			setValue(this);
 			if(options.submitOnClick === true){
-				console.log($(this).closest('form'));
 				submitForm($(this).closest('form'));
 			}
 		});
