@@ -256,9 +256,9 @@ class Cloud_Config_Request {
 	 * @param array $payload
 	 * @return array [response string, Cloud_Config object used for request]
 	 */
-	protected static function __make_request( $method, $payload = array() ) {
+	protected static function __make_request( $method, $payload = array(), $flatten_keys = true ) {
 
-		if ( $payload ) {
+		if ( $payload && $flatten_keys ) {
 
 			$payload = self::__flatten_keys( $payload );
 
@@ -562,7 +562,7 @@ class Cloud_Config_Request {
             'DomainName' => $domain,
         );
 
-        list($r, $config) = self::__make_request( 'UpdateServiceAccessPolicies', $payload );
+        list($r, $config) = self::__make_request( 'UpdateServiceAccessPolicies', $payload, false );
 
 		if ( $r ) {
 			$r = json_decode( $r );
