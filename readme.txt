@@ -3,7 +3,7 @@ Contributors: voceplatforms
 Tags: search, cloudsearch, amazon, aws
 Requires at least: 3.4.2
 Tested up to: 3.5
-Stable tag: 1.0.1
+Stable tag: 1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -90,6 +90,15 @@ The Query Parameter to enter (step #8) is "s".
 3. Lift search form
 
 == Changelog ==
+
+= 1.1 =
+* Add `lift_search_filters()` template tag. This functions only outputs the
+filters, but not the entire Lift search form. This allows you to use your
+theme's existing search form and add in only the Lift filters.
+* Refactor `Cloud_Config` class to be independent
+* Calls to `Cloud_Config_Request::__make_request()` can now override key
+flattening
+
 
 = 1.0.1 =
 * Fix CloudSearch capitalization
