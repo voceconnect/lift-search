@@ -264,8 +264,8 @@ class Cloud_Config_Request {
 
 		}
         
-        $credentials['key'] = Lift_Search::get_access_key_id();
-        $credentials['secret_key'] = Lift_Search::get_secret_access_key();
+        $credentials['access-key-id'] = Lift_Search::get_access_key_id();
+        $credentials['secret-access-key'] = Lift_Search::get_secret_access_key();
         $api = Lift_Search::get_http_api();
 
 		$config = new Cloud_Config( $credentials, $api, $method, $payload);
