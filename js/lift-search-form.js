@@ -28,7 +28,7 @@ var LiftSearchForm = (function (document, jQuery) {
 		var boundTo, val, selectEl;
 		boundTo = $(el).parent().data('lift_bind');
 		val = $(el).data('lift_value');
-		selectEl = $(document.getElementById(boundTo));
+		selectEl = $('.' + boundTo); // get by class, not ID since there may be more than one set of filters on a page
 		selectEl.find('option').removeAttr("selected");
 		selectEl.find('option[value="'+val+'"]').attr('selected', 'selected') ;
 	};
