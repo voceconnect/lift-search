@@ -94,6 +94,8 @@ The Query Parameter to enter (step #8) is "s".
 = 1.1 =
 * UI: `lift_search_form()` now duplicates the standard `get_search_form()`
 markup to play nicer with themes.
+* UI: Show the filtered term as the dropdown labels for filters and highlight.
+Clean up terms on filter labels. Make Relevancy the default sorting.
 * UI: Filters now work when more than one search form is present in a page.
 * Refactor: `Cloud_Config` class to be independent.
 * Refactor: Calls to `Cloud_Config_Request::__make_request()` can now override key
