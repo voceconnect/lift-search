@@ -25,7 +25,7 @@
 /* line 31, style.scss */
 .lift-search .lift-filters li.lift-list-toggler { margin-left: 15px; }
 /* line 32, style.scss */
-.lift-search .lift-filters li.lift-list-toggler a:after, .lift-search .lift-filters li.lift-list-toggler .search-paging span:after, .lift-search .search-paging .lift-filters li.lift-list-toggler span:after { content: ''; position: absolute; top: 10px; left: 100%; display: inline-block; background: url(../img/sprite-icons.png) -6px -68px; width: 8px; height: 4px; text-indent: -9999px; margin-left: -4px; }
+.lift-search .lift-filters li.lift-list-toggler a:after, .lift-search .lift-filters li.lift-list-toggler .search-paging span:after, .lift-search .search-paging .lift-filters li.lift-list-toggler span:after { content: ''; position: absolute; top: 8px; left: 100%; display: inline-block; background: url(../img/sprite-icons.png) -6px -68px; width: 8px; height: 4px; text-indent: -9999px; margin-left: -4px; }
 /* line 34, style.scss */
 .lift-search .lift-filters li.lift-list-toggler li a:hover, .lift-search .lift-filters li.lift-list-toggler li .search-paging span:hover, .lift-search .search-paging .lift-filters li.lift-list-toggler li span:hover { text-decoration: none; }
 /* line 35, style.scss */
