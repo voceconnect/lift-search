@@ -92,17 +92,17 @@ The Query Parameter to enter (step #8) is "s".
 == Changelog ==
 
 = 1.1 =
-* Add `lift_search_filters()` template tag. This functions only outputs the
-filters, but not the entire Lift search form. This allows you to use your
-theme's existing search form and add in only the Lift filters.
-* Refactor `Cloud_Config` class to be independent
-* Calls to `Cloud_Config_Request::__make_request()` can now override key
-flattening
+* UI: `lift_search_form()` now duplicates the standard `get_search_form()`
+markup to play nicer with themes.
+* UI: Filters now work when more than one search form is present in a page.
+* Refactor: `Cloud_Config` class to be independent.
+* Refactor: Calls to `Cloud_Config_Request::__make_request()` can now override key
+flattening.
 
 
 = 1.0.1 =
-* Fix CloudSearch capitalization
-* Refactor error logging
+* Fix CloudSearch capitalization.
+* Refactor error logging.
 
 = 1.0 =
-* Initial release
+* Initial release.
