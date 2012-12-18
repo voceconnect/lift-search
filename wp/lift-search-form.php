@@ -72,14 +72,16 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 * Builds the sort by dropdown/select field.
 		 */
 		public function add_sort_field() {
+			if ( ! $selected = Lift_Search_Form::get_query_var( 'orderby' ) ) {
+				$selected = 'relevancy';
+			}
 			$options = array(
-				'label' => 'Sort By',
+				'label' => ($selected) ? ucwords($selected) : 'Sort By',
 				'value' => array(
-					'All' => '',
 					'Date' => 'date',
 					'Relevancy' => 'relevancy'
 				),
-				'selected' => Lift_Search_Form::get_query_var( 'orderby' ),
+				'selected' => $selected,
 			);
 			$this->add_field( 'orderby', 'select', $options );
 		}
@@ -113,18 +115,36 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			global $wp_query;
 			$types = Lift_Search::get_indexed_post_types();
 			$selected_types = Lift_Search_Form::get_query_var( 'post_types' );
+			$label = ( ! $selected_types ) ? 'Type' : '';
+			$selected_labels = array();
+			if ( ! is_array( $selected_types) ) {
+				$selected_types = array( $selected_types );
+			}
+			
 			$values = array(
-				'All' => ''
+				'All Types' => ''
 			);
+			
 			foreach ( $types as $type ) {
 				$num = (isset( $wp_query->query_vars['facets'] ) && isset( $wp_query->query_vars['facets']['post_type'][$type] )) ? sprintf( '(%s)', $wp_query->query_vars['facets']['post_type'][$type] ) : '';
 
 				$type_object = get_post_type_object( $type );
 				$values[sprintf( '%s %s', $type_object->label, $num )] = $type;
 			}
+			
+			
+			foreach ( $values as $k => $v ) {
+				if ( in_array( $v, $selected_types ) ) {
+					$selected_labels[] = $k;
+				}
+			}
+			
+			if ( ! $label ) {
+				$label = join( ' / ', $selected_labels );
+			}
 
 			$options = array(
-				'label' => 'Type',
+				'label' => $label,
 				'value' => $values,
 				'selected' => $selected_types,
 			);
@@ -144,15 +164,25 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			) );
 			$query_start = Lift_Search_Form::get_query_var( 'date_start' );
 			$date_start = $query_start ? $query_start : 0;
+			$values = array(
+				'All Dates' => '',
+				'24 Hours' => $date_end - 86400,
+				'7 Days' => $date_end - (86400 * 7),
+				'30 Days' => $date_end - (86400 * 30)
+			);
+			
+			$selected_label = 'Date';
+			foreach ( $values as $k => $v ) {
+				if ( $v == $date_start ) {
+					$selected_label = $k;
+				}
+			}
+			$label = ( $date_start ) ? $selected_label : 'All Dates';
+			
 			$this->add_field( 'date_start', 'select', array(
-				'label' => "Date",
-				'value' => array(
-					'All' => 0,
-					'24 Hours' => $date_end - 86400,
-					'7 Days' => $date_end - (86400 * 7),
-					'30 Days' => $date_end - (86400 * 30)
-				),
-				'selected' => $date_start,
+				'label' => $label,
+				'value' => $values,
+				'selected' => (int) $date_start,
 			) );
 		}
 
@@ -369,7 +399,9 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 				>";
 			foreach ( $this->options['value'] as $k => $v ) {
 				$selected = "";
-				if ( $this->options['selected'] == $v ) {
+				if ( is_array( $this->options['selected'] ) && in_array( $v, $this->options['selected'], true ) ) {
+					$selected = "selected='selected'";
+				} else if ( $this->options['selected'] === $v ) {
 					$selected = "selected='selected'";
 				}
 				$html .= '<option value="' . $v . '" ' . $selected . '>' . $k . '</option>';
@@ -387,17 +419,29 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			if ( !in_array( $this->type, array( 'select' ) ) ) {
 				return false;
 			}
-			$html = "<li class='lift-list-toggler' id='lift-list-toggler-$this->id' data-role='list-toggler'><a href='#'>" . $this->options['label'] . "</a>";
-			$html .= "<ul class='lift-select-list lift-hidden' data-lift_bind='$this->id'>";
+			
+			$options = '';
+			$has_selection = false;
+			
 			foreach ( $this->options['value'] as $k => $v ) {
 				$selected = "";
-				if ( $this->options['selected'] == $v ) {
+				if ( is_array( $this->options['selected'] ) && in_array( $v, $this->options['selected'], true ) ) {
 					$selected = "selected";
+					$has_selection = true;
+				} else if ( $this->options['selected'] === $v ) {
+					$selected = "selected";
+					$has_selection = true;
 				}
-				$html .= '<li class="lift-list-item ' . $selected . '" data-lift_value="' . $v . '" >
+				$options .= '<li class="lift-list-item ' . $selected . '" data-lift_value="' . $v . '" >
 					<a href="#">' . $k . '</a>
 						</li>';
 			}
+			
+			$selected_class = ( $has_selection ) ? 'selected' : '';
+			
+			$html = sprintf('<li class="lift-list-toggler" id="lift-list-toggler-%s" data-role="list-toggler"><a href="#" class="%s">%s</a>', $this->id, $selected_class, $this->options['label'] );
+			$html .= "<ul class='lift-select-list lift-hidden' data-lift_bind='$this->id'>";
+			$html .= $options;
 			$html .= "</ul></li>";
 			return $html;
 		}

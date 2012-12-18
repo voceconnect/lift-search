@@ -64,9 +64,9 @@ if ( !class_exists( 'Lift_Search' ) ) {
 						wp_enqueue_style( 'lift-search', plugins_url( 'sass/style.css', __FILE__ ) );
 					} );
 
-			if ( self::get_search_endpoint() ) {
+			//if ( self::get_search_endpoint() ) {
 				Lift_WP_Search::init();
-			}
+			//}
 
 			if ( self::get_document_endpoint() ) {
 				Lift_Batch_Queue::init();

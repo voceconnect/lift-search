@@ -30,6 +30,7 @@ $dark-text: #333; // Text and Border colors
 			}
 			&.lift-list-toggler { margin-left: 15px;
 				a:after {@include after(8px, 4px, -6px, -68px, 8px, 100%); margin-left: -4px; }
+				a.selected { font-weight: bold; }
 				li a {
 					&:hover {text-decoration: none;}
 					&:after {background: none;}
