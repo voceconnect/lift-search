@@ -184,8 +184,11 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 * @return string search form
 		 */
 		public function form() {
-			$html = get_search_form( false );
+			$search_term = (is_search()) ? get_search_query() : "" ;
+			$html = "<form>";
+			$html .= "<input type='text' name='s' id='s' value='$search_term' />";
 			$html .= $this->form_filters();
+			$html .= "</form>";
 			apply_filters( 'lift_form_html', $html );
 			return $html;
 		}
