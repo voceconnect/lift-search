@@ -365,7 +365,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 				<select
 				id='$this->id'
 				name='$this->id'
-				class='" . $this->options['css'] . "'
+				class='" . $this->id . " " . $this->options['css'] . "'
 				>";
 			foreach ( $this->options['value'] as $k => $v ) {
 				$selected = "";
