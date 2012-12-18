@@ -16,14 +16,8 @@ $fancy-font: 'Lato', Arial, sans-serif;
 @mixin after($width, $height, $posT, $posL, $top, $left) {
 	content:'';position:absolute;top:$top;left:$left;@include sprite($width,$height,$posT,$posL);
 }
-.lift-search {@include nested-reset;font-size: 16px; font-family: $fancy-font;
+.lift-search {@include nested-reset; font-family: $fancy-font;
 	a {color: #2a84cd;}
-	.magnify {position: relative;
-		i {
-			@include after(10px, 9px, 0, -41px, 50%, 10px); margin-top: -3px
-		}
-	}
-	#s {width:100%;padding: 0; height:30px;line-height:30px;text-indent:24px;font-size:1.125em;-webkit-appearance:none;@include border-radius(6px);}
 	.lift-filters {margin-top: 12px; position: relative; z-index: 100;list-style: none;
 		li {display: inline-block; vertical-align: middle; position: relative; color: $dark-text;
 			a { position: relative; padding-right: 10px; z-index: 1000;
@@ -50,9 +44,6 @@ $fancy-font: 'Lato', Arial, sans-serif;
 			}
 		}
 		hr {background: #999; background: rgba(0,0,0,.2); margin: 12px 0; height: 1px; overflow: hidden; font-size: 0; border: none;}
-	}
-	input.lift-submit {background: $link-color; @include background-image(linear-gradient(lighten($link-color, 15%),$link-color)); @include border-radius(4px); padding: 4px 8px; color: #fff; font-weight: bold;border: none; font-size: 1em;
-		&:hover {background: $link-color}
 	}
 	.lift-filter-list {border-top: 1px solid $dark-text; margin-top: 8px; padding: 7px 0;
 		h2 {font-size: 1.0625em; }

@@ -185,7 +185,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 */
 		public function form() {
 			$search_term = (is_search()) ? get_search_query() : "" ;
-			$html = "<form>";
+			$html = "<form class='lift-search'>";
 			$html .= "<input type='text' name='s' id='s' value='$search_term' />";
 			$html .= $this->form_filters();
 			$html .= "</form>";
