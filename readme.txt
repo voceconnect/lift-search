@@ -3,7 +3,7 @@ Contributors: voceplatforms
 Tags: search, cloudsearch, amazon, aws
 Requires at least: 3.4.2
 Tested up to: 3.5
-Stable tag: 1.0.1
+Stable tag: 1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -91,9 +91,18 @@ The Query Parameter to enter (step #8) is "s".
 
 == Changelog ==
 
+= 1.1 =
+* UI: `lift_search_form()` now duplicates the standard `get_search_form()`
+markup to play nicer with themes.
+* UI: Filters now work when more than one search form is present in a page.
+* Refactor: `Cloud_Config` class to be independent.
+* Refactor: Calls to `Cloud_Config_Request::__make_request()` can now override key
+flattening.
+
+
 = 1.0.1 =
-* Fix CloudSearch capitalization
-* Refactor error logging
+* Fix CloudSearch capitalization.
+* Refactor error logging.
 
 = 1.0 =
-* Initial release
+* Initial release.
