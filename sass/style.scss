@@ -2,21 +2,14 @@
 $link-color: #2a84cd; // Main Link and Blue color
 $link-off: #9a9a9a; // Alternate Link color
 $dark-text: #333; // Text and Border colors
-$fancy-font: 'Lato', Arial, sans-serif;
-@mixin nested-reset {
-  div, span, object, iframe,h1, h2, h3, h4, h5, h6, p, blockquote, pre,a, abbr, address, cite, code,del, dfn, em, img, ins, kbd, q, samp,small, strong, sub, sup, var,b, i,dl, dt, dd, ol, ul, li,fieldset, form, label, legend,table, caption, tbody, tfoot, thead, tr, th, td,article, aside, canvas, details, embed,figure, figcaption, footer, header, hgroup,menu, nav, output, ruby, section, summary,time, mark, audio, video {@include reset-box-model; @include reset-font; }
-  table {@include reset-table; }
-  caption, th, td {@include reset-table-cell; }
-  q, blockquote {@include reset-quotation; }
-  a img {@include reset-image-anchor-border; } 
-}
+
 @mixin sprite($width, $height, $posT, $posL) {
 	display:inline-block;background:url(../img/sprite-icons.png) $posT $posL;width:$width;height:$height;text-indent:-9999px;
 }
 @mixin after($width, $height, $posT, $posL, $top, $left) {
 	content:'';position:absolute;top:$top;left:$left;@include sprite($width,$height,$posT,$posL);
 }
-.lift-search {@include nested-reset; font-family: $fancy-font;
+.lift-search {
 	a {color: #2a84cd;}
 	.lift-filters {margin-top: 12px; position: relative; z-index: 100;list-style: none;
 		li {display: inline-block; vertical-align: middle; position: relative; color: $dark-text;
@@ -69,8 +62,8 @@ $fancy-font: 'Lato', Arial, sans-serif;
 	}
 	.search-results {}
 	.search-result {border-bottom: 1px solid #ccc; padding: 16px 20px 16px 0;
-		h2 {color: #2a84cd; font: bold 1.375em/1em $fancy-font; margin-bottom: 15px;}
-		p {font: .75em/1.5em $fancy-font, Arial, sans-serif; padding-bottom: 12px; color: #333;
+		h2 {color: #2a84cd; font: bold 1.375em/1em; margin-bottom: 15px;}
+		p {font: .75em/1.5em; padding-bottom: 12px; color: #333;
 			&.search-date {color: #73777a;}
 		}
 		.search-thumb {float: left; margin: 0 8px 10px 0;

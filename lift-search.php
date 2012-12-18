@@ -61,7 +61,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			// @TODO only enqueue on search template or if someone calls the form
 			add_action( 'wp_enqueue_scripts', function() {
 						wp_enqueue_script( 'lift-search-form', plugins_url( 'js/lift-search-form.js', __FILE__ ), array( 'jquery' ) );
-						wp_enqueue_style( 'lift-search-font', 'https://fonts.googleapis.com/css?family=Lato:400,700,900' );
 						wp_enqueue_style( 'lift-search', plugins_url( 'sass/style.css', __FILE__ ) );
 					} );
 
