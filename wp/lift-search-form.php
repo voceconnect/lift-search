@@ -9,11 +9,11 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 	 * 
 	 * There are three filters within the class that can be used to modify the output:
 	 * 
-	 * 'lift_default_fields' can be used to remove default search fields on the form.
+	 * 'lift_filters_default_fields' can be used to remove default search fields on the form.
 	 * 
-	 * 'lift_form_field_objects' can be used to add or remove Voce Search Field objects.
+	 * 'lift_filters_form_field_objects' can be used to add or remove Voce Search Field objects.
 	 * 
-	 * 'lift_form_html' can be used to modify the form html output
+	 * 'lift_search_form' can be used to modify the form html output
 	 */
 	class Lift_Search_Form {
 
@@ -35,7 +35,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 * Lift_Search_Form constructor.
 		 */
 		private function __construct() {
-			add_filter( 'lift_default_fields', function($defaults) {
+			add_filter( 'lift_filters_default_fields', function($defaults) {
 						$remove = array( 'post_categories', 'post_tags' );
 						$filtered = array_diff( $defaults, $remove );
 						return $filtered;
@@ -46,11 +46,11 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 
 		/**
 		 * Calls all of the default search field build methods, Not including the main search term field.
-		 * Fields can be modified using the 'lift_default_fields' filter.
+		 * Fields can be modified using the 'lift_filters_default_fields' filter.
 		 */
 		public function additional_fields() {
 			$default_fields = array( 'date', 'post_type', 'post_categories', 'post_tags', 'orderby' );
-			$fields = apply_filters( 'lift_default_fields', $default_fields );
+			$fields = apply_filters( 'lift_filters_default_fields', $default_fields );
 			if ( in_array( 'date', $fields ) ) {
 				$this->add_date_fields();
 			}
@@ -220,7 +220,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			$html .= ' <input type="submit" id="searchsubmit" value="'. esc_attr__('Search') .'" />';
 			$html .= $this->form_filters();
 			$html .= "</div></form>";
-			apply_filters( 'lift_form_html', $html );
+			apply_filters( 'lift_search_form', $html );
 			return $html;
 		}
 
@@ -234,7 +234,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 				return;
 			}
 			
-			$fields = apply_filters( 'lift-form-field-objects', $this->fields );
+			$fields = apply_filters( 'lift_filters_form_field_objects', $this->fields );
 			$html = '<fieldset class="lift-search-form-filters">';
 			foreach ( $fields as $field ) {
 				if ( is_a( $field, 'Lift_Search_Field' ) ) {
@@ -254,7 +254,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 * @return string 
 		 */
 		public function js_form_controls() {
-			$fields = apply_filters( 'lift-form-field-objects', $this->fields );
+			$fields = apply_filters( 'lift_filters_form_field_objects', $this->fields );
 			$counter = 1;
 			$html = "<div class='lift-js-filters lift-hidden' style='display: none'><ul id='lift-filters'>";
 			$html .= "<li class='first'>Filter by: </li>";
