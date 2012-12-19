@@ -256,7 +256,7 @@ class Cloud_Config_Request {
 	 * @param array $payload
 	 * @return array [response string, Cloud_Config object used for request]
 	 */
-	protected static function __make_request( $method, $payload = array(), $flatten_keys = true ) {
+	protected static function __make_request( $method, $payload = array(), $credentials = null, $flatten_keys = true ) {
 
 		if ( $payload && $flatten_keys ) {
 
@@ -264,8 +264,11 @@ class Cloud_Config_Request {
 
 		}
         
-        $credentials['access-key-id'] = Lift_Search::get_access_key_id();
-        $credentials['secret-access-key'] = Lift_Search::get_secret_access_key();
+		if ( ! $credentials ) {
+			$credentials['access-key-id'] = Lift_Search::get_access_key_id();
+			$credentials['secret-access-key'] = Lift_Search::get_secret_access_key();
+		}
+		
         $api = Lift_Search::get_http_api();
 
 		$config = new Cloud_Config( $credentials, $api, $method, $payload);
@@ -562,7 +565,7 @@ class Cloud_Config_Request {
             'DomainName' => $domain,
         );
 
-        list($r, $config) = self::__make_request( 'UpdateServiceAccessPolicies', $payload, false );
+        list($r, $config) = self::__make_request( 'UpdateServiceAccessPolicies', $payload, null, false );
 
 		if ( $r ) {
 			$r = json_decode( $r );
