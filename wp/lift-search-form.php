@@ -115,7 +115,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			global $wp_query;
 			$types = Lift_Search::get_indexed_post_types();
 			$selected_types = Lift_Search_Form::get_query_var( 'post_types' );
-			$label = ( ! $selected_types ) ? 'Type' : '';
+			$label = ( ! $selected_types ) ? 'All Types' : '';
 			$selected_labels = array();
 			if ( ! is_array( $selected_types) ) {
 				$selected_types = array( $selected_types );
@@ -230,6 +230,10 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		}
 
 		public function form_filters() {
+			if ( ! is_search() ) {
+				return;
+			}
+			
 			$fields = apply_filters( 'lift-form-field-objects', $this->fields );
 			$html = '<fieldset class="lift-search-form-filters">';
 			foreach ( $fields as $field ) {
@@ -251,12 +255,14 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 */
 		public function js_form_controls() {
 			$fields = apply_filters( 'lift-form-field-objects', $this->fields );
-			$html = "<div class='lift-js-filters lift-hidden' style='display: none'><ul class='lift-filters'>";
-			$html .= "<li>Filter by: </li>";
+			$counter = 1;
+			$html = "<div class='lift-js-filters lift-hidden' style='display: none'><ul id='lift-filters'>";
+			$html .= "<li class='first'>Filter by: </li>";
 			foreach ( $fields as $field ) {
 				if ( is_a( $field, 'Lift_Search_Field' ) ) {
-					$html .= $field->faux_element();
+					$html .= $field->faux_element( $counter == count( $fields ) );
 				}
+				$counter ++;
 			}
 			$html .= "</ul></div>";
 			return $html;
@@ -315,12 +321,12 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 * Call methods to create JS form element overrides
 		 * @return type 
 		 */
-		public function faux_element() {
+		public function faux_element( $last = false ) {
 			switch ( $this->type ) {
 				case 'checkbox':
-					return $this->faux_checkbox_field();
+					return $this->faux_checkbox_field( $last );
 				case 'select':
-					return $this->faux_select_field();
+					return $this->faux_select_field( $last );
 					break;
 			}
 		}
@@ -415,13 +421,14 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 * Generate custom list elements to replace select fields
 		 * @return boolean|string False if field type is unsupported | HTML list item elements
 		 */
-		private function faux_select_field() {
+		private function faux_select_field( $last = false ) {
 			if ( !in_array( $this->type, array( 'select' ) ) ) {
 				return false;
 			}
 			
 			$options = '';
 			$has_selection = false;
+			$last_class = ( $last ) ? 'last' : '';
 			
 			foreach ( $this->options['value'] as $k => $v ) {
 				$selected = "";
@@ -432,14 +439,12 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 					$selected = "selected";
 					$has_selection = true;
 				}
-				$options .= '<li class="lift-list-item ' . $selected . '" data-lift_value="' . $v . '" >
-					<a href="#">' . $k . '</a>
-						</li>';
+				$options .= sprintf( '<li class="lift-list-item %s %s" data-lift_value="%s" ><a href="#">%s</a></li>', $selected, $last, $v, $k ) ;
 			}
 			
 			$selected_class = ( $has_selection ) ? 'selected' : '';
 			
-			$html = sprintf('<li class="lift-list-toggler" id="lift-list-toggler-%s" data-role="list-toggler"><a href="#" class="%s">%s</a>', $this->id, $selected_class, $this->options['label'] );
+			$html = sprintf('<li class="lift-list-toggler %s" id="lift-list-toggler-%s" data-role="list-toggler"><a href="#" class="%s">%s</a>', $last_class, $this->id, $selected_class, $this->options['label'] );
 			$html .= "<ul class='lift-select-list lift-hidden' data-lift_bind='$this->id'>";
 			$html .= $options;
 			$html .= "</ul></li>";

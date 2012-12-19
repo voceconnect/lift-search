@@ -9,36 +9,38 @@ $dark-text: #333; // Text and Border colors
 @mixin after($width, $height, $posT, $posL, $top, $left) {
 	content:'';position:absolute;top:$top;left:$left;@include sprite($width,$height,$posT,$posL);
 }
-.lift-search {
-	a {color: #2a84cd;}
-	.lift-filters {margin-top: 12px; position: relative; z-index: 100;list-style: none;
-		li {display: inline-block; vertical-align: middle; position: relative; color: $dark-text;
-			a { position: relative; padding-right: 10px; z-index: 1000;
-				&.lift-list-toggler.selected { padding-right: 14px;
-					&:after{@include after(8px, 4px, -6px, -68px, 9px, 100%); margin-left: -8px;}
-				}
-			}
-			ul {display: none; position: absolute; margin-top: 4px; top: 100%; left: -15px; background: #fff; border: 1px solid $link-off; padding: 10px 0;
-				li {display: block; white-space: nowrap; margin: 0; position: relative; color: $dark-text; font-size: .75em; display: block; padding: 5px 15px;
-					&:hover {background: lighten($dark-text, 70%); text-decoration: none;}
-					&.selected:before {content: '\2713'; position: absolute; left: 3px; top: 4px; font-weight: bold;}
-				}
-			}
-			&.clicked {
-				a {color: $dark-text;}
-				ul {display: block;}
-			}
-			&.lift-list-toggler { margin-left: 15px;
-				a:after {@include after(8px, 4px, -6px, -68px, 8px, 100%); margin-left: -4px; }
-				a.selected { font-weight: bold; }
-				li a {
-					&:hover {text-decoration: none;}
-					&:after {background: none;}
-				}
+#lift-filters {margin-top: 12px; position: relative; z-index: 100;list-style: none;
+	li {margin: 0; display: inline-block; vertical-align: middle; position: relative; color: $dark-text; margin-right: 15px;
+		a { position: relative; padding-right: 10px; z-index: 1000;
+			&.lift-list-toggler.selected { padding-right: 14px;
+				&:after{@include after(8px, 4px, -6px, -68px, 9px, 100%); margin-left: -8px;}
 			}
 		}
-		hr {background: #999; background: rgba(0,0,0,.2); margin: 12px 0; height: 1px; overflow: hidden; font-size: 0; border: none;}
+		ul {display: none; position: absolute; margin-top: 4px; top: 100%; left: -15px; background: #fff; border: 1px solid $link-off; padding: 10px 0;
+			li {display: block; white-space: nowrap; margin: 0; position: relative; color: $dark-text; font-size: .75em; display: block; padding: 5px 15px;
+				&:hover {background: lighten($dark-text, 70%); text-decoration: none;}
+				&.selected:before {content: '\2713'; position: absolute; left: 3px; top: 4px; font-weight: bold;}
+			}
+		}
+		&.clicked {
+			a {color: $dark-text;}
+			ul {display: block;}
+		}
+		&.lift-list-toggler { 
+			a:after {@include after(8px, 4px, -6px, -68px, 8px, 100%); margin-left: -4px; }
+			a.selected { font-weight: bold; }
+			li a {
+				&:hover {text-decoration: none;}
+				&:after {background: none;}
+			}
+		}
+		&.first { margin-right: 15px; }
+		&.last { margin-right: 0; }
 	}
+	hr {background: #999; background: rgba(0,0,0,.2); margin: 12px 0; height: 1px; overflow: hidden; font-size: 0; border: none;}
+}
+.lift-search {
+	a {color: #2a84cd;}
 	.lift-filter-list {border-top: 1px solid $dark-text; margin-top: 8px; padding: 7px 0;
 		h2 {font-size: 1.0625em; }
 		hr {background: lighten($dark-text, 40%); height: 1px; border: none; position: relative; margin-bottom: 0;
