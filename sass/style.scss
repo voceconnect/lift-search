@@ -10,6 +10,7 @@ $dark-text: #333; // Text and Border colors
 	content:'';position:absolute;top:$top;left:$left;@include sprite($width,$height,$posT,$posL);
 }
 #lift-filters {margin-top: 12px; position: relative; z-index: 100;list-style: none;
+	ul {margin: 0;}
 	li {margin: 0; display: inline-block; vertical-align: middle; position: relative; color: $dark-text; margin-right: 15px;
 		a { position: relative; padding-right: 10px; z-index: 1000;
 			&.lift-list-toggler.selected { padding-right: 14px;
