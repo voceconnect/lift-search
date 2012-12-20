@@ -1,7 +1,7 @@
 <?php
 /*
   Plugin Name: Lift Search
-  Version: 1.0.1
+  Version: 1.1
   Plugin URI: http://getliftsearch.com/
   Description: Improves WordPress search using Amazon CloudSearch
   Author: Voce Platforms
@@ -61,7 +61,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			// @TODO only enqueue on search template or if someone calls the form
 			add_action( 'wp_enqueue_scripts', function() {
 						wp_enqueue_script( 'lift-search-form', plugins_url( 'js/lift-search-form.js', __FILE__ ), array( 'jquery' ) );
-						wp_enqueue_style( 'lift-search-font', 'https://fonts.googleapis.com/css?family=Lato:400,700,900' );
 						wp_enqueue_style( 'lift-search', plugins_url( 'sass/style.css', __FILE__ ) );
 					} );
 
@@ -271,7 +270,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			$domain = strtolower( trim( $_POST['domain'] ) );
 
 			$error = false;
-			$new_domain = true;
 			$replacing_domain = ( self::get_search_domain() != $domain );
 
 			try {
@@ -299,8 +297,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 						self::__set_setting( self::SEARCH_DOMAIN, $domain );
 					}
-
-					$new_domain = false;
 				} else {
 					$status_message = 'Domain could not be found. <span class="">Would you like to <a id="lift-create-domain" data-domain="' . esc_attr( $domain ) . '" href="#">create this domain with Lift\'s default indexes</a>?</span>';
 					$error = true;
@@ -311,7 +307,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				$error = true;
 			}
 
-			if ( !$error && ( $new_domain || $replacing_domain ) ) {
+			if ( !$error && $replacing_domain ) {
 				// mark setup complete
 				update_option( self::INITIAL_SETUP_COMPLETE_OPTION, 1 );
 				Lift_Batch_Queue::enable_cron();

@@ -28,7 +28,7 @@ var LiftSearchForm = (function (document, jQuery) {
 		var boundTo, val, selectEl;
 		boundTo = $(el).parent().data('lift_bind');
 		val = $(el).data('lift_value');
-		selectEl = $(document.getElementById(boundTo));
+		selectEl = $('.' + boundTo); // get by class, not ID since there may be more than one set of filters on a page
 		selectEl.find('option').removeAttr("selected");
 		selectEl.find('option[value="'+val+'"]').attr('selected', 'selected') ;
 	};
@@ -42,7 +42,7 @@ var LiftSearchForm = (function (document, jQuery) {
 			e.preventDefault();
 			setValue(this);
 			if(options.submitOnClick === true){
-				submitForm($('form#lift-search'));
+				submitForm($(this).closest('form'));
 			}
 		});
 	};
@@ -125,7 +125,7 @@ var hideDefaultForm;
  **/
 hideDefaultForm = function hideDefaultForm(){
 	"use strict";
-	var css = 'fieldset.lift-filters, .lift-submit { display: none; }',
+	var css = '.lift-search-form-filters, .lift-submit, .lift-hidden { display: none; }',
 	head = document.getElementsByTagName('head')[0],
 	style = document.createElement('style');
 

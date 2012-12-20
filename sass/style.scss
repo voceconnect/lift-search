@@ -2,58 +2,46 @@
 $link-color: #2a84cd; // Main Link and Blue color
 $link-off: #9a9a9a; // Alternate Link color
 $dark-text: #333; // Text and Border colors
-$fancy-font: 'Lato', Arial, sans-serif;
-@mixin nested-reset {
-  div, span, object, iframe,h1, h2, h3, h4, h5, h6, p, blockquote, pre,a, abbr, address, cite, code,del, dfn, em, img, ins, kbd, q, samp,small, strong, sub, sup, var,b, i,dl, dt, dd, ol, ul, li,fieldset, form, label, legend,table, caption, tbody, tfoot, thead, tr, th, td,article, aside, canvas, details, embed,figure, figcaption, footer, header, hgroup,menu, nav, output, ruby, section, summary,time, mark, audio, video {@include reset-box-model; @include reset-font; }
-  table {@include reset-table; }
-  caption, th, td {@include reset-table-cell; }
-  q, blockquote {@include reset-quotation; }
-  a img {@include reset-image-anchor-border; } 
-}
+
 @mixin sprite($width, $height, $posT, $posL) {
 	display:inline-block;background:url(../img/sprite-icons.png) $posT $posL;width:$width;height:$height;text-indent:-9999px;
 }
 @mixin after($width, $height, $posT, $posL, $top, $left) {
 	content:'';position:absolute;top:$top;left:$left;@include sprite($width,$height,$posT,$posL);
 }
-.lift-search {@include nested-reset;font-size: 16px; font-family: $fancy-font;
+#lift-filters {margin: 12px 0 0 0; position: relative; z-index: 100;list-style: none;
+	li {margin: 0; display: inline-block; vertical-align: middle; position: relative; color: $dark-text; margin-right: 15px;
+		a { position: relative; padding-right: 10px; z-index: 1000;
+			&.lift-list-toggler.selected { padding-right: 14px;
+				&:after{@include after(8px, 4px, -6px, -68px, 9px, 100%); margin-left: -8px;}
+			}
+		}
+		ul {display: none; position: absolute; margin-top: 4px; top: 100%; left: -15px; background: #fff; border: 1px solid $link-off; padding: 10px 0;
+			li {display: block; white-space: nowrap; margin: 0; position: relative; color: $dark-text; font-size: .75em; display: block; padding: 5px 15px;
+				&:hover {background: lighten($dark-text, 70%); text-decoration: none;}
+				&.selected:before {content: '\2713'; position: absolute; left: 3px; top: 4px; font-weight: bold;}
+			}
+		}
+		&.clicked {
+			a {color: $dark-text;}
+			ul {display: block;}
+		}
+		&.lift-list-toggler {
+			a { font-weight: normal; }
+			a:after {@include after(8px, 4px, -6px, -68px, 8px, 100%); margin-left: -4px; }
+			a.selected { font-weight: bold; }
+			li a {
+				&:hover {text-decoration: none;}
+				&:after {background: none;}
+			}
+		}
+		&.first { margin-right: 15px; }
+		&.last { margin-right: 0; }
+	}
+	hr {background: #999; background: rgba(0,0,0,.2); margin: 12px 0; height: 1px; overflow: hidden; font-size: 0; border: none;}
+}
+.lift-search {
 	a {color: #2a84cd;}
-	.magnify {position: relative;
-		i {
-			@include after(10px, 9px, 0, -41px, 50%, 10px); margin-top: -3px
-		}
-	}
-	#s {width:100%;padding: 0; height:30px;line-height:30px;text-indent:24px;font-size:1.125em;-webkit-appearance:none;@include border-radius(6px);}
-	.lift-filters {margin-top: 12px; position: relative; z-index: 100;list-style: none;
-		li {display: inline-block; vertical-align: middle; position: relative; color: $dark-text;
-			a { position: relative; padding-right: 10px; z-index: 1000;
-				&.lift-list-toggler.selected { padding-right: 14px;
-					&:after{@include after(8px, 4px, -6px, -68px, 9px, 100%); margin-left: -8px;}
-				}
-			}
-			ul {display: none; position: absolute; margin-top: 4px; top: 100%; left: -15px; background: #fff; border: 1px solid $link-off; padding: 10px 0;
-				li {display: block; white-space: nowrap; margin: 0; position: relative; color: $dark-text; font-size: .75em; display: block; padding: 5px 15px;
-					&:hover {background: lighten($dark-text, 70%); text-decoration: none;}
-					&.selected:before {content: '\2713'; position: absolute; left: 3px; top: 4px; font-weight: bold;}
-				}
-			}
-			&.clicked {
-				a {color: $dark-text;}
-				ul {display: block;}
-			}
-			&.lift-list-toggler { margin-left: 15px;
-				a:after {@include after(8px, 4px, -6px, -68px, 10px, 100%); margin-left: -4px; }
-				li a {
-					&:hover {text-decoration: none;}
-					&:after {background: none;}
-				}
-			}
-		}
-		hr {background: #999; background: rgba(0,0,0,.2); margin: 12px 0; height: 1px; overflow: hidden; font-size: 0; border: none;}
-	}
-	input.lift-submit {background: $link-color; @include background-image(linear-gradient(lighten($link-color, 15%),$link-color)); @include border-radius(4px); padding: 4px 8px; color: #fff; font-weight: bold;border: none; font-size: 1em;
-		&:hover {background: $link-color}
-	}
 	.lift-filter-list {border-top: 1px solid $dark-text; margin-top: 8px; padding: 7px 0;
 		h2 {font-size: 1.0625em; }
 		hr {background: lighten($dark-text, 40%); height: 1px; border: none; position: relative; margin-bottom: 0;
@@ -78,8 +66,8 @@ $fancy-font: 'Lato', Arial, sans-serif;
 	}
 	.search-results {}
 	.search-result {border-bottom: 1px solid #ccc; padding: 16px 20px 16px 0;
-		h2 {color: #2a84cd; font: bold 1.375em/1em $fancy-font; margin-bottom: 15px;}
-		p {font: .75em/1.5em $fancy-font, Arial, sans-serif; padding-bottom: 12px; color: #333;
+		h2 {color: #2a84cd; font: bold 1.375em/1em; margin-bottom: 15px;}
+		p {font: .75em/1.5em; padding-bottom: 12px; color: #333;
 			&.search-date {color: #73777a;}
 		}
 		.search-thumb {float: left; margin: 0 8px 10px 0;

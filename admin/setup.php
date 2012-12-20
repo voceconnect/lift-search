@@ -71,7 +71,7 @@ $disabled = 'disabled="disabled"';
 						<td>
 							<input name="search-domain" value="<?php echo esc_attr( Lift_Search::get_search_domain() ); ?>" class="regular-text" type="text">
 							<br><span class="lift-light-grey">
-								If you have already configured a search domain in the Amazon CloudSearch Dashboard, enter it here. Otherwise, you will be prompted to create a new one after clicking Save Domain below.
+								If you have already configured a search domain in the AWS Console, enter it here. Otherwise, you will be prompted to create a new one after clicking Save Domain below.
 							</span>
 						</td>
 					</tr>

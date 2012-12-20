@@ -284,7 +284,11 @@ jQuery(document).ready(function($) {
 			request.success(function(response){
 				var resp_parsed = lift_ajax.parseJSON(response);
 				if (!resp_parsed || resp_parsed.error) {
-					msg_text = 'An error occurred. Response could not be parsed.';
+					if ( resp_parsed.error ) {
+						msg_text = resp_parsed.error;
+					} else {
+						msg_text = 'An error occurred. Response could not be parsed.';
+					}
 					msg.addClass('error-message').removeClass('success-message');
 					$('.lift-step-4 .lift-admin-panel').attr('disabled', 'disabled');
 					next.attr('disabled', 'disabled');

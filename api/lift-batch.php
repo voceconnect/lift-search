@@ -122,7 +122,7 @@ class Lift_Batch {
 					$this->add_document( $documents[$i] );
 				} catch ( Lift_Batch_Exception $e ) {
 					$this->errors[] = array(
-                        'code' => 300,
+                        'code' => 400,
 						'message' => sprintf( 'Failed adding document at index %s', $i ),
 						'failedIndex' => $i
 					);
@@ -137,6 +137,62 @@ class Lift_Batch {
             );
 			throw new Lift_Batch_Exception( $this->errors );
 		}
+	}
+
+	/**
+	 * Args:
+	 * 
+	 * id				- post ID to remove
+	 * limit			- size of batch (default all)
+	 * start_from		- remove posts from this ID and newer (default is oldest post)
+	 * 
+	 * @method delete_document
+	 * @param array $args
+	 * @return int Number of rows deleted, or FALSE on failure ( # / 2 = documents )
+	 */
+	public function delete_document( $args = array() ) {
+
+		global $wpdb;
+
+
+		// set conditions
+		$where = array();
+		$where[] = 'sub_p.post_type = "lift_queued_document"';
+
+		// remove specific ID
+		if ( array_key_exists('id', $args) && (int)$args['id'] >= 1 ) {
+			$where[] = sprintf( 'sub_p.ID = %d', (int)$args['id'] );
+		}
+
+		// remove batch starting from specific ID
+		if ( array_key_exists('start_from', $args) && (int)$args['start_from'] >= 1 ) {
+			$where[] = sprintf( 'sub_p.ID >= %d', (int)$args['start_from'] );
+		}
+
+
+		// change batch size
+		$limit = '';
+
+		if ( array_key_exists('limit', $args) && (int)$args['limit'] >= 1 ) {
+			$limit = sprintf( 'LIMIT %d', (int)$args['limit'] );
+		}
+
+
+		return $wpdb->query(
+				$wpdb->prepare(
+					"DELETE p, pm
+						FROM {$wpdb->posts} p 
+						INNER JOIN (
+							SELECT sub_p.ID 
+								FROM {$wpdb->posts} sub_p
+								WHERE ".implode(' AND ', $where)."
+								ORDER BY sub_p.ID ASC
+								{$limit}
+							) p_join ON p.ID = p_join.ID
+						LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id"
+				)
+			);
+
 	}
 
 	/**

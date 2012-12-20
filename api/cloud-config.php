@@ -9,20 +9,12 @@ class Cloud_Config {
 	private $endpoint = 'https://cloudsearch.us-east-1.amazonaws.com';
 	private $api_version = '2011-02-01';
 
-	public function __construct( $operation, $payload = array( ), $credentials = array( ) ) {
+	public function __construct( $credentials, $api, $operation, $payload = array( ) ) {
 		$this->operation = $operation;
 		$this->payload = $payload;
-
-		if ( count($credentials) ) {
-			$this->key = $credentials['access-key-id'];
-			$this->secret_key = $credentials['secret-access-key'];
-		}
-		else {
-			$this->key = Lift_Search::get_access_key_id();
-			$this->secret_key = Lift_Search::get_secret_access_key();
-		}
-
-		$this->http_api = Lift_Search::get_http_api();
+        $this->key = $credentials['access-key-id'];
+        $this->secret_key = $credentials['secret-access-key'];
+		$this->http_api = $api;
 	}
 
 	public function to_query_string( $array ) {
@@ -264,15 +256,22 @@ class Cloud_Config_Request {
 	 * @param array $payload
 	 * @return array [response string, Cloud_Config object used for request]
 	 */
-	protected static function __make_request( $method, $payload = array(), $credentials = array() ) {
+	protected static function __make_request( $method, $payload = array(), $credentials = null, $flatten_keys = true ) {
 
-		if ( $payload ) {
+		if ( $payload && $flatten_keys ) {
 
 			$payload = self::__flatten_keys( $payload );
 
 		}
+        
+		if ( ! $credentials ) {
+			$credentials['access-key-id'] = Lift_Search::get_access_key_id();
+			$credentials['secret-access-key'] = Lift_Search::get_secret_access_key();
+		}
+		
+        $api = Lift_Search::get_http_api();
 
-		$config = new Cloud_Config( $method, $payload, $credentials );
+		$config = new Cloud_Config( $credentials, $api, $method, $payload);
 
 		$r = $config->authenticate();
 
@@ -566,9 +565,7 @@ class Cloud_Config_Request {
             'DomainName' => $domain,
         );
 
-        $config = new Cloud_Config( 'UpdateServiceAccessPolicies', $payload );
-
-		$r = $config->authenticate();
+        list($r, $config) = self::__make_request( 'UpdateServiceAccessPolicies', $payload, null, false );
 
 		if ( $r ) {
 			$r = json_decode( $r );
@@ -715,9 +712,7 @@ class Cloud_Config_Request {
 
 		$payload['IndexField'] += self::__parse_index_options( $field_type, $options );
 
-		$config = new Cloud_Config( 'DefineIndexField', self::__flatten_keys( $payload ) );
-
-		$r = $config->authenticate();
+		list($r, $config) = self::__make_request( 'DefineIndexField', self::__flatten_keys( $payload ) );
 
 		if ( $r ) {
 

@@ -73,7 +73,7 @@ $domain = Lift_Search::get_search_domain();
                             <form method="get" action="">
                                 <input type="hidden" name="page" value="<?php echo esc_attr( Lift_Search::ADMIN_STATUS_PAGE ); ?>">
                                 <input type="hidden" name="sync-queue" value="1">
-                                <button class="button-primary" <?php echo ( ! Lift_Batch_Queue::ready_for_batch( Lift_Search::get_search_domain() ) ) ? 'disabled' : ''; ?>>Sync Queue Now</button>
+                                <button class="button-primary" <?php echo ( Lift_Batch_Queue::is_batch_locked() || ! Lift_Batch_Queue::ready_for_batch( Lift_Search::get_search_domain() ) ) ? 'disabled' : ''; ?>>Sync Queue Now</button>
                             </form>
 						</div>
 						<div class="clr"></div>
