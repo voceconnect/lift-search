@@ -16,17 +16,17 @@ class Lift_Document_Update_Queue {
 
 	public static function get_queue_count() {
 		global $wpdb;
-		
-		if(false === ($queue_count = wp_cache_get('lift_update_queue_count'))) {
+
+		if ( false === ($queue_count = wp_cache_get( 'lift_update_queue_count' )) ) {
 			$queue_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT( 1 ) FROM $wpdb->posts
-				WHERE post_type = %s", self::STORAGE_POST_TYPE) );
-			
-			wp_cache_set('lift_update_queue_count', $queue_count);
+				WHERE post_type = %s", self::STORAGE_POST_TYPE ) );
+
+			wp_cache_set( 'lift_update_queue_count', $queue_count );
 		}
-		
+
 		return $queue_count;
 	}
-	
+
 	/**
 	 * Sets a document field to be queued for an update
 	 * @param int $document_id
@@ -63,7 +63,7 @@ class Lift_Document_Update_Queue {
 		}
 
 		if ( $update_post = self::get_document_update_post( $document_id, $document_type ) ) {
-			$post_meta_content = get_post_meta($update_post->ID, 'lift_content', true);
+			$post_meta_content = get_post_meta( $update_post->ID, 'lift_content', true );
 			$update_data = ( array ) maybe_unserialize( $post_meta_content );
 			$action = isset( $update_data['action'] ) ? $update_data['action'] : 'add';
 			$fields = isset( $update_data['fields'] ) ? ( array ) $update_data['fields'] : array( );
@@ -95,7 +95,7 @@ class Lift_Document_Update_Queue {
 			if ( count( $posts ) === 1 ) {
 				$post_id = $posts[0];
 				wp_cache_set( 'lift_queue_post_id_' . $post_name, $post_id );
-				wp_cache_delete('lift_update_queue_count');
+				wp_cache_delete( 'lift_update_queue_count' );
 			}
 		}
 
@@ -126,7 +126,7 @@ class Lift_Document_Update_Queue {
 		) );
 
 		add_action( 'shutdown', array( __CLASS__, '_save_updates' ) );
-		
+
 		Lift_Post_Update_Watcher::init();
 		Lift_Post_Meta_Update_Watcher::init();
 		Lift_Taxonomy_Update_Watcher::init();
@@ -143,12 +143,12 @@ class Lift_Document_Update_Queue {
 			$new = false;
 			if ( false == ($post = self::get_document_update_post( $change_doc->document_id, $change_doc->document_type ) ) ) {
 				$post = array(
-                        'post_type' => self::STORAGE_POST_TYPE,
-                        'post_name' => $change_doc->document_type . '-' . $change_doc->document_id,
-                        'post_title' => $change_doc->document_type . '-' . $change_doc->document_id,
-                        'post_status' => 'publish',
-                        'post_content' => '',
-                );
+					'post_type' => self::STORAGE_POST_TYPE,
+					'post_name' => $change_doc->document_type . '-' . $change_doc->document_id,
+					'post_title' => $change_doc->document_type . '-' . $change_doc->document_id,
+					'post_status' => 'publish',
+					'post_content' => '',
+				);
 				$new = true;
 			}
 
@@ -163,11 +163,12 @@ class Lift_Document_Update_Queue {
 			if ( ( $post_id = wp_insert_post( $post ) ) && $new ) {
 				wp_cache_set( 'lift_queue_post_id_' . $change_doc->document_type . '_' . $change_doc->document_id, $post_id );
 			}
-			update_post_meta($post_id, 'lift_content', $post_content);
+			update_post_meta( $post_id, 'lift_content', $post_content );
 		}
 	}
 
 }
+
 add_action( 'init', array( 'Lift_Document_Update_Queue', 'init' ), 2 );
 
 class Lift_Update_Document {

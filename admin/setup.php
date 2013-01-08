@@ -19,12 +19,12 @@ $disabled = 'disabled="disabled"';
 				<p>
 					<em>1</em> You will need an Amazon Web Services account, visit <a target="_blank" href="http://aws.amazon.com/">Amazon AWS</a>. <a href="http://aws.amazon.com/documentation/" class="button button-secondary" target="_blank">AWS Documentation</a>
 				</p>
-				<?php if ( ! $step_completed[4] ): ?>
+				<?php if ( !$step_completed[4] ): ?>
 					<br />
 					<input type="button" value="Next" class="lift-next-step lift-step-button button-primary" data-lift_step="next" />
 				<?php endif; ?>
 			</div>
-			<div class="lift-step lift-step-2 <?php echo ( ! $step_completed[4] ? 'hidden' : '' ); ?>">
+			<div class="lift-step lift-step-2 <?php echo (!$step_completed[4] ? 'hidden' : '' ); ?>">
 				<p>
 					<em>2</em> Add your account info. You can retrieve your access keys from the
 					<a href="https://portal.aws.amazon.com/gp/aws/securityCredentials" target="_blank">Amazon security credentials page</a>. 
@@ -57,13 +57,13 @@ $disabled = 'disabled="disabled"';
 						</td>
 					</tr>
 				</table>
-				<?php if ( ! $step_completed[4] ): ?>
+				<?php if ( !$step_completed[4] ): ?>
 					<br />
 					<input type="button" value="Back" class="lift-prev-step lift-step-button button-primary" data-lift_step="prev"/>
 					<input type="button" value="Next" class="lift-next-step lift-step-button button-primary" data-lift_step="next" <?php echo ($step_completed[2] ? '' : $disabled); ?> />
 				<?php endif; ?>
 			</div>
-			<div class="lift-step lift-step-3 <?php echo ( ! $step_completed[4] ? 'hidden' : '' ); ?>">
+			<div class="lift-step lift-step-3 <?php echo (!$step_completed[4] ? 'hidden' : '' ); ?>">
 				<p><em>3</em> Please enter a search domain name. This must be a unique string to your AWS account. The domain name string can only contain the following characters: a-z (lowercase), 0-9, and - (hyphen). Uppercase letters and underscores are not allowed. The string has a max length of 28 characters.</p>
 				<table class="form-table">
 					<tr valign="top">
@@ -84,18 +84,18 @@ $disabled = 'disabled="disabled"';
 						</td>
 					</tr>
 				</table>
-				<?php if ( ! $step_completed[4] ): ?>
+				<?php if ( !$step_completed[4] ): ?>
 					<br />
 					<input type="button" value="Back" class="lift-prev-step lift-step-button button-primary" data-lift_step="prev"/>
 					<input type="button" value="Next" class="lift-next-step lift-step-button button-primary" data-lift_step="next" <?php echo ($step_completed[3] ? '' : $disabled); ?> />
 				<?php endif; ?>
 			</div>
-			<div class="lift-step lift-step-4 <?php echo ( ! $step_completed[4] ? 'hidden' : '' ); ?>">
+			<div class="lift-step lift-step-4 <?php echo (!$step_completed[4] ? 'hidden' : '' ); ?>">
 				<p>
 					<em>4</em> Your search domain is ready to go! If this is a new search domain, it will take approximately 30-40 minutes for it to become active and ready to index your documents.
 				</p>
 				<p>
-					<?php if ( ! $step_completed[4] ): ?>
+					<?php if ( !$step_completed[4] ): ?>
 						<input type="button" value="Back" class="lift-prev-step lift-step-button button-primary"data-lift_step="prev" />
 					<?php endif; ?>
 					<a href="<?php echo admin_url( sprintf( 'options-general.php?page=%s', Lift_Search::ADMIN_STATUS_PAGE ) ); ?>" class="lift-admin-panel<?php echo ($step_completed[4] ? '-initial-completed' : ''); ?> button-primary">View Lift Search Dashboard</a> 

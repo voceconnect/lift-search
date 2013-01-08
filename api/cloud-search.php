@@ -1,109 +1,92 @@
 <?php
+
 /*
 
-Example usage:
+  Example usage:
 
-$query = new Cloud_Search_Query('post_content:"ratchet"');
+  $query = new Cloud_Search_Query('post_content:"ratchet"');
 
-$query->add_facet('post_category');
-$query->add_return_field('id');
-$query->add_rank('post_date_gmt', 'DESC');
+  $query->add_facet('post_category');
+  $query->add_return_field('id');
+  $query->add_rank('post_date_gmt', 'DESC');
 
-$query_string = $query->get_query_string();
+  $query_string = $query->get_query_string();
 
-*/
-
+ */
 
 class Cloud_Search_Query {
 
-	protected $facets = array();
-	protected $return_fields = array();
-	protected $size  = 10;
+	protected $facets = array( );
+	protected $return_fields = array( );
+	protected $size = 10;
 	protected $start = 0;
 	protected $boolean_query = '';
-	protected $ranks = array();
+	protected $ranks = array( );
 
 	public function __construct( $boolean_query = '' ) {
-
 		$this->boolean_query = $boolean_query;
-
 	}
 
 	public function set_boolean_query( $boolean_query ) {
-
 		$this->boolean_query = $boolean_query;
-
 	}
 
 	public function add_facet( $facet ) {
-
-		$this->facets = array_merge( $this->facets, (array) $facet );
-
+		$this->facets = array_merge( $this->facets, ( array ) $facet );
 	}
 
 	public function add_return_field( $field ) { // string or array
-
-		$this->return_fields = array_merge( $this->return_fields, (array) $field );
-
+		$this->return_fields = array_merge( $this->return_fields, ( array ) $field );
 	}
 
 	private function __validate_size( $size ) {
-		if( (int)$size != $size || (int)$size < 0 ) {
+		if ( ( int ) $size != $size || ( int ) $size < 0 ) {
 			throw new CloudSearchAPIException( 'Size must be a positive integer.', 2 );
 		}
 	}
 
 	public function set_size( $size = 10 ) {
-		
 		$this->__validate_size( $size );
-
 		$this->size = $size;
 	}
 
 	private function __validate_start( $start ) {
-		if( (int)$start != $start || (int)$start < 0 ) {
+		if ( ( int ) $start != $start || ( int ) $start < 0 ) {
 			throw new CloudSearchAPIException( 'Start must be a positive integer', 1 );
 		}
 	}
 
 	public function set_start( $start ) {
-
 		$this->__validate_start( $start );
-
 		$this->start = $start;
-
 	}
 
 	public function add_rank( $field, $order ) {
-
-		$order = ('DESC' === strtoupper($order)) ? 'DESC' : 'ASC';
-
+		$order = ('DESC' === strtoupper( $order )) ? 'DESC' : 'ASC';
 		$this->ranks[$field] = $order;
-
 	}
 
 	public function get_query_string() {
+		$ranks = array( );
 
-		$ranks = array();
-		foreach ($this->ranks as $field => $order) {
+		foreach ( $this->ranks as $field => $order ) {
 			$ranks[] = ('DESC' === $order) ? "-{$field}" : $field;
 		}
 
-		$params = array_filter(array(
-			'bq'            => $this->boolean_query,
-			'facet'         => implode(',', $this->facets),
-			'return-fields' => implode(',', $this->return_fields),
-			'size'          => $this->size,
-			'start'         => $this->start,
-			'rank'          => implode(',', $ranks)
-		));
+		$params = array_filter( array(
+			'bq' => $this->boolean_query,
+			'facet' => implode( ',', $this->facets ),
+			'return-fields' => implode( ',', $this->return_fields ),
+			'size' => $this->size,
+			'start' => $this->start,
+			'rank' => implode( ',', $ranks )
+			) );
 
 		return http_build_query( $params );
-
 	}
 
 }
 
 class CloudSearchAPIException extends Exception {
-
+	
 }

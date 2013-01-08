@@ -6,15 +6,15 @@
  */
 
 if ( !class_exists( 'Lift_Batch_Queue' ) ) {
-    
-    add_action( 'init', array( 'Lift_Batch_Queue', 'action_add_cron' ) );
+
+	add_action( 'init', array( 'Lift_Batch_Queue', 'action_add_cron' ) );
 
 	class Lift_Batch_Queue {
 
 		const QUEUE_ALL_MARKER_OPTION = 'lift-queue-all-content-timestamp';
 		const QUEUE_ALL_SET_SIZE = 100;
 		const BATCH_CRON_HOOK = 'lift_batch_cron';
-        const QUEUE_ALL_CRON_HOOK = 'lift_queue_all_cron';
+		const QUEUE_ALL_CRON_HOOK = 'lift_queue_all_cron';
 		const CRON_INTERVAL = 'lift-cron';
 		const BATCH_LOCK = 'lift-batch-lock';
 		const LAST_CRON_TIME_OPTION = 'lift-last-cron-time';
@@ -28,9 +28,9 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 
 			Lift_Document_Update_Queue::init();
 		}
-        
-        public static function action_add_cron() {        
-            add_filter( 'cron_schedules', function( $schedules ) {
+
+		public static function action_add_cron() {
+			add_filter( 'cron_schedules', function( $schedules ) {
 					if ( Lift_Search::get_batch_interval() > 0 ) {
 						$interval = Lift_Search::get_batch_interval();
 					} else {
@@ -47,83 +47,82 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 
 			add_action( self::BATCH_CRON_HOOK, array( __CLASS__, 'send_next_batch' ) );
 			add_action( self::QUEUE_ALL_CRON_HOOK, array( __CLASS__, 'process_queue_all' ) );
-        }
-        
-        /**
-         * enable the cron 
-         */
-        public static function enable_cron() {
-            wp_clear_scheduled_hook( self::BATCH_CRON_HOOK );
-            wp_schedule_event( time(), self::CRON_INTERVAL, self::BATCH_CRON_HOOK );
-        }
-        
-        /**
-         * disable the cron 
-         */
-        public static function disable_cron() {
-            wp_clear_scheduled_hook( self::BATCH_CRON_HOOK );
-        }
+		}
+
+		/**
+		 * enable the cron 
+		 */
+		public static function enable_cron() {
+			wp_clear_scheduled_hook( self::BATCH_CRON_HOOK );
+			wp_schedule_event( time(), self::CRON_INTERVAL, self::BATCH_CRON_HOOK );
+		}
+
+		/**
+		 * disable the cron 
+		 */
+		public static function disable_cron() {
+			wp_clear_scheduled_hook( self::BATCH_CRON_HOOK );
+		}
 
 		/**
 		 * is cron enabled?
 		 */
 		public static function cron_enabled() {
-            $enabled = ( bool ) wp_next_scheduled( self::BATCH_CRON_HOOK );
-            
+			$enabled = ( bool ) wp_next_scheduled( self::BATCH_CRON_HOOK );
+
 			return $enabled;
 		}
 
-        /**
-         * get the last cron run time formatted for the blog's timezone and date/time format. or 'n/a' if not available.
-         *
-         * * @return string date string or 'n/a' 
-         */
+		/**
+		 * get the last cron run time formatted for the blog's timezone and date/time format. or 'n/a' if not available.
+		 *
+		 * * @return string date string or 'n/a' 
+		 */
 		public static function get_last_cron_time() {
-			$date_format = sprintf('%s @ %s', get_option('date_format') , get_option('time_format'));
+			$date_format = sprintf( '%s @ %s', get_option( 'date_format' ), get_option( 'time_format' ) );
 
-			$gmt_offset = 60 * 60 * get_option('gmt_offset');
+			$gmt_offset = 60 * 60 * get_option( 'gmt_offset' );
 
-            if ( ($last_cron_time_raw = get_option( self::LAST_CRON_TIME_OPTION, FALSE ) ) ) {
-                return date( $date_format, $last_cron_time_raw + $gmt_offset);
-            } else {
-                return 'n/a';
-            }
-			
-		}
-
-        /**
-         * get the next cron run time formatted for the blog's timezone and date/time format. or 'n/a' if not available.
-         *
-         * * @return string date string or 'n/a' 
-         */
-		public static function get_next_cron_time() {
-			$date_format = sprintf('%s @ %s', get_option('date_format') , get_option('time_format'));
-
-			$gmt_offset = 60 * 60 * get_option('gmt_offset');
-            
-            if ( ($next_cron_time_raw = wp_next_scheduled( self::BATCH_CRON_HOOK ) ) ) {
-				return date( $date_format, $next_cron_time_raw + $gmt_offset);
-			} elseif ( self::cron_enabled() ) {
-				return date( $date_format, time() + Lift_Search::get_batch_interval() + $gmt_offset);
+			if ( ($last_cron_time_raw = get_option( self::LAST_CRON_TIME_OPTION, FALSE ) ) ) {
+				return date( $date_format, $last_cron_time_raw + $gmt_offset );
 			} else {
 				return 'n/a';
 			}
 		}
 
-        /**
-         * count of posts in the queue to be sent to CloudSearch
-         * 
-         * @return int 
-         */
+		/**
+		 * get the next cron run time formatted for the blog's timezone and date/time format. or 'n/a' if not available.
+		 *
+		 * * @return string date string or 'n/a' 
+		 */
+		public static function get_next_cron_time() {
+			$date_format = sprintf( '%s @ %s', get_option( 'date_format' ), get_option( 'time_format' ) );
+
+			$gmt_offset = 60 * 60 * get_option( 'gmt_offset' );
+
+			if ( ($next_cron_time_raw = wp_next_scheduled( self::BATCH_CRON_HOOK ) ) ) {
+				return date( $date_format, $next_cron_time_raw + $gmt_offset );
+			} elseif ( self::cron_enabled() ) {
+				return date( $date_format, time() + Lift_Search::get_batch_interval() + $gmt_offset );
+			} else {
+				return 'n/a';
+			}
+		}
+
+		/**
+		 * count of posts in the queue to be sent to CloudSearch
+		 * 
+		 * @return int 
+		 */
 		public static function get_queue_count() {
 			return Lift_Document_Update_Queue::get_queue_count();
 		}
 
-        /** 
-         * get a table with the current queue
-         * 
-         * @return string 
-         */
+		/**
+		 * get a table with the current queue
+		 * 
+		 * @return string 
+		 */
 		public static function get_queue_list() {
 			$page = (isset( $_GET['paged'] )) ? $_GET['paged'] : 0;
 			$args = array(
@@ -134,7 +133,7 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 				'orderby' => 'ID',
 				'order' => 'DESC'
 			);
-			$query = new WP_Query( $args );			
+			$query = new WP_Query( $args );
 			$html = '<table class="wp-list-table widefat fixed posts">
 				<thead>
 				<tr>
@@ -147,16 +146,16 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 			$pages = '';
 			if ( $query->have_posts() ) {
 				while ( $query->have_posts() ) : $query->the_post();
-					$pid = (int) substr(get_the_title(), 5);
-					if (get_post_status($pid)){
+					$pid = ( int ) substr( get_the_title(), 5 );
+					if ( get_post_status( $pid ) ) {
 						$last_user = '';
-						if ( $last_id = get_post_meta($pid, '_edit_last', true) ) {
-							$last_user = get_userdata($last_id);
+						if ( $last_id = get_post_meta( $pid, '_edit_last', true ) ) {
+							$last_user = get_userdata( $last_id );
 						}
 						$html .= '<tr>';
 						$html .= '<td class="column-date">' . get_the_ID() . '</td>';
-						$html .= '<td class="column-title"><a href="' . get_post_permalink($pid) . '">' . get_the_title($pid) . '</a></td>';
-						$html .= '<td class="column-author">' . (isset($last_user->display_name) ? $last_user->display_name : '') . '</td>';
+						$html .= '<td class="column-title"><a href="' . get_post_permalink( $pid ) . '">' . get_the_title( $pid ) . '</a></td>';
+						$html .= '<td class="column-author">' . (isset( $last_user->display_name ) ? $last_user->display_name : '') . '</td>';
 						$html .= '<td class="column-categories">' . get_the_time( 'D. M d Y g:ia' ) . '</td>';
 						$html .= '</tr>';
 					} else {
@@ -165,7 +164,7 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 						$html .= '<td class="column-title">Deleted ' . get_the_title() . '</td>';
 						$html .= '<td class="column-author">&nbsp;</td>';
 						$html .= '<td class="column-categories">' . get_the_time( 'D. M d Y g:ia' ) . '</td>';
-						$html .= '</tr>';					
+						$html .= '</tr>';
 					}
 				endwhile;
 				$big = 999999999;
@@ -186,20 +185,20 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 			return $html;
 		}
 
-        /**
-         * queue all posts for indexing. clear the prior cron job.
-         */
+		/**
+		 * queue all posts for indexing. clear the prior cron job.
+		 */
 		public static function queue_all() {
 			update_option( self::QUEUE_ALL_MARKER_OPTION, current_time( 'mysql', true ) );
-            wp_clear_scheduled_hook( self::QUEUE_ALL_CRON_HOOK );
+			wp_clear_scheduled_hook( self::QUEUE_ALL_CRON_HOOK );
 			wp_schedule_event( time(), self::CRON_INTERVAL, self::QUEUE_ALL_CRON_HOOK );
 		}
 
-        /**
-         * used by queue_all cron job to process the queue of all posts
-         * 
-         * @global object $wpdb
-         */
+		/**
+		 * used by queue_all cron job to process the queue of all posts
+		 * 
+		 * @global object $wpdb
+		 */
 		public static function process_queue_all() {
 			global $wpdb;
 
@@ -242,40 +241,39 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 
 			update_option( self::QUEUE_ALL_MARKER_OPTION, $new_date_to );
 		}
-        
-        /**
-         * is the batch locked?
-         * 
-         * @return bool 
-         */
-        public static function is_batch_locked() {
-            $locked = get_transient( self::BATCH_LOCK );
-            
-            return $locked;
-        }
 
+		/**
+		 * is the batch locked?
+		 * 
+		 * @return bool 
+		 */
+		public static function is_batch_locked() {
+			$locked = get_transient( self::BATCH_LOCK );
 
-        /**
-         * is the domain ready for a batch. has to exist and be in a good state
-         * 
-         * @param string $domain_name
-         * @return boolean 
-         */
-        public static function ready_for_batch( $domain_name ){
-            
-            $domains = Cloud_Config_Request::GetDomains(array($domain_name));
-            if ( $domains ) {
-                $ds = $domains->DescribeDomainsResponse->DescribeDomainsResult->DomainStatusList;
-                if ( ! count($ds) ) {
-                    return false;
-                }
-                foreach ($ds as $d) {
-                    if ( $d->DomainName == $domain_name ) {
-                        return (bool) ( ! $d->Deleted && ! $d->Processing && ! $d->RequiresIndexDocuments && $d->SearchInstanceCount > 0 );
-                    }
-                }
-            }
-        }
+			return $locked;
+		}
+
+		/**
+		 * is the domain ready for a batch. has to exist and be in a good state
+		 * 
+		 * @param string $domain_name
+		 * @return boolean 
+		 */
+		public static function ready_for_batch( $domain_name ) {
+
+			$domains = Cloud_Config_Request::GetDomains( array( $domain_name ) );
+			if ( $domains ) {
+				$ds = $domains->DescribeDomainsResponse->DescribeDomainsResult->DomainStatusList;
+				if ( !count( $ds ) ) {
+					return false;
+				}
+				foreach ( $ds as $d ) {
+					if ( $d->DomainName == $domain_name ) {
+						return ( bool ) (!$d->Deleted && !$d->Processing && !$d->RequiresIndexDocuments && $d->SearchInstanceCount > 0 );
+					}
+				}
+			}
+		}
 
 		/**
 		 * Pulls the next set of items from the queue and sends a batch from it
@@ -284,12 +282,12 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 		 * @todo Add locking
 		 */
 		public static function send_next_batch() {
-            if( ! self::ready_for_batch( Lift_Search::get_search_domain() ) ){
+			if ( !self::ready_for_batch( Lift_Search::get_search_domain() ) ) {
 				delete_transient( self::BATCH_LOCK );
 				Lift_Search::event_log( 'CloudSearch Not Ready for Batch ' . time(), 'The batch is locked or the search domain is either currently processing, needs indexing, or your domain does not have indexes set up.', array( 'send-queue', 'response-false', 'notice' ) );
 				return;
 			}
-            
+
 			$lock_key = md5( uniqid( microtime() . mt_rand(), true ) );
 			if ( !get_transient( self::BATCH_LOCK ) ) {
 				set_transient( self::BATCH_LOCK, $lock_key, 300 );
@@ -302,20 +300,20 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 
 
 			update_option( self::LAST_CRON_TIME_OPTION, time() );
-            
-            $args = array(
+
+			$args = array(
 				'post_type' => Lift_Document_Update_Queue::STORAGE_POST_TYPE,
 				'posts_per_page' => self::QUEUE_ALL_SET_SIZE,
 				'orderby' => 'post_date',
 				'order' => 'asc',
 				'fields' => 'ids',
-            );
-            
+			);
+
 			$queued_update_ids = get_posts( $args );
-            
-            if ( ! $queued_update_ids ) {
-                return;
-            }
+
+			if ( !$queued_update_ids ) {
+				return;
+			}
 
 			_prime_post_caches( $queued_update_ids );
 
@@ -323,15 +321,15 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 			$batched_ids = array( );
 			foreach ( $queued_update_ids as $update_id ) {
 				if ( $update_post = get_post( $update_id ) ) {
-					$post_meta_content = get_post_meta($update_id, 'lift_content', true);
+					$post_meta_content = get_post_meta( $update_id, 'lift_content', true );
 					$update_data = ( array ) maybe_unserialize( $post_meta_content );
 					if ( $update_data['document_type'] == 'post' ) {
 						$action = $update_data['action'];
 						if ( $action == 'add' ) {
-							$post = get_post($update_data['document_id'], ARRAY_A);
-							$post_data = array('ID' => $update_data['document_id']);
-							foreach($update_data['fields'] as $field) {
-								$post_data[$field] = isset($post[$field]) ? $post[$field] : null;
+							$post = get_post( $update_data['document_id'], ARRAY_A );
+							$post_data = array( 'ID' => $update_data['document_id'] );
+							foreach ( $update_data['fields'] as $field ) {
+								$post_data[$field] = isset( $post[$field] ) ? $post[$field] : null;
 							}
 
 							$sdf_field_data = apply_filters( 'lift_post_changes_to_data', $post_data, $update_data['fields'], $update_data['document_id'] );
@@ -340,7 +338,7 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 						}
 
 
-						$sdf_doc = Lift_Posts_To_SDF::format_post( (object) $sdf_field_data, array(
+						$sdf_doc = Lift_Posts_To_SDF::format_post( ( object ) $sdf_field_data, array(
 								'action' => $action,
 								'time' => time()
 							) );
@@ -371,10 +369,9 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 					$log_title = "Post Queue Sent ";
 					$tag = 'success';
 
-					foreach($batched_ids as $processed_id) {
-						wp_delete_post($processed_id, true);
+					foreach ( $batched_ids as $processed_id ) {
+						wp_delete_post( $processed_id, true );
 					}
-					
 				} else {
 					$log_title = "Post Queue Send Error ";
 					$tag = 'error';
@@ -386,8 +383,10 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 				$messages = $cloud_api->getErrorMessages();
 				Lift_Search::event_log( 'Post Queue Error ' . time(), $messages, array( 'send-queue', 'response-false', 'error' ) );
 			}
-			wp_cache_delete('lift_update_queue_count');
+			wp_cache_delete( 'lift_update_queue_count' );
 			delete_transient( self::BATCH_LOCK );
 		}
+
 	}
+
 }

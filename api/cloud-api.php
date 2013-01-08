@@ -2,10 +2,10 @@
 
 class Cloud_API {
 
-	private $search_version;
 	private $error_messages;
 	private $submission_uri;
 	private $search_uri;
+
 	const API_VERSION = '2011-02-01';
 
 	/**
@@ -19,25 +19,25 @@ class Cloud_API {
 	 * @param string $search_domain_uri
 	 * @param iLift_HTTP $http_interface
 	 */
-	public function __construct($http_interface, $document_endpoint, $search_endpoint, $version = '2011-02-01') {
+	public function __construct( $http_interface, $document_endpoint, $search_endpoint, $version = '2011-02-01' ) {
 
 		$this->http_interface = $http_interface;
 
 		$this->submission_uri = sprintf( 'http://%s/%s/documents/batch', $document_endpoint, $version );
-		$this->search_uri     = sprintf( 'http://%s/%s/search?', $search_endpoint, $version );
+		$this->search_uri = sprintf( 'http://%s/%s/search?', $search_endpoint, $version );
 	}
 
-	private function send($method = 'POST', $data = null) {
+	private function send( $method = 'POST', $data = null ) {
 
-		$method = strtoupper($method);
+		$method = strtoupper( $method );
 
 		// only use JSON for now
 		$headers = array(
 			'Content-Type' => 'application/json',
-			'Accept'       => 'application/json'
+			'Accept' => 'application/json'
 		);
 
-		switch ($method) {
+		switch ( $method ) {
 
 			case 'POST':
 				$response = $this->http_interface->post( $this->submission_uri, $data, $headers );
@@ -48,47 +48,44 @@ class Cloud_API {
 				break;
 
 			default:
-				throw new Exception('you did it wrong');
-
+				throw new Exception( 'you did it wrong' );
 		}
-        
-        $json = json_decode( $response );
-        
-        if ( ! $json ) {
-            $this->error_messages = $response;
-        }
+
+		$json = json_decode( $response );
+
+		if ( !$json ) {
+			$this->error_messages = $response;
+		}
 
 		return $json;
-
 	}
 
 	/**
 	 * Sends the search to the CloudSearch API
 	 * @param Cloud_Search_Query $query
 	 */
-	public function sendSearch($query) {
-		$response = $this->send('GET', $query->get_query_string());
+	public function sendSearch( $query ) {
+		$response = $this->send( 'GET', $query->get_query_string() );
 
 		if ( $response && property_exists( $response, 'error' ) ) {
 			$this->error_messages = $response->messages;
 			return false;
 		}
 
-		if( in_array( $this->http_interface->getStatusCode(), array( 200, 201, 204 ) ) ) {
+		if ( in_array( $this->http_interface->getStatusCode(), array( 200, 201, 204 ) ) ) {
 			return $response;
 		}
 
 		return false;
-
 	}
 
 	/**
 	 * Sends the batch to the CloudSearch API
 	 * @param LiftBatch $batch
 	 */
-	public function sendBatch($batch) {
+	public function sendBatch( $batch ) {
 
-		$response = $this->send('POST', $batch->convert_to_JSON());
+		$response = $this->send( 'POST', $batch->convert_to_JSON() );
 
 		if ( $response && ( 'error' === $response->status ) ) {
 			$this->error_messages = $response->errors;
@@ -105,4 +102,5 @@ class Cloud_API {
 	public function getErrorMessages() {
 		return $this->error_messages;
 	}
+
 }

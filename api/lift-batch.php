@@ -50,10 +50,10 @@ class Lift_Batch {
 		} else if ( $documents === false ) {
 			// pass
 		} else {
-            $this->errors[] = array(
-                'code' => 100,
-                'message' => 'Tried to pass an invalid data type to constructor',
-            );
+			$this->errors[] = array(
+				'code' => 100,
+				'message' => 'Tried to pass an invalid data type to constructor',
+			);
 			throw new Lift_Batch_Exception( $this->errors );
 		}
 	}
@@ -68,7 +68,7 @@ class Lift_Batch {
 			$document->lang = 'en';
 		}
 
-		foreach (array( 'type', 'id', 'version' ) as $prop) {
+		foreach ( array( 'type', 'id', 'version' ) as $prop ) {
 			if ( !property_exists( $document, $prop ) ) {
 				$this->errors[] = array(
 					'code' => 300,
@@ -77,7 +77,7 @@ class Lift_Batch {
 			}
 			if ( empty( $document->{$prop} ) ) {
 				$this->errors[] = array(
-                    'code' => 310,
+					'code' => 310,
 					'message' => sprintf( 'Required field is empty: %s', $prop )
 				);
 			}
@@ -95,7 +95,7 @@ class Lift_Batch {
 	 * @throws Lift_Batch_Exception
 	 */
 	public function add_document( $document ) {
-		$document = (object) $document;
+		$document = ( object ) $document;
 		if ( !$this->can_add( $document ) ) {
 			throw new Lift_Batch_Exception( $this->errors );
 		}
@@ -112,17 +112,17 @@ class Lift_Batch {
 
 			if ( empty( $documents ) ) {
 				$this->errors[] = array(
-                    'code' => 220,
-                    'message' => 'Passed empty array'
-                );
+					'code' => 220,
+					'message' => 'Passed empty array'
+				);
 				throw new Lift_Batch_Exception( $this->errors );
 			}
-			for ($i = 0; $i < count( $documents ); $i++) {
+			for ( $i = 0; $i < count( $documents ); $i++ ) {
 				try {
 					$this->add_document( $documents[$i] );
 				} catch ( Lift_Batch_Exception $e ) {
 					$this->errors[] = array(
-                        'code' => 400,
+						'code' => 400,
 						'message' => sprintf( 'Failed adding document at index %s', $i ),
 						'failedIndex' => $i
 					);
@@ -131,10 +131,10 @@ class Lift_Batch {
 			}
 			return $this->documents;
 		} else {
-            $this->errors[] = array(
-                'code' => 110,
-                'message' => sprintf( 'Expecting array, given: %s', gettype( $documents ) ),
-            );
+			$this->errors[] = array(
+				'code' => 110,
+				'message' => sprintf( 'Expecting array, given: %s', gettype( $documents ) ),
+			);
 			throw new Lift_Batch_Exception( $this->errors );
 		}
 	}
@@ -150,33 +150,31 @@ class Lift_Batch {
 	 * @param array $args
 	 * @return int Number of rows deleted, or FALSE on failure ( # / 2 = documents )
 	 */
-	public function delete_document( $args = array() ) {
-
+	public function delete_document( $args = array( ) ) {
 		global $wpdb;
 
 
 		// set conditions
-		$where = array();
+		$where = array( );
 		$where[] = 'sub_p.post_type = "lift_queued_document"';
 
 		// remove specific ID
-		if ( array_key_exists('id', $args) && (int)$args['id'] >= 1 ) {
-			$where[] = sprintf( 'sub_p.ID = %d', (int)$args['id'] );
+		if ( array_key_exists( 'id', $args ) && ( int ) $args['id'] >= 1 ) {
+			$where[] = sprintf( 'sub_p.ID = %d', ( int ) $args['id'] );
 		}
 
 		// remove batch starting from specific ID
-		if ( array_key_exists('start_from', $args) && (int)$args['start_from'] >= 1 ) {
-			$where[] = sprintf( 'sub_p.ID >= %d', (int)$args['start_from'] );
+		if ( array_key_exists( 'start_from', $args ) && ( int ) $args['start_from'] >= 1 ) {
+			$where[] = sprintf( 'sub_p.ID >= %d', ( int ) $args['start_from'] );
 		}
 
 
 		// change batch size
 		$limit = '';
 
-		if ( array_key_exists('limit', $args) && (int)$args['limit'] >= 1 ) {
-			$limit = sprintf( 'LIMIT %d', (int)$args['limit'] );
+		if ( array_key_exists( 'limit', $args ) && ( int ) $args['limit'] >= 1 ) {
+			$limit = sprintf( 'LIMIT %d', ( int ) $args['limit'] );
 		}
-
 
 		return $wpdb->query(
 				$wpdb->prepare(
@@ -185,14 +183,13 @@ class Lift_Batch {
 						INNER JOIN (
 							SELECT sub_p.ID 
 								FROM {$wpdb->posts} sub_p
-								WHERE ".implode(' AND ', $where)."
+								WHERE " . implode( ' AND ', $where ) . "
 								ORDER BY sub_p.ID ASC
 								{$limit}
 							) p_join ON p.ID = p_join.ID
 						LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id"
 				)
-			);
-
+		);
 	}
 
 	/**
@@ -202,7 +199,7 @@ class Lift_Batch {
 	 */
 	public function check_document_length( $document ) {
 		$json = json_encode( $document );
-		return (bool) (strlen( $json ) <= self::DOCUMENT_LIMIT);
+		return ( bool ) (strlen( $json ) <= self::DOCUMENT_LIMIT);
 	}
 
 	/**
@@ -210,7 +207,7 @@ class Lift_Batch {
 	 * @return boolean
 	 */
 	public function check_documents_length() {
-		return (bool) ($this->get_documents_length() <= self::BATCH_LIMIT);
+		return ( bool ) ($this->get_documents_length() <= self::BATCH_LIMIT);
 	}
 
 	/**
@@ -228,10 +225,10 @@ class Lift_Batch {
 	 */
 	public function can_add( $document ) {
 		if ( !is_object( $document ) || !$this->check_required_fields( $document ) ) {
-            $this->errors[] = array(
-                'code' => 120,
-                'message' => 'Document is not an object',
-            );
+			$this->errors[] = array(
+				'code' => 120,
+				'message' => 'Document is not an object',
+			);
 			throw new Lift_Batch_Exception( $this->errors );
 		}
 		$localDocs = $this->documents;
@@ -241,15 +238,15 @@ class Lift_Batch {
 			return true;
 		} else {
 			$this->errors[] = array(
-                'code' => 500,
+				'code' => 500,
 				'message' => 'Batch limit reached',
 				'current_count' => count( $this->documents ),
 				'current_size' => $this->get_documents_length()
 			);
 			return false;
 		}
-        
-        return false;
+
+		return false;
 	}
 
 	/**
@@ -259,9 +256,9 @@ class Lift_Batch {
 	 * return object
 	 */
 	public function sanitize( $document ) {
-		if ( property_exists($document, 'fields') && is_array( $document->fields ) ) {
-			$document->fields = array_change_key_case($document->fields);
-			foreach ($document->fields as $key => $value) {
+		if ( property_exists( $document, 'fields' ) && is_array( $document->fields ) ) {
+			$document->fields = array_change_key_case( $document->fields );
+			foreach ( $document->fields as $key => $value ) {
 				if ( $value === null ) {
 					$document->fields[$key] = "";
 				}
@@ -273,8 +270,8 @@ class Lift_Batch {
 	public function convert_to_JSON() {
 		$json = json_encode( $this->documents );
 		if ( empty( $this->documents ) ||
-				$json === null ||
-				!$json ) {
+			$json === null ||
+			!$json ) {
 			return false;
 		} else {
 			return $json;
