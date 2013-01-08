@@ -685,10 +685,12 @@ if ( !class_exists( 'Lift_Search' ) ) {
 	Lift_Search::init();
 }
 
-register_uninstall_hook(__FILE__, function() {
+register_uninstall_hook(__FILE__, '_lift_uninstall');
+
+function _lift_uninstall() {
 	// @TODO Clean up batch posts and any scheduled crons
 	 	
 	//clean up options
 	delete_option(Lift_Search::INITIAL_SETUP_COMPLETE_OPTION);
 	delete_option(Lift_Search::SETTINGS_OPTION);
-});
+}
