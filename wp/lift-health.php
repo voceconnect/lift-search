@@ -62,7 +62,7 @@ if ( !class_exists( 'Lift_Health' ) ) {
 				$lift_health_interval = $interval;
 				add_filter( 'posts_where', array( __CLASS__, 'filter_posts_where' ) );
 				$q = new WP_Query( array(
-						'posts_per_page' => -1,
+						'posts_per_page' => 1,
 						'post_type' => Voce_Error_Logging::POST_TYPE,
 						'tax_query' => array( array(
 								'taxonomy' => Voce_Error_Logging::TAXONOMY,
@@ -73,7 +73,7 @@ if ( !class_exists( 'Lift_Health' ) ) {
 						) );
 				remove_filter( 'posts_where', array( __CLASS__, 'filter_posts_where' ) );
 
-				$post_count = $q->post_count;
+				$post_count = $q->found_posts;
 
 				if ( $post_count >= $data['threshold'] ) {
 					$errors = true;
