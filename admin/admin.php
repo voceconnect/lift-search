@@ -157,6 +157,7 @@ class Lift_Admin {
 		// since add_options/submenu_page doesn't give us the correct hook...
 		$func_enqueue_admin_script = function() {
 				wp_enqueue_script( 'lift-admin-settings', plugins_url( 'js/admin-settings.js', __DIR__ ), array( 'jquery' ) );
+				Lift_Admin::_enqueue_style();
 			};
 
 		foreach ( array( 'lift-search/admin/setup.php', 'lift-search/admin/status.php' ) as $hook ) {
