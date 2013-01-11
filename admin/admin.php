@@ -171,8 +171,8 @@ class Lift_Admin {
 	 * used for configuration testing 
 	 */
 	public static function _ajax_test_and_save_credentials() {
-		$id = preg_replace( '/[^a-zA-Z0-9_\-\/\\]/', '', $_POST['id'] );
-		$secret = preg_replace( '/[^a-zA-Z0-9_\-\/\\]/', '', $_POST['secret'] );
+		$id = preg_replace( '/[^a-zA-Z0-9_\-\/\\\\+]/', '', $_POST['id'] );
+		$secret = preg_replace( '/[^a-zA-Z0-9_\-\/\\\\+]/', '', $_POST['secret'] );
 
 		$result = self::test_credentials( $id, $secret );
 
@@ -181,12 +181,12 @@ class Lift_Admin {
 			Lift_Search::set_secret_access_key( $secret );
 		}
 
-		die( json_encode( array( 'error' => $error, 'message' => $status_message ) ) );
+		die( json_encode( $result ) );
 	}
 
 	public static function _ajax_test_domain() {
 
-		$test_access = self::test_credentials( self::get_access_key_id(), self::get_secret_access_key() );
+		$test_access = self::test_credentials( Lift_Search::get_access_key_id(), Lift_Search::get_secret_access_key() );
 		if ( $test_access['error'] ) {
 			echo json_encode( $test_access );
 			die;

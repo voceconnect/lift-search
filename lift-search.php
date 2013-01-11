@@ -269,7 +269,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		}
 
 		public static function set_search_domain( $value ) {
-			self::_set_setting( 'search-domain', $value );
+			self::__set_setting( 'search-domain', $value );
 		}
 
 		/**
