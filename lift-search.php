@@ -1,4 +1,5 @@
 <?php
+
 /*
   Plugin Name: Lift Search
   Version: 1.1
@@ -35,42 +36,28 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * Option name for storing all user based options 
 		 */
 		const SETTINGS_OPTION = 'lift-settings';
-
-		/**
-		 * Page name used for admin setup 
-		 */
-		const ADMIN_LANDING_PAGE = 'lift-search/admin/setup.php';
-
-		/**
-		 * Page name used for admin status 
-		 */
-		const ADMIN_STATUS_PAGE = 'lift-search/admin/status.php';
-		
-		
 		const INDEX_DOCUMENTS_HOOK = 'lift_index_documents';
 		const SET_ENDPOINTS_HOOK = 'lift_set_endpoints';
 		const NEW_DOMAIN_CRON_INTERVAL = 'lift-index-documents';
 
+		/**
+		 * Returns whether setup has been complete by testing whether all
+		 * required data is set
+		 * @return bool 
+		 */
 		public static function is_setup_complete() {
 			return self::get_access_key_id() && self::get_secret_access_key()
 				&& self::get_search_domain() && get_option( self::INITIAL_SETUP_COMPLETE_OPTION, 0 );
 		}
 
 		public static function init() {
+
+			if ( is_admin() ) {
+				require_once(__DIR__ . '/admin/admin.php');
+				add_action( 'admin_init', array( 'Lift_Admin', 'init' ) );
+			}
+
 			add_action( 'admin_menu', array( __CLASS__, 'add_settings' ) );
-
-			add_action( 'admin_init', array( __CLASS__, 'admin_init' ) );
-			add_filter( 'plugin_row_meta', array( __CLASS__, 'settings_link' ), 10, 2 );
-			add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( __CLASS__, 'settings_link' ), 10, 2 );
-
-			add_action( 'wp_ajax_lift_test_access', array( __CLASS__, 'ajax_test_access' ) );
-			add_action( 'wp_ajax_lift_test_domain', array( __CLASS__, 'ajax_test_domain' ) );
-
-			add_action( 'wp_ajax_lift_delete_error_logs', array( __CLASS__, 'ajax_delete_error_logs' ) );
-
-			add_action( 'wp_ajax_lift_update_cron_interval', array( __CLASS__, 'ajax_update_cron_interval' ) );
-
-			add_action( 'wp_ajax_lift_create_domain', array( __CLASS__, 'ajax_create_domain' ) );
 
 			add_action( 'wp_ajax_lift_set_cron_status', array( __CLASS__, 'ajax_set_cron_status' ) );
 
@@ -159,52 +146,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				} );
 		}
 
-		public static function admin_init() {
-
-			if ( isset( $_GET['page'] ) && Lift_Search::ADMIN_STATUS_PAGE == $_GET['page'] ) {
-
-				// require landing page to be filled out
-				if ( !isset( $_GET['lift-setup-complete'] ) && !self::is_setup_complete() ) {
-					wp_redirect( admin_url( 'options-general.php?page=' . Lift_Search::ADMIN_LANDING_PAGE ) );
-				}
-
-				// send IndexDocuments request
-				if ( current_user_can( 'manage_options' ) && isset( $_GET['lift-indexdocuments'] ) ) {
-					Cloud_Config_Request::IndexDocuments( self::get_search_domain() );
-					wp_redirect( admin_url( 'options-general.php?page=' . Lift_Search::ADMIN_STATUS_PAGE ) );
-				}
-
-				// send next batch
-				if ( current_user_can( 'manage_options' ) && isset( $_GET['sync-queue'] ) ) {
-					Lift_Batch_Queue::send_next_batch();
-					wp_redirect( admin_url( 'options-general.php?page=' . Lift_Search::ADMIN_STATUS_PAGE ) );
-				}
-			}
-
-			foreach ( array( 'user_admin_notices', 'admin_notices' ) as $filter ) {
-				add_action( $filter, function() {
-						if ( !Lift_Search::is_setup_complete() ) {
-							if ( !isset( $_GET['page'] ) || (isset( $_GET['page'] ) && Lift_Search::ADMIN_LANDING_PAGE != $_GET['page']) ) {
-								Lift_Search::configure_lift_nag();
-							}
-						}
-					} );
-			}
-		}
-
-		/**
-		 * Add link to access settings page on Plugin mainpage
-		 * @param array $links
-		 * @param string $page
-		 * @return array 
-		 */
-		public static function settings_link( $links, $page ) {
-			if ( $page == plugin_basename( __FILE__ ) ) {
-				$links[] = '<a href="' . admin_url( 'options-general.php?page=' . Lift_Search::ADMIN_LANDING_PAGE ) . '">Settings</a>';
-			}
-			return $links;
-		}
-
 		/**
 		 * Setup settings in admin
 		 * @method add_settings
@@ -212,10 +153,10 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		public static function add_settings() {
 			$capability = apply_filters( 'lift_settings_capability', 'manage_options' );
 
-			add_options_page( 'Lift: Search for WordPress', 'Lift Search', $capability, self::ADMIN_STATUS_PAGE );
-			add_submenu_page( '', 'Lift: Search for Wordpress', 'Lift Search', $capability, self::ADMIN_LANDING_PAGE );
+			add_options_page( 'Lift: Search for WordPress', 'Lift Search', $capability, Lift_Admin::STATUS_PAGE );
+			add_submenu_page( '', 'Lift: Search for Wordpress', 'Lift Search', $capability, Lift_Admin::LANDING_PAGE );
 
-			wp_enqueue_style( 'lift-search', plugins_url( 'sass/admin.css', __FILE__ ) );
+			wp_enqueue_style( 'lift-search-admin', plugins_url( 'sass/admin.css', __FILE__ ) );
 
 			// since add_options/submenu_page doesn't give us the correct hook...
 			foreach ( array( 'lift-search/admin/setup.php', 'lift-search/admin/status.php' ) as $hook ) {
@@ -225,29 +166,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			}
 		}
 
-		public static function ajax_set_cron_status() {
-			$set_cron = ( bool ) intval( $_POST['cron'] );
-
-			if ( $set_cron ) {
-				Lift_Batch_Queue::enable_cron();
-			} else {
-				Lift_Batch_Queue::disable_cron();
-			}
-
-			echo json_encode( array(
-				'set_cron' => $set_cron,
-				'last_cron' => Lift_Batch_Queue::get_last_cron_time(),
-				'next_cron' => Lift_Batch_Queue::get_next_cron_time()
-			) );
-			die;
-		}
-
-		public static function ajax_test_access() {
-			echo json_encode( self::test_access( trim( $_POST['id'] ), trim( $_POST['secret'] ) ) );
-			die;
-		}
-
-		private function test_access( $id = '', $secret = '' ) {
+		public function test_access( $id = '', $secret = '' ) {
 
 			$credentials = array( 'access-key-id' => $id, 'secret-access-key' => $secret );
 			$error = false;
@@ -272,148 +191,11 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			return array( 'error' => $error, 'message' => $status_message );
 		}
 
-		public static function ajax_test_domain() {
-
-			$test_access = self::test_access( self::get_access_key_id(), self::get_secret_access_key() );
-			if ( $test_access['error'] ) {
-				echo json_encode( $test_access );
-				die;
-			}
-
-			$domain = strtolower( trim( $_POST['domain'] ) );
-
-			$error = false;
-			$replacing_domain = ( self::get_search_domain() != $domain );
-
-			try {
-				if ( Cloud_Config_Request::TestDomain( $domain ) ) {
-					$status_message = 'Success';
-					self::__set_setting( 'search-domain', $domain );
-
-					$document_endpoint = Cloud_Config_Request::DocumentEndpoint( $domain );
-					$search_endpoint = Cloud_Config_Request::SearchEndpoint( $domain );
-
-					try {
-						if ( $document_endpoint && $search_endpoint ) {
-							self::__set_setting( 'document-endpoint', $document_endpoint );
-							self::__set_setting( 'search-endpoint', $search_endpoint );
-						} else {
-							$status_message = 'Unable to set endpoints. If this is a newly-created search domain it will take up to 30 minutes for endpoints to become available. Please try back later.';
-							$error = true;
-
-							self::__set_setting( 'search-domain', $domain );
-						}
-					} catch ( Exception $e ) {
-						//@todo add exception logging for endpoint failure
-						$status_message = "Unable to set endpoints. Please check the search domain's status in the AWS Console";
-						$error = true;
-
-						self::__set_setting( 'search-domain', $domain );
-					}
-				} else {
-					$status_message = 'Domain could not be found. <span class="">Would you like to <a id="lift-create-domain" data-domain="' . esc_attr( $domain ) . '" href="#">create this domain with Lift\'s default indexes</a>?</span>';
-					$error = true;
-				}
-			} catch ( Exception $e ) {
-				// @todo add exception logging for domain check failure
-				$status_message = 'There was an error checking the domain. Please try again.';
-				$error = true;
-			}
-
-			if ( !$error && $replacing_domain ) {
-				// mark setup complete
-				update_option( self::INITIAL_SETUP_COMPLETE_OPTION, 1 );
-				Lift_Batch_Queue::enable_cron();
-				Lift_Batch_Queue::queue_all();
-			}
-
-			echo json_encode( array( 'error' => $error, 'message' => $status_message ) );
-			die;
-		}
-
-		public static function ajax_create_domain() {
-
-			$domain = strtolower( trim( $_POST['domain'] ) );
-
-			$error = false;
-			$status_messages = array( );
-
-			$r = Cloud_Config_Request::CreateDomain( $domain );
-
-			if ( $r ) {
-
-				self::__set_setting( 'search-domain', $domain );
-
-				$r = Cloud_Config_Request::LoadSchema( $domain );
-
-				if ( $r ) {
-					if ( $r->DescribeDomainsResponse->DescribeDomainsResult->DomainStatusList ) {
-						$status_messages[] = 'Index created succesfully.';
-						self::__set_setting( 'document-endpoint', '' );
-						self::__set_setting( 'search-endpoint', '' );
-						self::add_new_domain_crons(); // add crons
-					} else {
-						$status_messages[] = 'There was an error creating an index for your domain.';
-						$error = true;
-
-						Lift_Search::event_log( 'Cloud_Config_Request::LoadSchema (http success)', $r, array( 'error' ) );
-					}
-				} else {
-					$status_message = 'There was an error creating an index for your domain.';
-					$status_messages[] = $status_message;
-					$error = true;
-
-					Lift_Search::event_log( 'Cloud_Config_Request::LoadSchema', $status_message, array( 'error' ) );
-				}
-
-				$r = Cloud_Config_Request::UpdateServiceAccessPolicies( $domain, Cloud_Config_Request::GetDefaultServiceAccessPolicy( $domain ) );
-
-				if ( $r ) {
-					$status_messages[] = 'Service Access Policies successfully configured.';
-				} else {
-					$status_messages[] = 'Service Access Policies could not be set. You will need to use the AWS Console to set them for this search domain.';
-					$error = true;
-
-					Lift_Search::event_log( 'Cloud_Config_Request::UpdateServiceAccessPolicies', $r, array( 'error' ) );
-				}
-			} else {
-				$status_message = 'There was an error creating your domain. Please make sure the domain name follows the rules above and try again.';
-				$status_messages[] = $status_message;
-				$error = true;
-
-				Lift_Search::event_log( 'Cloud_Config_Request::CreateDomain', $status_message, array( 'error' ) );
-			}
-
-			if ( !$error ) {
-				// mark setup complete, enable cron and queue all posts
-				update_option( self::INITIAL_SETUP_COMPLETE_OPTION, 1 );
-				Lift_Batch_Queue::enable_cron();
-				Lift_Batch_Queue::queue_all();
-
-				$status_messages[] = "New search domains take approximately 30-45 minutes to become active. Once your search domain is 
-                    available on CloudSearch, Lift will complete it's configuration, index all posts on your site, and 
-                    queue up new posts to be synced periodically.";
-			}
-
-			echo json_encode( array(
-				'error' => $error,
-				'message' => join( ' ', $status_messages ),
-			) );
-
-			exit;
-		}
-
-		public static function ajax_delete_error_logs() {
-			$response = Voce_Error_Logging::delete_logs( array( 'lift-search' ) );
-			echo json_encode( $response );
-			die();
-		}
-
 		/**
 		 * schedule crons needed for new domains. clear existing crons first.
 		 * 
 		 */
-		private static function add_new_domain_crons() {
+		public static function add_new_domain_crons() {
 			wp_clear_scheduled_hook( self::INDEX_DOCUMENTS_HOOK );
 			wp_clear_scheduled_hook( self::SET_ENDPOINTS_HOOK );
 
@@ -441,41 +223,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				self::__set_setting( 'search-endpoint', $search_endpoint );
 				wp_clear_scheduled_hook( self::SET_ENDPOINTS_HOOK );
 			}
-		}
-
-		public static function ajax_update_cron_interval() {
-			$units = ( string ) $_POST['cron_interval_units'];
-			$units = in_array( $units, array( 'm', 'h', 'd' ) ) ? $units : 'm';
-
-			$interval = ( int ) $_POST['cron_interval'];
-			$interval = ($units == 'm' && $interval < 1 ? 1 : $interval);
-
-			switch ( $units ) {
-				case 'd':
-					$interval *= 24;
-				case 'h':
-					$interval *= 60;
-				case 'm':
-					$interval *= 60;
-			}
-
-			self::__set_setting( 'batch-interval', $interval );
-			self::__set_setting( 'batch-interval-units', $units );
-
-			if ( Lift_Batch_Queue::cron_enabled() ) {
-				Lift_Batch_Queue::disable_cron(); // kill the scheduled event
-				$last_time = get_option( Lift_Batch_Queue::LAST_CRON_TIME_OPTION, time() );
-
-				wp_schedule_event( $last_time + $interval, Lift_Batch_Queue::CRON_INTERVAL, Lift_Batch_Queue::BATCH_CRON_HOOK ); // schedule the next one based on the last
-
-				Lift_Batch_Queue::enable_cron();
-			}
-
-			echo json_encode( array(
-				'last_cron' => Lift_Batch_Queue::get_last_cron_time(),
-				'next_cron' => Lift_Batch_Queue::get_next_cron_time()
-			) );
-			die;
 		}
 
 		/**
@@ -514,11 +261,27 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		}
 
 		/**
+		 * Sets the access key id
+		 * @param type $value 
+		 */
+		public static function set_access_key_id( $value ) {
+			self::__set_setting( 'access-key-id', $value );
+		}
+
+		/**
 		 * Get secret access key
 		 * @return string
 		 */
 		public static function get_secret_access_key() {
 			return apply_filters( 'lift_secret_access_key', self::__get_setting( 'secret-access-key' ) );
+		}
+
+		/**
+		 * Sets the secret key id
+		 * @param type $value 
+		 */
+		public static function set_secret_access_key( $value ) {
+			self::__set_setting( 'secret-access-key', $value );
 		}
 
 		/**
@@ -529,12 +292,20 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			return apply_filters( 'lift_search_domain', self::__get_setting( 'search-domain' ) );
 		}
 
+		public static function set_search_domain( $value ) {
+			self::_set_setting( 'search-domain', $value );
+		}
+
 		/**
 		 * Get search endpoint setting
 		 * @return string
 		 */
 		public static function get_search_endpoint() {
 			return apply_filters( 'lift_search_endpoint', self::__get_setting( 'search-endpoint' ) );
+		}
+
+		public static function set_search_endpoint( $value ) {
+			self::__set_setting( 'lift_search_endpoint', $value );
 		}
 
 		/**
@@ -545,6 +316,10 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			return apply_filters( 'lift_document_endpoint', self::__get_setting( 'document-endpoint' ) );
 		}
 
+		public static function set_document_endpoint( $value ) {
+			self::__set_setting( 'lift_document_endpoint', $value );
+		}
+
 		/**
 		 * Get batch interval setting
 		 * @return int
@@ -553,31 +328,62 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			return apply_filters( 'lift_batch_interval', self::__get_setting( 'batch-interval' ) );
 		}
 
-		/**
-		 * Get batch interval setting, adjusted for time unit
-		 * @return int
-		 */
-		public static function get_batch_interval_adjusted() {
-			$adjusted = self::get_batch_interval();
-
-			switch ( self::get_batch_interval_unit() ) {
+		public static function get_batch_interval_display() {
+			$interval = self::get_batch_interval();
+			$unit = self::__get_setting( 'lift_batch_interval_unit' );
+			$value = 0;
+			switch ( $unit ) {
 				case 'd':
-					$adjusted /= 24;
+					$value /= 24;
 				case 'h':
-					$adjusted /= 60;
+					$value /= 60;
 				case 'm':
-					$adjusted /= 60;
+				default:
+					$unit = 'm';
+					$value /= 60;
 			}
 
-			return apply_filters( 'lift_batch_interval_adjusted', $adjusted );
+			return apply_filters( 'lift_batch_interval_display', compact( 'value', 'unit' ) );
 		}
 
 		/**
-		 * Get batch interval unit setting
-		 * @return string
+		 * Sets the batch interval based off of user facing values
+		 * @param int $value The number of units
+		 * @param string $unit The shorthand value of the unit, options are 'm','h','d'
 		 */
-		public static function get_batch_interval_unit() {
-			return apply_filters( 'lift_batch_interval_unit', self::__get_setting( 'batch-interval-units' ) );
+		public static function set_batch_interval_display( $value, $unit ) {
+			$old_interval = self::get_batch_interval_display();
+			$has_changed = false;
+
+			foreach ( array( 'value', 'unit' ) as $key ) {
+				if ( $old_interval[$key] != $$key ) {
+					$has_changed = true;
+					break;
+				}
+			}
+
+			if ( $has_changed ) {
+				$interval = $value;
+				switch ( $unit ) {
+					case 'd':
+						$interval *= 24;
+					case 'h':
+						$interval *= 60;
+					case 'm':
+					default:
+						$unit = 'm';
+						$interval *= 60;
+				}
+
+				self::__set_setting( 'lift_batch_interval_unit', $unit );
+				self::__set_setting( 'lift_batch_interval', $interval );
+
+				if ( Lift_Batch_Queue::cron_enabled() ) {
+					$last_time = get_option( Lift_Batch_Queue::LAST_CRON_TIME_OPTION, time() );
+
+					Lift_Batch_Queue::enable_cron( $last_time + $interval );
+				}
+			}
 		}
 
 		public static function get_http_api() {
@@ -600,27 +406,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 		public static function get_indexed_post_types() {
 			return apply_filters( 'lift_indexed_post_types', array( 'post', 'page' ) );
-		}
-
-		public static function configure_lift_nag() {
-			?>
-			<div id="banneralert" class="lift-colorized">
-				<div class="lift-balloon">
-					<img src="<?php echo plugin_dir_url( __FILE__ ) ?>img/logo.png" alt="Lift Logo">
-				</div>
-				<div class="lift-message"><p><strong>Welcome to Lift</strong>: 	Now that you've activated the Lift plugin it's time to set it up. Click below to get started. </p></div>
-				<div><a class="lift-btn" href="<?php echo admin_url( 'options-general.php?page=' . Lift_Search::ADMIN_LANDING_PAGE ) ?>">Configure Lift</a></div>
-				<div class="clr"></div>
-			</div>
-			<script>
-				jQuery(document).ready(function($) {
-					var $bannerAlert = $('#banneralert');
-					if ( $bannerAlert.length ) {
-						$('.wrap h2').first().after($bannerAlert);
-					}
-				});
-			</script>
-			<?php
 		}
 
 		public static function RecentLogTable() {

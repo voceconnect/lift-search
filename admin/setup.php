@@ -98,7 +98,7 @@ $disabled = 'disabled="disabled"';
 					<?php if ( !$step_completed[4] ): ?>
 						<input type="button" value="Back" class="lift-prev-step lift-step-button button-primary"data-lift_step="prev" />
 					<?php endif; ?>
-					<a href="<?php echo admin_url( sprintf( 'options-general.php?page=%s', Lift_Search::ADMIN_STATUS_PAGE ) ); ?>" class="lift-admin-panel<?php echo ($step_completed[4] ? '-initial-completed' : ''); ?> button-primary">View Lift Search Dashboard</a> 
+					<a href="<?php echo admin_url( sprintf( 'options-general.php?page=%s', Lift_Admin::STATUS_PAGE ) ); ?>" class="lift-admin-panel<?php echo ($step_completed[4] ? '-initial-completed' : ''); ?> button-primary">View Lift Search Dashboard</a> 
 				</p>
 			</div>
 		</div><!-- end ordered-list -->

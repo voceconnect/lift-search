@@ -10,41 +10,41 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 	add_action( 'init', array( 'Lift_Batch_Queue', 'action_add_cron' ) );
 
 	class Lift_Batch_Queue {
-
 		/**
 		 * Option name for the placeholder used to determine the documents
 		 * still needed to be queued up for submission after initial install
 		 */
+
 		const QUEUE_ALL_MARKER_OPTION = 'lift-queue-all-content-timestamp';
-		
+
 		/**
 		 * The number of documents to add to the queue at a time when doing the
 		 * initial enqueuing of all documents 
 		 */
 		const QUEUE_ALL_SET_SIZE = 100;
-		
+
 		/**
 		 * ID of the hook called by wp_cron when a batch should be processed 
 		 */
 		const BATCH_CRON_HOOK = 'lift_batch_cron';
-		
+
 		/**
 		 * ID of the hook called by wp_cron when a next set of documents should
 		 * be added to the queue 
 		 */
 		const QUEUE_ALL_CRON_HOOK = 'lift_queue_all_cron';
-		
+
 		/**
 		 * Name of the custom interval created for batch processing
 		 */
 		const CRON_INTERVAL = 'lift-cron';
-		
+
 		/**
 		 * Name of the transient key used to block multiple processes from 
 		 * modifying batches at the same time. 
 		 */
 		const BATCH_LOCK = 'lift-batch-lock';
-		
+
 		/**
 		 * Option name for the option storing the timestamp that the last
 		 * batch was run. 
@@ -81,9 +81,11 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 		/**
 		 * enable the cron 
 		 */
-		public static function enable_cron() {
+		public static function enable_cron( $timestamp = null ) {
+			if ( is_null( $timestamp ) )
+				$timestamp = time();
 			wp_clear_scheduled_hook( self::BATCH_CRON_HOOK );
-			wp_schedule_event( time(), self::CRON_INTERVAL, self::BATCH_CRON_HOOK );
+			wp_schedule_event( $timestamp, self::CRON_INTERVAL, self::BATCH_CRON_HOOK );
 		}
 
 		/**
@@ -415,13 +417,13 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 			wp_cache_delete( 'lift_update_queue_count' );
 			delete_transient( self::BATCH_LOCK );
 		}
-		
-		
+
 		public static function _deactivation_cleanup() {
-			delete_option(self::QUEUE_ALL_MARKER_OPTION);
-			delete_option(self::LAST_CRON_TIME_OPTION); //@foobar!!!!
+			delete_option( self::QUEUE_ALL_MARKER_OPTION );
+			delete_option( self::LAST_CRON_TIME_OPTION ); //@foobar!!!!
 			wp_clear_scheduled_hook( self::BATCH_CRON_HOOK );
 		}
+
 	}
 
 }
