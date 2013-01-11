@@ -54,12 +54,8 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 			if ( is_admin() ) {
 				require_once(__DIR__ . '/admin/admin.php');
-				add_action( 'admin_init', array( 'Lift_Admin', 'init' ) );
+				Lift_Admin::init();
 			}
-
-			add_action( 'admin_menu', array( __CLASS__, 'add_settings' ) );
-
-			add_action( 'wp_ajax_lift_set_cron_status', array( __CLASS__, 'ajax_set_cron_status' ) );
 
 			// @TODO only enqueue on search template or if someone calls the form
 			add_action( 'wp_enqueue_scripts', function() {
@@ -144,26 +140,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 						wp_clear_scheduled_hook( self::SET_ENDPOINTS_HOOK );
 					}
 				} );
-		}
-
-		/**
-		 * Setup settings in admin
-		 * @method add_settings
-		 */
-		public static function add_settings() {
-			$capability = apply_filters( 'lift_settings_capability', 'manage_options' );
-
-			add_options_page( 'Lift: Search for WordPress', 'Lift Search', $capability, Lift_Admin::STATUS_PAGE );
-			add_submenu_page( '', 'Lift: Search for Wordpress', 'Lift Search', $capability, Lift_Admin::LANDING_PAGE );
-
-			wp_enqueue_style( 'lift-search-admin', plugins_url( 'sass/admin.css', __FILE__ ) );
-
-			// since add_options/submenu_page doesn't give us the correct hook...
-			foreach ( array( 'lift-search/admin/setup.php', 'lift-search/admin/status.php' ) as $hook ) {
-				add_action( "load-{$hook}", function() {
-						wp_enqueue_script( 'lift-admin-settings', plugins_url( 'js/admin-settings.js', __FILE__ ), array( 'jquery' ) );
-					} );
-			}
 		}
 
 		public function test_access( $id = '', $secret = '' ) {
