@@ -3,7 +3,7 @@
 class Lift_Post_Update_Watcher {
 
 	public static function get_watched_post_types() {
-		return apply_filters( 'lift_watched_post_types', array( 'post', 'page' ) );
+		return apply_filters( 'lift_watched_post_types', Lift_Search::get_indexed_post_types() );
 	}
 
 	public static function get_watched_post_fields( $post_type ) {
