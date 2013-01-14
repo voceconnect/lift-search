@@ -101,6 +101,9 @@ comment_count            uint     Yes (default)  No       Yes (default)
 taxonomy_tags_id         literal  Yes            No       No
 taxonomy_tags_label      text     No             No       Yes (default)`
 
+= Which post types are indexed by default? How do I modify which post types are indexed? =
+By default, posts and pages are indexed. To modify this, use the `lift_indexed_post_types` filter which is an array of post types to index. 
+
 == Screenshots ==
 
 1. Lift setup
