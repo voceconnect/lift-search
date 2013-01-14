@@ -167,6 +167,16 @@ class Lift_Document_Update_Queue {
 		}
 	}
 
+	public static function _deactivation_cleanup() {
+		global $wpdb;
+
+		$batch_post_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM $wpdb->posts
+			WHERE post_type = %s", self::STORAGE_POST_TYPE ) );
+		foreach ( $batch_post_ids as $post_id ) {
+			wp_delete_post( $post_id, true );
+		}
+	}
+
 }
 
 add_action( 'init', array( 'Lift_Document_Update_Queue', 'init' ), 2 );

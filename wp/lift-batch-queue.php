@@ -7,9 +7,15 @@
 
 if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 
-	add_action( 'init', array( 'Lift_Batch_Queue', 'action_add_cron' ) );
-
 	class Lift_Batch_Queue {
+
+		/**
+		 * Private var to track whether this class was previously initialized
+		 * 
+		 * @var bool
+		 */
+		private static $is_initialized = false;
+
 		/**
 		 * Option name for the placeholder used to determine the documents
 		 * still needed to be queued up for submission after initial install
@@ -52,13 +58,9 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 		const LAST_CRON_TIME_OPTION = 'lift-last-cron-time';
 
 		public static function init() {
+			if ( self::$is_initialized )
+				return false;
 
-			require_once(__DIR__ . '/lift-update-queue.php');
-
-			Lift_Document_Update_Queue::init();
-		}
-
-		public static function action_add_cron() {
 			add_filter( 'cron_schedules', function( $schedules ) {
 					if ( Lift_Search::get_batch_interval() > 0 ) {
 						$interval = Lift_Search::get_batch_interval();
@@ -76,6 +78,12 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 
 			add_action( self::BATCH_CRON_HOOK, array( __CLASS__, 'send_next_batch' ) );
 			add_action( self::QUEUE_ALL_CRON_HOOK, array( __CLASS__, 'process_queue_all' ) );
+
+			require_once(__DIR__ . '/lift-update-queue.php');
+
+			Lift_Document_Update_Queue::init();
+
+			self::$is_initialized = true;
 		}
 
 		/**
@@ -420,8 +428,9 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 
 		public static function _deactivation_cleanup() {
 			delete_option( self::QUEUE_ALL_MARKER_OPTION );
-			delete_option( self::LAST_CRON_TIME_OPTION ); //@foobar!!!!
+			delete_option( self::LAST_CRON_TIME_OPTION );
 			wp_clear_scheduled_hook( self::BATCH_CRON_HOOK );
+			delete_transient( self::BATCH_LOCK );
 		}
 
 	}

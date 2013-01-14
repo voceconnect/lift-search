@@ -138,6 +138,7 @@ class Lift_Admin {
 	 * queue all current content 
 	 */
 	private static function _complete_setup() {
+		Lift_Batch_Queue::init();
 		// mark setup complete, enable cron and queue all posts
 		update_option( Lift_Search::INITIAL_SETUP_COMPLETE_OPTION, 1 );
 		Lift_Batch_Queue::enable_cron();
