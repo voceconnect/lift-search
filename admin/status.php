@@ -1,5 +1,5 @@
 <?php
-$cron_enabled = Lift_Batch_Queue::cron_enabled();
+$cron_enabled = Lift_Batch_Handler::cron_enabled();
 $status = Lift_Health::get_overall_status();
 
 $overall_status_text = 'All Clear';
@@ -50,13 +50,13 @@ $batch_interval_display = Lift_Search::get_batch_interval_display();
 							<tr>
 								<td>Last: </td>
 								<td>
-									<strong id="last-cron"><?php echo esc_html( Lift_Batch_Queue::get_last_cron_time() ); ?></strong>
+									<strong id="last-cron"><?php echo esc_html( Lift_Batch_Handler::get_last_cron_time() ); ?></strong>
 								</td>
 							</tr>
 							<tr>
 								<td>Next: </td>
 								<td>
-									<strong id="next-cron"><?php echo esc_html( Lift_Batch_Queue::get_next_cron_time() ); ?></strong>
+									<strong id="next-cron"><?php echo esc_html( Lift_Batch_Handler::get_next_cron_time() ); ?></strong>
 								</td>
 							</tr>
 						</table>
@@ -74,7 +74,7 @@ $batch_interval_display = Lift_Search::get_batch_interval_display();
 							<form method="get" action="">
 								<input type="hidden" name="page" value="<?php echo esc_attr( Lift_Admin::STATUS_PAGE ); ?>">
 								<input type="hidden" name="sync-queue" value="1">
-								<button class="button-primary" <?php echo ( Lift_Batch_Queue::is_batch_locked() || !Lift_Batch_Queue::ready_for_batch( Lift_Search::get_search_domain() ) ) ? 'disabled' : ''; ?>>Sync Queue Now</button>
+								<button class="button-primary" <?php echo ( Lift_Batch_Handler::is_batch_locked() || !Lift_Batch_Handler::ready_for_batch( Lift_Search::get_search_domain() ) ) ? 'disabled' : ''; ?>>Sync Queue Now</button>
 							</form>
 						</div>
 						<div class="clr"></div>
@@ -122,8 +122,7 @@ $batch_interval_display = Lift_Search::get_batch_interval_display();
 		</div>
 
 		<div class="indent">
-			<h3><span class="alignright">Documents in Queue: <strong><?php echo number_format( Lift_Batch_Queue::get_queue_count() ); ?></strong></span>Documents to be Synced</h3>
-			<?php echo Lift_Batch_Queue::get_queue_list(); ?>			
+			<?php echo Lift_Batch_Handler::get_queue_list(); ?>			
 			<h3 class="alignleft" id="lift-logs">Recent Logs</h3> 
 			<p class="alignleft" style="padding-top:3px ;margin-left:15px;">
 				<a href="<?php echo esc_attr( admin_url( sprintf( 'edit.php?post_type=%s', Voce_Error_Logging::POST_TYPE ) ) ); ?>" class="alignleft">View All</a>

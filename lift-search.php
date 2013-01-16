@@ -16,7 +16,7 @@ require_once('api/cloud-api.php');
 require_once('api/cloud-search.php');
 require_once('api/cloud-config.php');
 require_once('lib/posts-to-sdf.php');
-require_once('wp/lift-batch-queue.php');
+require_once('wp/lift-batch-handler.php');
 require_once('wp/lift-health.php');
 require_once('wp/lift-wp-search.php');
 require_once('wp/lift-search-form.php');
@@ -56,7 +56,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			}
 
 			if ( self::get_document_endpoint() ) {
-				Lift_Batch_Queue::init();
+				Lift_Batch_Handler::init();
 			}
 			
 			if ( is_admin() ) {
@@ -352,10 +352,10 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				self::__set_setting( 'batch-interval-unit', $unit );
 				self::__set_setting( 'batch-interval', $interval );
 
-				if ( Lift_Batch_Queue::cron_enabled() ) {
-					$last_time = get_option( Lift_Batch_Queue::LAST_CRON_TIME_OPTION, time() );
+				if ( Lift_Batch_Handler::cron_enabled() ) {
+					$last_time = get_option( Lift_Batch_Handler::LAST_CRON_TIME_OPTION, time() );
 
-					Lift_Batch_Queue::enable_cron( $last_time + $interval );
+					Lift_Batch_Handler::enable_cron( $last_time + $interval );
 				}
 			}
 		}
@@ -457,6 +457,6 @@ function _lift_deactivate() {
 
 	wp_clear_scheduled_hook( Lift_Search::INDEX_DOCUMENTS_HOOK );
 
-	Lift_Batch_Queue::_deactivation_cleanup();
+	Lift_Batch_Handler::_deactivation_cleanup();
 	Lift_Document_Update_Queue::_deactivation_cleanup();
 }

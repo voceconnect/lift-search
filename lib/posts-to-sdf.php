@@ -167,9 +167,11 @@ class Lift_Posts_To_SDF {
 
 		$document = apply_filters( 'lift_document', $document, $_post['ID'], $data['action'] );
 
-		$document['fields'] = ( object ) array_filter( $document['fields'], function( $value ) {
-					return !is_null( $value );
-				} );
+		if(isset($document['fields'])) {
+			$document['fields'] = ( object ) array_filter( $document['fields'], function( $value ) {
+						return !is_null( $value );
+					} );
+		}
 
 		return $document;
 	}

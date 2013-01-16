@@ -5,9 +5,9 @@
   @Description: Add documents to batch queue
  */
 
-if ( !class_exists( 'Lift_Batch_Queue' ) ) {
+if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 
-	class Lift_Batch_Queue {
+	class Lift_Batch_Handler {
 
 		/**
 		 * Private var to track whether this class was previously initialized
@@ -68,7 +68,7 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 						$interval = 86400;
 					}
 
-					$schedules[Lift_Batch_Queue::CRON_INTERVAL] = array(
+					$schedules[Lift_Batch_Handler::CRON_INTERVAL] = array(
 						'interval' => $interval,
 						'display' => '',
 					);
@@ -149,31 +149,24 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 		}
 
 		/**
-		 * count of posts in the queue to be sent to CloudSearch
-		 * 
-		 * @return int 
-		 */
-		public static function get_queue_count() {
-			return Lift_Document_Update_Queue::get_queue_count();
-		}
-
-		/**
 		 * get a table with the current queue
 		 * 
 		 * @return string 
 		 */
 		public static function get_queue_list() {
-			$page = (isset( $_GET['paged'] )) ? $_GET['paged'] : 0;
-			$args = array(
-				'post_type' => 'lift_queued_document',
-				'posts_per_page' => 10,
-				'paged' => max( 1, $page ),
-				'post_status' => 'any',
-				'orderby' => 'ID',
-				'order' => 'DESC'
-			);
-			$query = new WP_Query( $args );
-			$html = '<table class="wp-list-table widefat fixed posts">
+			$page = (isset( $_GET['paged'] )) ? intval( $_GET['paged'] ) : 1;
+			$page = max( 1, $page );
+
+			$update_query = Lift_Document_Update_Queue::query_updates( array(
+					'page' => $page,
+					'per_page' => 10,
+					'queue_ids' => array( Lift_Document_Update_Queue::get_active_queue_id(), Lift_Document_Update_Queue::get_closed_queue_id() )
+				) );
+
+			$meta_rows = $update_query->meta_rows;
+			$num_pages = $update_query->num_pages;
+			$html = '<h3><span class="alignright">Documents in Queue: <strong>' . $update_query->found_rows . '</strong></span>Documents to be Synced</h3>';
+			$html .= '<table class="wp-list-table widefat fixed posts">
 				<thead>
 				<tr>
 					<th class="column-date">Queue ID</th>
@@ -183,36 +176,45 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 				</tr>
 				</thead>';
 			$pages = '';
-			if ( $query->have_posts() ) {
-				while ( $query->have_posts() ) : $query->the_post();
-					$pid = ( int ) substr( get_the_title(), 5 );
-					if ( get_post_status( $pid ) ) {
-						$last_user = '';
-						if ( $last_id = get_post_meta( $pid, '_edit_last', true ) ) {
-							$last_user = get_userdata( $last_id );
-						}
-						$html .= '<tr>';
-						$html .= '<td class="column-date">' . get_the_ID() . '</td>';
-						$html .= '<td class="column-title"><a href="' . get_post_permalink( $pid ) . '">' . get_the_title( $pid ) . '</a></td>';
-						$html .= '<td class="column-author">' . (isset( $last_user->display_name ) ? $last_user->display_name : '') . '</td>';
-						$html .= '<td class="column-categories">' . get_the_time( 'D. M d Y g:ia' ) . '</td>';
-						$html .= '</tr>';
-					} else {
-						$html .= '<tr>';
-						$html .= '<td class="column-date">' . get_the_ID() . '</td>';
-						$html .= '<td class="column-title">Deleted ' . get_the_title() . '</td>';
-						$html .= '<td class="column-author">&nbsp;</td>';
-						$html .= '<td class="column-categories">' . get_the_time( 'D. M d Y g:ia' ) . '</td>';
-						$html .= '</tr>';
+			if ( count( $meta_rows ) ) {
+				foreach ( $meta_rows as $meta_row ) {
+					$meta_value = get_post_meta( $meta_row->post_id, $meta_row->meta_key, true );
+					switch ( $meta_value['document_type'] ) {
+						case 'post';
+
+							$post_id = $meta_value['document_id'];
+
+							$last_user = '';
+							if ( $last_id = get_post_meta( $post_id, '_edit_last', true ) ) {
+								$last_user = get_userdata( $last_id );
+							}
+
+							if ( $meta_value['action'] == 'add' ) {
+								$html .= '<tr>';
+								$html .= '<td class="column-date">' . $post_id . '</td>';
+								$html .= '<td class="column-title"><a href="' . get_edit_post_link( $post_id ) . '">' . esc_html( get_the_title( $post_id ) ) . '</a></td>';
+								$html .= '<td class="column-author">' . (isset( $last_user->display_name ) ? $last_user->display_name : '') . '</td>';
+								$html .= '<td class="column-categories">' . mysql2date( 'D. M d Y g:ia', $meta_value['update_date'] ) . '</td>';
+								$html .= '</tr>';
+							} else {
+								$html .= '<tr>';
+								$html .= '<td class="column-date">' . $post_id . '</td>';
+								$html .= '<td class="column-title">Deleted Post</td>';
+								$html .= '<td class="column-author">&nbsp;</td>';
+								$html .= '<td class="column-categories">' . mysql2date( 'D. M d Y g:ia', $meta_value['update_date'] ) . '</td>';
+								$html .= '</tr>';
+							}
+						default:
+							continue;
 					}
-				endwhile;
+				}
 				$big = 999999999;
 				$pages = '<div class="tablenav bottom"><div class="tablenav-pages"><span class="pagination-links">';
 				$pages .= paginate_links( array(
 					'base' => str_replace( $big, '%#%', esc_url( get_pagenum_link( $big ) ) ),
 					'format' => '?paged=%#%',
 					'current' => max( 1, $page ),
-					'total' => $query->max_num_pages
+					'total' => $num_pages
 					) );
 				$pages .= '</span></div></div>';
 			} else {
@@ -340,62 +342,60 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 
 			update_option( self::LAST_CRON_TIME_OPTION, time() );
 
-			$args = array(
-				'post_type' => Lift_Document_Update_Queue::STORAGE_POST_TYPE,
-				'posts_per_page' => self::QUEUE_ALL_SET_SIZE,
-				'orderby' => 'post_date',
-				'order' => 'asc',
-				'fields' => 'ids',
-			);
+			$closed_queue_id = Lift_Document_Update_Queue::get_closed_queue_id();
 
-			$queued_update_ids = get_posts( $args );
+			$update_query = Lift_Document_Update_Queue::query_updates( array(
+					'per_page' => self::QUEUE_ALL_SET_SIZE,
+					'queue_ids' => array( $closed_queue_id )
+				) );
 
-			if ( !$queued_update_ids ) {
+
+			if ( !count( $update_query->meta_rows ) ) {
+				//no documents queued up
+				Lift_Document_Update_Queue::close_active_queue();
+				delete_transient( self::BATCH_LOCK );
 				return;
 			}
 
-			_prime_post_caches( $queued_update_ids );
-
 			$batch = new Lift_Batch();
-			$batched_ids = array( );
-			foreach ( $queued_update_ids as $update_id ) {
-				if ( $update_post = get_post( $update_id ) ) {
-					$post_meta_content = get_post_meta( $update_id, 'lift_content', true );
-					$update_data = ( array ) maybe_unserialize( $post_meta_content );
-					if ( $update_data['document_type'] == 'post' ) {
-						$action = $update_data['action'];
-						if ( $action == 'add' ) {
-							$post = get_post( $update_data['document_id'], ARRAY_A );
-							$post_data = array( 'ID' => $update_data['document_id'] );
-							foreach ( $update_data['fields'] as $field ) {
-								$post_data[$field] = isset( $post[$field] ) ? $post[$field] : null;
-							}
+			$batched_meta_keys = array( );
+			foreach ( $update_query->meta_rows as $meta_row ) {
 
-							$sdf_field_data = apply_filters( 'lift_post_changes_to_data', $post_data, $update_data['fields'], $update_data['document_id'] );
-						} else {
-							$sdf_field_data = array( 'ID' => intval( $update_data['document_id'] ) );
+				$update_data = get_post_meta( $meta_row->post_id, $meta_row->meta_key, true );
+
+				if ( $update_data['document_type'] == 'post' ) {
+					$action = $update_data['action'];
+					if ( $action == 'add' ) {
+						$post = get_post( $update_data['document_id'], ARRAY_A );
+						$post_data = array( 'ID' => $update_data['document_id'] );
+						foreach ( $update_data['fields'] as $field ) {
+							$post_data[$field] = isset( $post[$field] ) ? $post[$field] : null;
 						}
 
+						$sdf_field_data = apply_filters( 'lift_post_changes_to_data', $post_data, $update_data['fields'], $update_data['document_id'] );
+					} else {
+						$sdf_field_data = array( 'ID' => intval( $update_data['document_id'] ) );
+					}
 
-						$sdf_doc = Lift_Posts_To_SDF::format_post( ( object ) $sdf_field_data, array(
-								'action' => $action,
-								'time' => time()
-							) );
 
-						try {
-							$batch->add_document( ( object ) $sdf_doc );
+					$sdf_doc = Lift_Posts_To_SDF::format_post( ( object ) $sdf_field_data, array(
+							'action' => $action,
+							'time' => time()
+						) );
 
-							$batched_ids[] = $update_id;
-						} catch ( Lift_Batch_Exception $e ) {
-							if ( isset( $e->errors[0]['code'] ) && 500 == $e->errors[0]['code'] ) {
-								break;
-							}
-							Lift_Search::event_log( 'Batch Add Error ' . time(), json_encode( $e ), array( 'batch-add', 'error' ) );
+					try {
+						$batch->add_document( ( object ) $sdf_doc );
 
-							//@todo log error, stop cron? --- update_option( self::$search_semaphore, 1 );
-
-							continue;
+						$batched_meta_keys[] = $meta_row->meta_key;
+					} catch ( Lift_Batch_Exception $e ) {
+						if ( isset( $e->errors[0]['code'] ) && 500 == $e->errors[0]['code'] ) {
+							break;
 						}
+						Lift_Search::event_log( 'Batch Add Error ' . time(), json_encode( $e ), array( 'batch-add', 'error' ) );
+
+						//@todo log error, stop cron? --- update_option( self::$search_semaphore, 1 );
+
+						continue;
 					}
 				}
 			}
@@ -408,8 +408,8 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 					$log_title = "Post Queue Sent ";
 					$tag = 'success';
 
-					foreach ( $batched_ids as $processed_id ) {
-						wp_delete_post( $processed_id, true );
+					foreach ( $batched_meta_keys as $meta_key ) {
+						delete_post_meta( $closed_queue_id, $meta_key );
 					}
 				} else {
 					$log_title = "Post Queue Send Error ";
@@ -422,7 +422,6 @@ if ( !class_exists( 'Lift_Batch_Queue' ) ) {
 				$messages = $cloud_api->getErrorMessages();
 				Lift_Search::event_log( 'Post Queue Error ' . time(), $messages, array( 'send-queue', 'response-false', 'error' ) );
 			}
-			wp_cache_delete( 'lift_update_queue_count' );
 			delete_transient( self::BATCH_LOCK );
 		}
 

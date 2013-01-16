@@ -48,7 +48,7 @@ class Lift_Admin {
 
 			// send next batch
 			if ( current_user_can( 'manage_options' ) && isset( $_GET['sync-queue'] ) ) {
-				Lift_Batch_Queue::send_next_batch();
+				Lift_Batch_Handler::send_next_batch();
 				wp_redirect( admin_url( 'options-general.php?page=' . self::STATUS_PAGE ) );
 			}
 		}
@@ -138,11 +138,11 @@ class Lift_Admin {
 	 * queue all current content 
 	 */
 	private static function _complete_setup() {
-		Lift_Batch_Queue::init();
+		Lift_Batch_Handler::init();
 		// mark setup complete, enable cron and queue all posts
 		update_option( Lift_Search::INITIAL_SETUP_COMPLETE_OPTION, 1 );
-		Lift_Batch_Queue::enable_cron();
-		Lift_Batch_Queue::queue_all();
+		Lift_Batch_Handler::enable_cron();
+		Lift_Batch_Handler::queue_all();
 	}
 
 	/**
@@ -254,8 +254,8 @@ class Lift_Admin {
 		Lift_Search::set_batch_interval_display( $interval, $units );
 
 		echo json_encode( array(
-			'last_cron' => Lift_Batch_Queue::get_last_cron_time(),
-			'next_cron' => Lift_Batch_Queue::get_next_cron_time()
+			'last_cron' => Lift_Batch_Handler::get_last_cron_time(),
+			'next_cron' => Lift_Batch_Handler::get_next_cron_time()
 		) );
 		die;
 	}
@@ -334,15 +334,15 @@ class Lift_Admin {
 		$set_cron = ( bool ) intval( $_POST['cron'] );
 
 		if ( $set_cron ) {
-			Lift_Batch_Queue::enable_cron();
+			Lift_Batch_Handler::enable_cron();
 		} else {
-			Lift_Batch_Queue::disable_cron();
+			Lift_Batch_Handler::disable_cron();
 		}
 
 		echo json_encode( array(
 			'set_cron' => $set_cron,
-			'last_cron' => Lift_Batch_Queue::get_last_cron_time(),
-			'next_cron' => Lift_Batch_Queue::get_next_cron_time()
+			'last_cron' => Lift_Batch_Handler::get_last_cron_time(),
+			'next_cron' => Lift_Batch_Handler::get_next_cron_time()
 		) );
 		die;
 	}
