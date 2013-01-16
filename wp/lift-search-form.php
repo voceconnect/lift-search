@@ -224,7 +224,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		}
 
 		public function loop() {
-			$path = WP_PLUGIN_DIR . '/lift-search/templates/lift-loop.php';
+			$path = dirname(__DIR__) . '/lift-search/templates/lift-loop.php';
 			include_once $path;
 		}
 

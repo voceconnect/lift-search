@@ -31,7 +31,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 */
 
 		const INITIAL_SETUP_COMPLETE_OPTION = 'lift-initial-setup-complete';
-
+		
 		/**
 		 * Option name for storing all user based options 
 		 */
