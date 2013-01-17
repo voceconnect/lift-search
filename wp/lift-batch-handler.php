@@ -61,9 +61,6 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 			if ( self::$is_initialized )
 				return false;
 
-			add_action( self::BATCH_CRON_HOOK, array( __CLASS__, 'send_next_batch' ) );
-			add_action( self::QUEUE_ALL_CRON_HOOK, array( __CLASS__, 'process_queue_all' ) );
-
 			require_once(__DIR__ . '/lift-update-queue.php');
 
 			Lift_Document_Update_Queue::init();

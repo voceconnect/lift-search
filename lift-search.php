@@ -68,7 +68,11 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 			add_action( 'init', array( __CLASS__, '__upgrade_check' ) );
 
-
+			//need cron hooks to be set prior to init
+			add_action( Lift_Batch_Handler::BATCH_CRON_HOOK, array( 'Lift_Batch_Handler', 'send_next_batch' ) );
+			add_action( Lift_Batch_Handler::QUEUE_ALL_CRON_HOOK, array( 'Lift_Batch_Handler', 'process_queue_all' ) );
+			
+			
 			// @TODO only enqueue on search template or if someone calls the form
 			add_action( 'wp_enqueue_scripts', function() {
 					wp_enqueue_script( 'lift-search-form', plugins_url( 'js/lift-search-form.js', __FILE__ ), array( 'jquery' ) );
