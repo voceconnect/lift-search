@@ -455,7 +455,8 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 				foreach ( $post_ids as $post_id ) {
 					if ( $update_meta = get_post_meta( $post_id, 'lift_content', true ) ) {
-
+						if(  is_string( $update_meta) )
+							$update_meta = maybe_unserialize ( $update_meta ); //previous versions double serialized meta
 
 						$meta_key = 'lift_update_' . $update_meta['document_type'] . '_' . $update_meta['document_id'];
 						$new_meta = array(
