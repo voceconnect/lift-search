@@ -31,7 +31,8 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 */
 
 		const INITIAL_SETUP_COMPLETE_OPTION = 'lift-initial-setup-complete';
-		
+		const DB_VERSION = 2;
+
 		/**
 		 * Option name for storing all user based options 
 		 */
@@ -51,19 +52,23 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		}
 
 		public static function init() {
+
 			if ( self::get_search_endpoint() ) {
-				Lift_WP_Search::init();
+				add_action( 'init', array( 'Lift_WP_Search', 'init' ) );
 			}
 
 			if ( self::get_document_endpoint() ) {
-				Lift_Batch_Handler::init();
+				add_action( 'init', array( 'Lift_Batch_Handler', 'init' ) );
 			}
-			
+
 			if ( is_admin() ) {
 				require_once(__DIR__ . '/admin/admin.php');
 				Lift_Admin::init();
 			}
-			
+
+			add_action( 'init', array( __CLASS__, '__upgrade_check' ) );
+
+
 			// @TODO only enqueue on search template or if someone calls the form
 			add_action( 'wp_enqueue_scripts', function() {
 					wp_enqueue_script( 'lift-search-form', plugins_url( 'js/lift-search-form.js', __FILE__ ), array( 'jquery' ) );
@@ -437,9 +442,43 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			}
 		}
 
+		public static function __upgrade_check() {
+			global $wpdb;
+
+			$db_version = get_option( 'lift_db_version', 0 );
+			if ( $db_version < 2 ) {
+
+				$post_ids = $wpdb->get_col( "SELECT ID FROM $wpdb->posts " .
+					"WHERE post_type = '" . Lift_Document_Update_Queue::STORAGE_POST_TYPE . "'" );
+
+				$queue_id = Lift_Document_Update_Queue::get_active_queue_id();
+
+				foreach ( $post_ids as $post_id ) {
+					if ( $update_meta = get_post_meta( $post_id, 'lift_content', true ) ) {
+
+
+						$meta_key = 'lift_update_' . $update_meta['document_type'] . '_' . $update_meta['document_id'];
+						$new_meta = array(
+							'document_id' => $update_meta['document_id'],
+							'document_type' => $update_meta['document_type'],
+							'action' => $update_meta['action'],
+							'fields' => $update_meta['fields'],
+							'update_date_gmt' => get_post_time( 'Y-m-d H:i:s', true, $post_id ),
+							'update_date' => get_post_time( 'Y-m-d H:i:s', false, $post_id )
+						);
+						update_post_meta( $queue_id, $meta_key, $new_meta );
+
+						wp_delete_post( $post_id );
+					}
+				}
+
+				update_option( 'lift_db_version', 2 );
+			}
+		}
+
 	}
 
-	Lift_Search::init();
+	add_action( 'plugins_loaded', array( 'Lift_Search', 'init' ) );
 }
 
 
