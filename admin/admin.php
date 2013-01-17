@@ -239,6 +239,9 @@ class Lift_Admin {
 	}
 
 	public static function _ajax_delete_error_logs() {
+		if ( !Lift_Search::error_logging_enabled() ) {
+			die( json_encode( array( 'error' => true ) ) );
+		}
 		$response = Voce_Error_Logging::delete_logs( array( 'lift-search' ) );
 		echo json_encode( $response );
 		die();

@@ -122,21 +122,23 @@ $batch_interval_display = Lift_Search::get_batch_interval_display();
 		</div>
 
 		<div class="indent">
-			<?php echo Lift_Batch_Handler::get_queue_list(); ?>			
-			<h3 class="alignleft" id="lift-logs">Recent Logs</h3> 
-			<p class="alignleft" style="padding-top:3px ;margin-left:15px;">
-				<a href="<?php echo esc_attr( admin_url( sprintf( 'edit.php?post_type=%s', Voce_Error_Logging::POST_TYPE ) ) ); ?>" class="alignleft">View All</a>
-			</p>
-			<?php if ( Voce_Error_Logging::get_log_count() && Voce_Error_Logging::get_log_count() > 0 ): ?>
-				<div class="alignright" style="margin-bottom:5px;">
-					<p>
-						<span class="alignleft status-message" id="clear-log-status-message" style="padding-top:3px; margin-right:15px;"></span>
-						<img id="clear-logs-loader" style="padding-top:3px; margin-right:15px;" src="<?php echo site_url( '/wp-admin/images/loading.gif' ); ?>" class="alignleft hidden"/>
-						<input type="button" class="button alignright" id="voce-lift-admin-settings-clear-status-logs" value="Clear Logs" />
-					</p>
-				</div>
+			<?php echo Lift_Batch_Handler::get_queue_list(); ?>	
+			<?php if(Lift_Search::error_logging_enabled()) : ?>
+				<h3 class="alignleft" id="lift-logs">Recent Logs</h3> 
+				<p class="alignleft" style="padding-top:3px ;margin-left:15px;">
+					<a href="<?php echo esc_attr( admin_url( sprintf( 'edit.php?post_type=%s', Voce_Error_Logging::POST_TYPE ) ) ); ?>" class="alignleft">View All</a>
+				</p>
+				<?php if ( Voce_Error_Logging::get_log_count() && Voce_Error_Logging::get_log_count() > 0 ): ?>
+					<div class="alignright" style="margin-bottom:5px;">
+						<p>
+							<span class="alignleft status-message" id="clear-log-status-message" style="padding-top:3px; margin-right:15px;"></span>
+							<img id="clear-logs-loader" style="padding-top:3px; margin-right:15px;" src="<?php echo site_url( '/wp-admin/images/loading.gif' ); ?>" class="alignleft hidden"/>
+							<input type="button" class="button alignright" id="voce-lift-admin-settings-clear-status-logs" value="Clear Logs" />
+						</p>
+					</div>
+				<?php endif; ?>
+				<?php echo Lift_Search::RecentLogTable(); ?>
 			<?php endif; ?>
-			<?php echo Lift_Search::RecentLogTable(); ?>
 		</div><!-- end indent -->
 	</div> <!-- end dashboard -->
 </div>

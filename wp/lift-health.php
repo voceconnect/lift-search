@@ -46,6 +46,10 @@ if ( !class_exists( 'Lift_Health' ) ) {
 		 * @return array 
 		 */
 		public static function get_local_status() {
+			if(!Lift_Search::error_logging_enabled()) {
+				return array('severity' => 0, 'reason' => '', 'errors' => false, 'status' => 0);
+			}
+			
 			$intervals = array(
 				60 * 60 => array( 'severity' => 2, 'threshold' => 5 ), // 1 hr
 				60 * 30 => array( 'severity' => 1, 'threshold' => 2 ), // 30 mins

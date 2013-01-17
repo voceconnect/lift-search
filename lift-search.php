@@ -51,7 +51,17 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				&& self::get_search_domain() && get_option( self::INITIAL_SETUP_COMPLETE_OPTION, 0 );
 		}
 
+		public static function error_logging_enabled() {
+			return !( defined( 'DISABLE_LIFT_ERROR_LOGGING' ) && DISABLE_LIFT_ERROR_LOGGING )
+				&& ( class_exists( 'Voce_Error_Logging' ) || file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) );
+		}
+
 		public static function init() {
+
+			if ( self::error_logging_enabled() && !class_exists( 'Voce_Error_Logging' )
+				&& file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) ) {
+				require_once (__DIR__ . '/lib/voce-error-loggin/voce-error-logging');
+			}
 
 			if ( self::get_search_endpoint() ) {
 				add_action( 'init', array( 'Lift_WP_Search', 'init' ) );
@@ -71,8 +81,8 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			//need cron hooks to be set prior to init
 			add_action( Lift_Batch_Handler::BATCH_CRON_HOOK, array( 'Lift_Batch_Handler', 'send_next_batch' ) );
 			add_action( Lift_Batch_Handler::QUEUE_ALL_CRON_HOOK, array( 'Lift_Batch_Handler', 'process_queue_all' ) );
-			
-			
+
+
 			// @TODO only enqueue on search template or if someone calls the form
 			add_action( 'wp_enqueue_scripts', function() {
 					wp_enqueue_script( 'lift-search-form', plugins_url( 'js/lift-search-form.js', __FILE__ ), array( 'jquery' ) );
@@ -111,7 +121,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 						'interval' => 60 * 5, // 5 mins
 						'display' => '',
 					);
-					
+
 					if ( Lift_Search::get_batch_interval() > 0 ) {
 						$interval = Lift_Search::get_batch_interval();
 					} else {
@@ -403,6 +413,10 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		}
 
 		public static function RecentLogTable() {
+			if(!self::error_logging_enabled()) {
+				return '<div class="notice">Error Logging is Disabled</div>';
+			}
+			
 			$args = array(
 				'post_type' => Voce_Error_Logging::POST_TYPE,
 				'posts_per_page' => 5,
@@ -470,8 +484,8 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 				foreach ( $post_ids as $post_id ) {
 					if ( $update_meta = get_post_meta( $post_id, 'lift_content', true ) ) {
-						if(  is_string( $update_meta) )
-							$update_meta = maybe_unserialize ( $update_meta ); //previous versions double serialized meta
+						if ( is_string( $update_meta ) )
+							$update_meta = maybe_unserialize( $update_meta ); //previous versions double serialized meta
 
 						$meta_key = 'lift_update_' . $update_meta['document_type'] . '_' . $update_meta['document_id'];
 						$new_meta = array(
@@ -505,8 +519,8 @@ function _lift_deactivate() {
 	//clean up options
 	delete_option( Lift_Search::INITIAL_SETUP_COMPLETE_OPTION );
 	delete_option( Lift_Search::SETTINGS_OPTION );
-	delete_option( 'lift_db_version');
-	
+	delete_option( 'lift_db_version' );
+
 	if ( class_exists( 'Voce_Error_Logging' ) ) {
 		Voce_Error_Logging::delete_logs( array( 'lift-search' ) );
 	}
