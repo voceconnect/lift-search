@@ -489,7 +489,8 @@ function _lift_deactivate() {
 	//clean up options
 	delete_option( Lift_Search::INITIAL_SETUP_COMPLETE_OPTION );
 	delete_option( Lift_Search::SETTINGS_OPTION );
-
+	delete_option( 'lift_db_version');
+	
 	if ( class_exists( 'Voce_Error_Logging' ) ) {
 		Voce_Error_Logging::delete_logs( array( 'lift-search' ) );
 	}
