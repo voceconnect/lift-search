@@ -107,6 +107,17 @@ if ( !class_exists( 'Lift_Search' ) ) {
 						'interval' => 60 * 5, // 5 mins
 						'display' => '',
 					);
+					
+					if ( Lift_Search::get_batch_interval() > 0 ) {
+						$interval = Lift_Search::get_batch_interval();
+					} else {
+						$interval = 86400;
+					}
+
+					$schedules[Lift_Batch_Handler::CRON_INTERVAL] = array(
+						'interval' => $interval,
+						'display' => '',
+					);
 
 					return $schedules;
 				} );
