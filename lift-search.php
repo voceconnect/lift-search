@@ -299,6 +299,13 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 		public static function set_search_domain( $value ) {
 			self::__set_setting( 'search-domain', $value );
+			$document_endpoint = Cloud_Config_Request::DocumentEndpoint( $value );
+			$search_endpoint = Cloud_Config_Request::SearchEndpoint( $value );
+
+			if ( $document_endpoint && $search_endpoint ) {
+				self::__set_setting( 'document-endpoint', $document_endpoint );
+				self::__set_setting( 'search-endpoint', $search_endpoint );
+			}
 		}
 
 		/**
@@ -413,10 +420,10 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		}
 
 		public static function RecentLogTable() {
-			if(!self::error_logging_enabled()) {
+			if ( !self::error_logging_enabled() ) {
 				return '<div class="notice">Error Logging is Disabled</div>';
 			}
-			
+
 			$args = array(
 				'post_type' => Voce_Error_Logging::POST_TYPE,
 				'posts_per_page' => 5,
