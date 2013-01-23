@@ -204,7 +204,7 @@ class Lift_WP_Search {
 			}
 
 			if ( empty( $q['perm'] ) || 'readable' != $q['perm'] ) {
-				foreach ( $p_stati_expression as $expression ) {
+				foreach ( $p_stati_expression->sub_expressions as $expression ) {
 					$r_stati_expression->addExpression( $expression );
 				}
 				unset( $p_stati_expression );
