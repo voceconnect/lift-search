@@ -109,10 +109,7 @@ $batch_interval_display = Lift_Search::get_batch_interval_display();
 		<div id="lift-remote-status">
 			<p>
 				Amazon CloudSearch search domain status for <i><?php echo esc_html( $domain ); ?></i>: 
-				<b><?php echo esc_html( strtoupper( $remote_domain_status_text ) ); ?></b>
-				<?php if ( $remote_domain_status && !( isset( $remote_domain_status['fatal'] ) ) && $remote_domain_status['needs_indexing'] ) : ?>
-					<a href="<?php echo admin_url( 'options-general.php?page=' . Lift_Admin::STATUS_PAGE . '&lift-indexdocuments' ); ?>" class="button">Index Now</a>
-				<?php endif; ?>.
+				<b><?php echo esc_html( strtoupper( $remote_domain_status_text ) ); ?></b><?php if ( $remote_domain_status && !( isset( $remote_domain_status['fatal'] ) ) && $remote_domain_status['needs_indexing'] ) : ?> <a href="<?php echo admin_url( 'options-general.php?page=' . Lift_Admin::STATUS_PAGE . '&lift-indexdocuments' ); ?>" class="button">Index Now</a><?php endif; ?>.
 				<?php if ( !isset( $remote_domain_status['fatal'] ) ) : ?>
 					Your index has <?php echo esc_html( $remote_domain_status['num_searchable_docs'] ); ?> searchable <?php echo $remote_document_text; ?>
 					using <?php echo esc_html( $remote_domain_status['search_partition_count'] ); ?> search <?php echo $remote_partition_text; ?> 
