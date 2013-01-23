@@ -121,6 +121,8 @@ class Lift_WP_Search {
 	public static function get_query_post_status( $wp_query ) {
 
 		$q = $wp_query->query_vars;
+		
+		$user_ID = get_current_user_id();
 
 		//mimic wp_query logic around post_type since it isn't performed on an accessible copy
 		$post_type = $q['post_type'];
