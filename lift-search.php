@@ -299,12 +299,18 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 		public static function set_search_domain( $value ) {
 			self::__set_setting( 'search-domain', $value );
-			$document_endpoint = Cloud_Config_Request::DocumentEndpoint( $value );
-			$search_endpoint = Cloud_Config_Request::SearchEndpoint( $value );
+			self::__update_endpoints();
+		}
 
-			if ( $document_endpoint && $search_endpoint ) {
-				self::__set_setting( 'document-endpoint', $document_endpoint );
-				self::__set_setting( 'search-endpoint', $search_endpoint );
+		private static function __update_endpoints() {
+			if ( $search_domain = self::get_search_domain() ) {
+				$document_endpoint = Cloud_Config_Request::DocumentEndpoint( $search_domain );
+				$search_endpoint = Cloud_Config_Request::SearchEndpoint( $search_domain );
+
+				if ( $document_endpoint && $search_endpoint ) {
+					self::__set_setting( 'document-endpoint', $document_endpoint );
+					self::__set_setting( 'search-endpoint', $search_endpoint );
+				}
 			}
 		}
 
@@ -313,6 +319,9 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return string
 		 */
 		public static function get_search_endpoint() {
+			if ( !self::__get_setting( 'search-endpoint' ) ) {
+				self::__update_endpoints();
+			}
 			return apply_filters( 'lift_search_endpoint', self::__get_setting( 'search-endpoint' ) );
 		}
 
@@ -325,6 +334,9 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return string
 		 */
 		public static function get_document_endpoint() {
+			if ( !self::__get_setting( 'document-endpoint' ) ) {
+				self::__update_endpoints();
+			}
 			return apply_filters( 'lift_document_endpoint', self::__get_setting( 'document-endpoint' ) );
 		}
 
@@ -417,6 +429,19 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 		public static function get_indexed_post_types() {
 			return apply_filters( 'lift_indexed_post_types', array( 'post', 'page' ) );
+		}
+
+		public static function get_indexed_post_fields( $post_type ) {
+			return apply_filters( 'lift_indexed_post_fields', array(
+					'post_title',
+					'post_content',
+					'post_excerpt',
+					'post_date_gmt',
+					'post_excerpt',
+					'post_status',
+					'post_type',
+					'post_author'
+					), $post_type );
 		}
 
 		public static function RecentLogTable() {

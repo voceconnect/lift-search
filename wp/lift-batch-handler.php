@@ -245,6 +245,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 
 			$post_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM $wpdb->posts 
 				WHERE post_type in ('" . implode( "','", $post_types ) . "') AND post_date_gmt < %s
+				AND post_status <> 'auto-draft'
 				ORDER BY post_date desc
 				LIMIT %d", $date_to, self::QUEUE_ALL_SET_SIZE ) );
 
@@ -350,7 +351,8 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 					if ( $action == 'add' ) {
 						$post = get_post( $update_data['document_id'], ARRAY_A );
 						$post_data = array( 'ID' => $update_data['document_id'] );
-						foreach ( $update_data['fields'] as $field ) {
+
+						foreach ( Lift_Search::get_indexed_post_fields( $post['post_type'] ) as $field ) {
 							$post_data[$field] = isset( $post[$field] ) ? $post[$field] : null;
 						}
 
