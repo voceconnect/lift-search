@@ -71,7 +71,7 @@ $batch_interval_display = Lift_Search::get_batch_interval_display();
 						</div>
 						<div class="clr"></div>
 						<div class="lift-index-now">
-							<form method="get" action="">
+							<form method="get" action="" id="sync-queue-now-form">
 								<input type="hidden" name="page" value="<?php echo esc_attr( Lift_Admin::STATUS_PAGE ); ?>">
 								<input type="hidden" name="sync-queue" value="1">
 								<button class="button-primary" <?php echo ( Lift_Batch_Handler::is_batch_locked() || !Lift_Batch_Handler::ready_for_batch( Lift_Search::get_search_domain() ) ) ? 'disabled' : ''; ?>>Sync Queue Now</button>
@@ -124,9 +124,9 @@ $batch_interval_display = Lift_Search::get_batch_interval_display();
 		<div class="indent">
 			<?php echo Lift_Batch_Handler::get_queue_list(); ?>	
 			<?php if(Lift_Search::error_logging_enabled()) : ?>
-				<h3 class="alignleft" id="lift-logs">Recent Logs</h3> 
+				<h3 class="alignleft" id="lift-logs">Recent Errors</h3> 
 				<p class="alignleft" style="padding-top:3px ;margin-left:15px;">
-					<a href="<?php echo esc_attr( admin_url( sprintf( 'edit.php?post_type=%s', Voce_Error_Logging::POST_TYPE ) ) ); ?>" class="alignleft">View All</a>
+					<a href="<?php echo esc_attr( admin_url( sprintf( 'edit.php?post_type=%s', Voce_Error_Logging::POST_TYPE ) ) ); ?>" class="alignleft">View All Logs</a>
 				</p>
 				<?php if ( Voce_Error_Logging::get_log_count() && Voce_Error_Logging::get_log_count() > 0 ): ?>
 					<div class="alignright" style="margin-bottom:5px;">
@@ -137,7 +137,7 @@ $batch_interval_display = Lift_Search::get_batch_interval_display();
 						</p>
 					</div>
 				<?php endif; ?>
-				<?php echo Lift_Search::RecentLogTable(); ?>
+				<?php echo Lift_Search::RecentErrorsTable(); ?>
 			<?php endif; ?>
 		</div><!-- end indent -->
 	</div> <!-- end dashboard -->
