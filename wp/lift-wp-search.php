@@ -23,7 +23,7 @@ class Lift_WP_Search {
 
 	public static function init() {
 		add_filter( 'posts_request', function( $request, $wp_query ) {
-				if ( $wp_query->is_search() )
+				if ( apply_filters( 'lift_override_post_results', true ) && $wp_query->is_search() )
 					return false;
 				return $request;
 			}, 10, 2 );
@@ -274,8 +274,9 @@ class Lift_WP_Search {
 	 * @return array $posts
 	 */
 	public static function posts_results( $posts, $wp_query ) {
-		if ( !apply_filters( 'lift_override_post_results', true ) || !$wp_query->is_search() )
+		if ( !apply_filters( 'lift_override_post_results', true ) || !$wp_query->is_search() ) {
 			return $posts;
+		}
 
 		// filter the lift query
 		$lift_query = apply_filters( 'lift_filter_query', self::lift_search_query( $wp_query ) );
