@@ -3,7 +3,7 @@ Contributors: voceplatforms
 Tags: search, cloudsearch, amazon, aws
 Requires at least: 3.4.2
 Tested up to: 3.5
-Stable tag: 1.1
+Stable tag: 1.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -111,6 +111,17 @@ By default, posts and pages are indexed. To modify this, use the `lift_indexed_p
 3. Lift search form
 
 == Changelog ==
+
+= 1.2 =
+* Bug Fix: Fixed bug where some fields would be deleted from AWS after update.
+* Bug Fix: Fixed issue with ALTERNATE_CRON compatibility.
+* Bug Fix: Fixed initialization of queuing all posts after setup.
+* Bug Fix: Fixed post status handling when searching from the wp-admin.
+* Refactor: Added un-install hooks for cleanup after deactivation.
+* Refactor: Performance tweaks.
+* Refactor: Removed references to WP_PLUGIN_DIR for more flexible installations
+* Refactor: Updated storage for queued updates.
+* Refactor: Added ability to disable voce-error-logging integration.
 
 = 1.1 =
 * UI: `lift_search_form()` now duplicates the standard `get_search_form()`
