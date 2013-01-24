@@ -3,7 +3,7 @@
 class Lift_Post_Update_Watcher {
 
 	public static function get_watched_post_types() {
-		return apply_filters( 'lift_watched_post_types', array( 'post', 'page' ) );
+		return apply_filters( 'lift_watched_post_types', Lift_Search::get_indexed_post_types() );
 	}
 
 	public static function get_watched_post_fields( $post_type ) {
@@ -18,23 +18,23 @@ class Lift_Post_Update_Watcher {
 				'post_author'
 				), $post_type );
 	}
-	
-	public static function check_post_validity($post_status, $post_type) {
-		return ( ! in_array( $post_status,  array( 'open', 'auto-draft' ) ) && in_array( $post_type, Lift_Post_Update_Watcher::get_watched_post_types() ) );
+
+	public static function check_post_validity( $post_status, $post_type ) {
+		return (!in_array( $post_status, array( 'open', 'auto-draft' ) ) && in_array( $post_type, Lift_Post_Update_Watcher::get_watched_post_types() ) );
 	}
 
 	public static function init() {
 
 		//catch new posts
 		add_filter( 'wp_insert_post_data', function($data, $postarr) {
-				if ( Lift_Post_Update_Watcher::check_post_validity($data['post_status'], $data['post_type']) ) {
+				if ( Lift_Post_Update_Watcher::check_post_validity( $data['post_status'], $data['post_type'] ) ) {
 
 					if ( empty( $postarr['ID'] ) ) {
 						//new post, so lets queue the entire post to be saved, since there is no
 						//specific hook in wp to know it is an insert, we have to do some trickery
 						add_action( 'save_post', function($post_id, $post) {
 								//check to make sure this isn't a revision insert
-							$_post = $post;
+								$_post = $post;
 								if ( in_array( get_post_type( $post_id ), Lift_Post_Update_Watcher::get_watched_post_types() ) ) {
 									Lift_Post_Update_Watcher::queue_entire_post( $post_id );
 									remove_action( 'save_post', __FUNCTION__ );
@@ -50,8 +50,8 @@ class Lift_Post_Update_Watcher {
 		add_action( 'post_updated', function( $post_id, $post_after, $post_before ) {
 				$post_status = get_post_status( $post_id );
 				$post_type = get_post_type( $post_id );
-				if ( Lift_Post_Update_Watcher::check_post_validity($post_status, $post_type) ) {
-					if($post_before->post_status == 'auto-draft') {
+				if ( Lift_Post_Update_Watcher::check_post_validity( $post_status, $post_type ) ) {
+					if ( $post_before->post_status == 'auto-draft' ) {
 						Lift_Post_Update_Watcher::queue_entire_post( $post_id );
 					} else {
 						foreach ( Lift_Post_Update_Watcher::get_watched_post_fields( $post_type ) as $field_name ) {
@@ -68,7 +68,7 @@ class Lift_Post_Update_Watcher {
 		add_action( 'delete_post', function($post_id) {
 				$post_status = get_post_status( $post_id );
 				$post_type = get_post_type( $post_id );
-				if ( Lift_Post_Update_Watcher::check_post_validity($post_status, $post_type) ) {
+				if ( Lift_Post_Update_Watcher::check_post_validity( $post_status, $post_type ) ) {
 					lift_queue_deletion( $post_id, 'post' );
 				}
 			}, 10, 2 );
@@ -132,18 +132,18 @@ class Lift_Post_Meta_Update_Watcher {
 class Lift_Taxonomy_Update_Watcher {
 
 	public function get_watched_taxonomies( $post_type ) {
-		
+
 		$default_taxonomies = array(
-			'post' => array('category', 'post_tag'),
+			'post' => array( 'category', 'post_tag' ),
 		);
-		return apply_filters( 'lift_watched_taxonomies', isset($default_taxonomies[$post_type]) ? $default_taxonomies[$post_type] : array(), $post_type );
+		return apply_filters( 'lift_watched_taxonomies', isset( $default_taxonomies[$post_type] ) ? $default_taxonomies[$post_type] : array( ), $post_type );
 	}
 
 	public function init() {
 		add_action( 'set_object_terms', function($post_id, $terms, $tt_ids, $taxonomy, $append, $old_tt_ids) {
 				$post_type = get_post_type( $post_id );
 				if ( in_array( $taxonomy, Lift_Taxonomy_Update_Watcher::get_watched_taxonomies( $post_type ) ) ) {
-					if ( $append || array_diff( $old_tt_ids, $tt_ids ) || array_diff($tt_ids, $old_tt_ids) ) {
+					if ( $append || array_diff( $old_tt_ids, $tt_ids ) || array_diff( $tt_ids, $old_tt_ids ) ) {
 						lift_queue_field_update( $post_id, 'taxonomy_' . $taxonomy, 'post' );
 					}
 				}

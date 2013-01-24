@@ -76,12 +76,13 @@ class Cloud_Schemas {
 		),
 	);
 
-	public static function GetSchema($schema){
+	public static function GetSchema( $schema ) {
 		$schema = self::$$schema;
-		if($schema){
+		if ( $schema ) {
 			return $schema;
 		} else {
 			return false;
 		}
 	}
+
 }

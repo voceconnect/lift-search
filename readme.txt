@@ -3,7 +3,7 @@ Contributors: voceplatforms
 Tags: search, cloudsearch, amazon, aws
 Requires at least: 3.4.2
 Tested up to: 3.5
-Stable tag: 1.1
+Stable tag: 1.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,27 @@ searches through Google Analytics you don't need to do anything. If you would
 like to know how to do this, see the [Google Analytics docs](http://www.google.com/url?q=http%3A%2F%2Fsupport.google.com%2Fanalytics%2Fbin%2Fanswer.py%3Fhl%3Den%26answer%3D1012264). 
 The Query Parameter to enter (step #8) is "s".
 
+= What index fields are used when Lift configures a new search domain? =
+The index fields are set as follows:
+`Field                    Type     Facet          Result   Search
+-----------------------  -------  -------------  ------   -------------
+id                       uint     Yes (default)  No       Yes (default)
+post_author              uint     Yes (default)  No       Yes (default)
+post_author_name         text     No             Yes      Yes (default)
+taxonomy_category_id     literal  Yes            No       No
+taxonomy_category_label  text     No             No       Yes (default)
+post_content             text     No             No       Yes (default)
+post_date_gmt            uint     Yes (default)  No       Yes (default)
+post_status              literal  Yes            No       No
+post_title               text     No             Yes      Yes (default)
+post_type                literal  Yes            No       Yes
+comment_count            uint     Yes (default)  No       Yes (default)
+taxonomy_tags_id         literal  Yes            No       No
+taxonomy_tags_label      text     No             No       Yes (default)`
+
+= Which post types are indexed by default? How do I modify which post types are indexed? =
+By default, posts and pages are indexed. To modify this, use the `lift_indexed_post_types` filter which is an array of post types to index. 
+
 == Screenshots ==
 
 1. Lift setup
@@ -90,6 +111,17 @@ The Query Parameter to enter (step #8) is "s".
 3. Lift search form
 
 == Changelog ==
+
+= 1.2 =
+* Bug Fix: Fixed bug where some fields would be deleted from AWS after update.
+* Bug Fix: Fixed issue with ALTERNATE_CRON compatibility.
+* Bug Fix: Fixed initialization of queuing all posts after setup.
+* Bug Fix: Fixed post status handling when searching from the wp-admin.
+* Refactor: Added un-install hooks for cleanup after deactivation.
+* Refactor: Performance tweaks.
+* Refactor: Removed references to WP_PLUGIN_DIR for more flexible installations
+* Refactor: Updated storage for queued updates.
+* Refactor: Added ability to disable voce-error-logging integration.
 
 = 1.1 =
 * UI: `lift_search_form()` now duplicates the standard `get_search_form()`

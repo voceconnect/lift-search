@@ -2,14 +2,13 @@
 
 interface iLift_HTTP {
 
-	public function post( $url, $data, $headers = array() );
+	public function post( $url, $data, $headers = array( ) );
 
-	public function get( $url, $headers = array() );
+	public function get( $url, $headers = array( ) );
 
 	public function getStatusCode();
 
 	public function getResponse();
-
 }
 
 class Lift_HTTP_WP implements iLift_HTTP {
@@ -17,9 +16,9 @@ class Lift_HTTP_WP implements iLift_HTTP {
 	protected $response_code;
 	protected $response;
 
-	private function makeRequest( $url, $method = 'POST', $data = '', $headers = array() ) {
-        // @TODO: better error handling to pass up to caller
-        
+	private function makeRequest( $url, $method = 'POST', $data = '', $headers = array( ) ) {
+		// @TODO: better error handling to pass up to caller
+
 		$args = array(
 			'method' => strtoupper( $method ),
 			'timeout' => 45,
@@ -42,7 +41,7 @@ class Lift_HTTP_WP implements iLift_HTTP {
 		return wp_remote_retrieve_body( $this->response );
 	}
 
-	public function get( $url, $headers = array() ) {
+	public function get( $url, $headers = array( ) ) {
 		if ( empty( $url ) ) {
 			return false;
 		}
@@ -50,7 +49,7 @@ class Lift_HTTP_WP implements iLift_HTTP {
 		return $this->makeRequest( $url, 'GET', '', $headers );
 	}
 
-	public function post( $url, $data, $headers = array() ) {
+	public function post( $url, $data, $headers = array( ) ) {
 		if ( empty( $url ) || empty( $data ) ) {
 			return false;
 		}
@@ -65,11 +64,12 @@ class Lift_HTTP_WP implements iLift_HTTP {
 	public function getResponse() {
 		return $this->response;
 	}
+
 }
 
 class Lift_HTTP_WP_VIP extends Lift_HTTP_WP implements iLift_HTTP {
 
-	public function get( $url, $headers = array() ) {
+	public function get( $url, $headers = array( ) ) {
 
 		$this->response = vip_safe_wp_remote_get( $url, '', 3, 1, 20, compact( 'headers' ) );
 
@@ -80,7 +80,6 @@ class Lift_HTTP_WP_VIP extends Lift_HTTP_WP implements iLift_HTTP {
 		$this->response_code = wp_remote_retrieve_response_code( $this->response );
 
 		return wp_remote_retrieve_body( $this->response );
-
 	}
 
 }
@@ -95,7 +94,6 @@ class Lift_HTTP_Curl implements iLift_HTTP {
 
 		//Setup cURL
 		$this->setOptions();
-
 	}
 
 	private function setOptions() {
@@ -121,37 +119,37 @@ class Lift_HTTP_Curl implements iLift_HTTP {
 		return $this->response;
 	}
 
-	public function get( $url, $headers = array() ) {
+	public function get( $url, $headers = array( ) ) {
 		$request = $this->makeRequest( 'get', $url, '', $headers );
 		return $request;
 	}
 
-	public function post( $url, $data, $headers = array() ) {
+	public function post( $url, $data, $headers = array( ) ) {
 		$request = $this->makeRequest( 'post', $url, $data, $headers );
 		return $request;
 	}
 
 	function makeRequest( $method, $url, $data, $headers ) {
-		
+
 		curl_setopt( $this->channel, CURLOPT_URL, $url );
 
 		if ( strtolower( $method ) == 'post' ) {
 			curl_setopt( $this->channel, CURLOPT_POST, true );
 			curl_setopt( $this->channel, CURLOPT_POSTFIELDS, $data );
-			
 		}
 
-		curl_setopt( $this->channel, CURLOPT_HTTPHEADER, $headers);	
+		curl_setopt( $this->channel, CURLOPT_HTTPHEADER, $headers );
 
 		$this->response = curl_exec( $this->channel );
 		$response_info = curl_getinfo( $this->channel );
 		$this->response_code = $response_info['http_code'];
 
 		// @TODO: wp_error style handling here (timeouts, etc)
-		if( ! in_array( $this->response_code, array( 200, 201, 204 ) ) ) {
+		if ( !in_array( $this->response_code, array( 200, 201, 204 ) ) ) {
 			return false;
 		}
 
 		return $this->response;
 	}
+
 }

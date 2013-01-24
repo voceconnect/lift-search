@@ -13,20 +13,81 @@ class Lift_Document_Update_Queue {
 	private static $document_update_docs = array( );
 
 	const STORAGE_POST_TYPE = 'lift_queued_document';
+	const QUEUE_IDS_OPTION = 'lift_queue_ids';
 
-	public static function get_queue_count() {
-		global $wpdb;
+	/**
+	 * Gives the post_id representing the closed/completed queue.
+	 * The closed queue is the one that is currently no longer accepting
+	 * new changes and is waiting or in the process of being sent in batches
+	 *
+	 * @return int 
+	 */
+	public static function get_closed_queue_id() {
+		return self::get_queue_id( 'closed' );
+	}
+
+	/**
+	 * Gives the post_id representing the current active queue that all
+	 * new changes are saved to.  
+	 * 
+	 * @return int 
+	 */
+	public static function get_active_queue_id() {
+		return self::get_queue_id( 'active' );
+	}
+
+	/**
+	 * Closes the active queue and creates a new active queue to start
+	 * storing new updates
+	 * 
+	 * @return type 
+	 */
+	public static function close_active_queue() {
+		$lock_name = 'lift_close_active_queue';
 		
-		if(false === ($queue_count = wp_cache_get('lift_update_queue_count'))) {
-			$queue_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT( 1 ) FROM $wpdb->posts
-				WHERE post_type = %s", self::STORAGE_POST_TYPE) );
-			
-			wp_cache_set('lift_update_queue_count', $queue_count);
+		$lock_key = md5( uniqid( microtime() . mt_rand(), true ) );
+		if ( !get_transient( $lock_name ) ) {
+			set_transient( $lock_name, $lock_key, 60 );
+		}
+
+		if ( get_transient( $lock_name ) !== $lock_key ) {
+			//another server/request has this lock
+			return;
 		}
 		
-		return $queue_count;
+		
+		$active_queue_id = self::get_active_queue_id();
+		$closed_queue_id = self::get_closed_queue_id();
+		
+		update_option( self::QUEUE_IDS_OPTION, array(
+			'active' => $closed_queue_id,
+			'closed' => $active_queue_id
+		));
+		
+		delete_transient($lock_name);
 	}
-	
+
+	private static function get_queue_id( $type ) {
+		$queue_ids = get_option( self::QUEUE_IDS_OPTION, array( ) );
+
+		$queue_id = isset( $queue_ids[$type] ) ? $queue_ids[$type] : false;
+
+		if ( !$queue_id || !get_post( $queue_id ) ) {
+			//queue post doesn't yet exist, create one
+			$queue_id = wp_insert_post( array(
+				'post_type' => self::STORAGE_POST_TYPE,
+				'post_status' => 'publish',
+				'post_title' => 'lift queue post'
+				) );
+
+			$queue_ids[$type] = $queue_id;
+
+			update_option( self::QUEUE_IDS_OPTION, $queue_ids );
+		}
+
+		return $queue_id;
+	}
+
 	/**
 	 * Sets a document field to be queued for an update
 	 * @param int $document_id
@@ -51,20 +112,19 @@ class Lift_Document_Update_Queue {
 	}
 
 	/**
-	 * Gets the instance of the LiftUpdateDocument for the given document.
+	 * Gets the instance of the LiftUpdateDocument for the given document from the active
+	 * batch.  A new instance is created if there isn't yet one.
 	 * @param int $document_id
 	 * @param string $document_type
 	 * @return Lift_Update_Document 
 	 */
 	public static function get_queued_document_updates( $document_id, $document_type = 'post' ) {
-		$key = $document_type . '_' . $document_id;
+		$key = 'lift_update_' . $document_type . '_' . $document_id;
 		if ( isset( self::$document_update_docs[$key] ) ) {
 			return self::$document_update_docs[$key];
 		}
 
-		if ( $update_post = self::get_document_update_post( $document_id, $document_type ) ) {
-			$post_meta_content = get_post_meta($update_post->ID, 'lift_content', true);
-			$update_data = ( array ) maybe_unserialize( $post_meta_content );
+		if ( is_array( $update_data = get_post_meta( self::get_active_queue_id(), $key ) ) ) {
 			$action = isset( $update_data['action'] ) ? $update_data['action'] : 'add';
 			$fields = isset( $update_data['fields'] ) ? ( array ) $update_data['fields'] : array( );
 			$document_update_doc = new Lift_Update_Document( $document_id, $document_type, $action, $fields );
@@ -74,32 +134,6 @@ class Lift_Document_Update_Queue {
 
 		self::$document_update_docs[$key] = $document_update_doc;
 		return $document_update_doc;
-	}
-
-	/**
-	 * Retrieves the post used to store the queued document update
-	 * @param int $document_id
-	 * @param string $document_type
-	 * @return WP_Post|null 
-	 */
-	private static function get_document_update_post( $document_id, $document_type ) {
-		$post_name = $document_type . '-' . $document_id;
-		if ( false === ($post_id = wp_cache_get( 'lift_queue_post_id_' . $post_name ) ) ) {
-			$posts = get_posts( array(
-				'post_type' => self::STORAGE_POST_TYPE,
-				'posts_per_page' => 1,
-				'name' => $post_name,
-				'fields' => 'ids'
-				) );
-
-			if ( count( $posts ) === 1 ) {
-				$post_id = $posts[0];
-				wp_cache_set( 'lift_queue_post_id_' . $post_name, $post_id );
-				wp_cache_delete('lift_update_queue_count');
-			}
-		}
-
-		return $post_id ? get_post( $post_id ) : false;
 	}
 
 	/**
@@ -126,10 +160,45 @@ class Lift_Document_Update_Queue {
 		) );
 
 		add_action( 'shutdown', array( __CLASS__, '_save_updates' ) );
-		
+
 		Lift_Post_Update_Watcher::init();
 		Lift_Post_Meta_Update_Watcher::init();
 		Lift_Taxonomy_Update_Watcher::init();
+	}
+
+	public static function query_updates( $args = array( ) ) {
+		global $wpdb;
+
+		$defaults = array(
+			'page' => 1,
+			'per_page' => 10,
+			'queue_ids' => self::get_active_queue_id(),
+		);
+
+		extract( $args = wp_parse_args( $args, $defaults ) );
+
+		$page = is_int( $page ) ? max( $page, 1 ) : 1;
+		$per_page = intval( $per_page );
+
+		$queue_ids = array_map( 'intval', ( array ) $queue_ids );
+
+
+		$limit = 'LIMIT ' . ($page - 1) * $per_page . ', ' . $per_page;
+
+		$query = "SELECT SQL_CALC_FOUND_ROWS meta_id, meta_key, post_id FROM $wpdb->postmeta " .
+			"WHERE post_id in (" . join( ',', $queue_ids ) . ") AND meta_key like 'lift_update_%' " .
+			"ORDER BY meta_id " .
+			$limit;
+
+		$meta_rows = $wpdb->get_results( $query );
+		$found_rows = $wpdb->get_var( "SELECT FOUND_ROWS()" );
+
+		return ( object ) array(
+				'query_args' => $args,
+				'meta_rows' => $meta_rows,
+				'found_rows' => $found_rows,
+				'num_pages' => ceil( $found_rows / $per_page )
+		);
 	}
 
 	/**
@@ -140,34 +209,33 @@ class Lift_Document_Update_Queue {
 			if ( !$change_doc->has_changed ) {
 				continue;
 			}
-			$new = false;
-			if ( false == ($post = self::get_document_update_post( $change_doc->document_id, $change_doc->document_type ) ) ) {
-				$post = array(
-                        'post_type' => self::STORAGE_POST_TYPE,
-                        'post_name' => $change_doc->document_type . '-' . $change_doc->document_id,
-                        'post_title' => $change_doc->document_type . '-' . $change_doc->document_id,
-                        'post_status' => 'publish',
-                        'post_content' => '',
-                );
-				$new = true;
-			}
 
-			$post_content = serialize( array(
+			$key = 'lift_update_' . $change_doc->document_type . '_' . $change_doc->document_id;
+
+			$update_data = array(
 				'document_id' => $change_doc->document_id,
 				'document_type' => $change_doc->document_type,
 				'action' => $change_doc->action,
-				'fields' => $change_doc->fields
-				) );
+				'fields' => $change_doc->fields,
+				'update_date_gmt' => current_time( 'mysql', 1 ),
+				'update_date' => current_time( 'mysql' )
+			);
+			update_post_meta( self::get_active_queue_id(), $key, $update_data );
+		}
+	}
 
+	public static function _deactivation_cleanup() {
+		global $wpdb;
 
-			if ( ( $post_id = wp_insert_post( $post ) ) && $new ) {
-				wp_cache_set( 'lift_queue_post_id_' . $change_doc->document_type . '_' . $change_doc->document_id, $post_id );
-			}
-			update_post_meta($post_id, 'lift_content', $post_content);
+		$batch_post_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM $wpdb->posts
+			WHERE post_type = %s", self::STORAGE_POST_TYPE ) );
+		foreach ( $batch_post_ids as $post_id ) {
+			wp_delete_post( $post_id, true );
 		}
 	}
 
 }
+
 add_action( 'init', array( 'Lift_Document_Update_Queue', 'init' ), 2 );
 
 class Lift_Update_Document {

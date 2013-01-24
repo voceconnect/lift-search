@@ -1,5 +1,4 @@
 <?php
-
 // Make sure class name doesn't exist
 if ( !class_exists( 'Lift_Search_Form' ) ) {
 
@@ -36,10 +35,10 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 */
 		private function __construct() {
 			add_filter( 'lift_filters_default_fields', function($defaults) {
-						$remove = array( 'post_categories', 'post_tags' );
-						$filtered = array_diff( $defaults, $remove );
-						return $filtered;
-					} );
+					$remove = array( 'post_categories', 'post_tags' );
+					$filtered = array_diff( $defaults, $remove );
+					return $filtered;
+				} );
 
 			$this->additional_fields();
 		}
@@ -72,11 +71,11 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 * Builds the sort by dropdown/select field.
 		 */
 		public function add_sort_field() {
-			if ( ! $selected = Lift_Search_Form::get_query_var( 'orderby' ) ) {
+			if ( !$selected = Lift_Search_Form::get_query_var( 'orderby' ) ) {
 				$selected = 'relevancy';
 			}
 			$options = array(
-				'label' => ($selected) ? ucwords($selected) : 'Sort By',
+				'label' => ($selected) ? ucwords( $selected ) : 'Sort By',
 				'value' => array(
 					'Date' => 'date',
 					'Relevancy' => 'relevancy'
@@ -115,31 +114,31 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			global $wp_query;
 			$types = Lift_Search::get_indexed_post_types();
 			$selected_types = Lift_Search_Form::get_query_var( 'post_types' );
-			$label = ( ! $selected_types ) ? 'All Types' : '';
-			$selected_labels = array();
-			if ( ! is_array( $selected_types) ) {
+			$label = (!$selected_types ) ? 'All Types' : '';
+			$selected_labels = array( );
+			if ( !is_array( $selected_types ) ) {
 				$selected_types = array( $selected_types );
 			}
-			
+
 			$values = array(
 				'All Types' => ''
 			);
-			
+
 			foreach ( $types as $type ) {
 				$num = (isset( $wp_query->query_vars['facets'] ) && isset( $wp_query->query_vars['facets']['post_type'][$type] )) ? sprintf( '(%s)', $wp_query->query_vars['facets']['post_type'][$type] ) : '';
 
 				$type_object = get_post_type_object( $type );
 				$values[sprintf( '%s %s', $type_object->label, $num )] = $type;
 			}
-			
-			
+
+
 			foreach ( $values as $k => $v ) {
 				if ( in_array( $v, $selected_types ) ) {
 					$selected_labels[] = $k;
 				}
 			}
-			
-			if ( ! $label ) {
+
+			if ( !$label ) {
 				$label = join( ' / ', $selected_labels );
 			}
 
@@ -170,7 +169,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 				'7 Days' => $date_end - (86400 * 7),
 				'30 Days' => $date_end - (86400 * 30)
 			);
-			
+
 			$selected_label = 'Date';
 			foreach ( $values as $k => $v ) {
 				if ( $v == $date_start ) {
@@ -178,11 +177,11 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 				}
 			}
 			$label = ( $date_start ) ? $selected_label : 'All Dates';
-			
+
 			$this->add_field( 'date_start', 'select', array(
 				'label' => $label,
 				'value' => $values,
-				'selected' => (int) $date_start,
+				'selected' => ( int ) $date_start,
 			) );
 		}
 
@@ -214,10 +213,10 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 * @return string search form
 		 */
 		public function form() {
-			$search_term = (is_search()) ? get_search_query() : "" ;
-			$html = '<form role="search" class="lift-search" id="searchform"><div>';
+			$search_term = (is_search()) ? get_search_query() : "";
+			$html = '<form role="search" class="lift-search" id="searchform" action="'.site_url().'/"><div>';
 			$html .= "<input type='text' name='s' id='s' value='$search_term' />";
-			$html .= ' <input type="submit" id="searchsubmit" value="'. esc_attr__('Search') .'" />';
+			$html .= ' <input type="submit" id="searchsubmit" value="' . esc_attr__( 'Search' ) . '" />';
 			$html .= $this->form_filters();
 			$html .= "</div></form>";
 			apply_filters( 'lift_search_form', $html );
@@ -225,15 +224,15 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		}
 
 		public function loop() {
-			$path = WP_PLUGIN_DIR . '/lift-search/templates/lift-loop.php';
+			$path = dirname(__DIR__) . '/lift-search/templates/lift-loop.php';
 			include_once $path;
 		}
 
 		public function form_filters() {
-			if ( ! is_search() ) {
+			if ( !is_search() ) {
 				return;
 			}
-			
+
 			$fields = apply_filters( 'lift_filters_form_field_objects', $this->fields );
 			$html = '<fieldset class="lift-search-form-filters">';
 			foreach ( $fields as $field ) {
@@ -262,7 +261,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 				if ( is_a( $field, 'Lift_Search_Field' ) ) {
 					$html .= $field->faux_element( $counter == count( $fields ) );
 				}
-				$counter ++;
+				$counter++;
 			}
 			$html .= "</ul></div>";
 			return $html;
@@ -425,11 +424,11 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			if ( !in_array( $this->type, array( 'select' ) ) ) {
 				return false;
 			}
-			
+
 			$options = '';
 			$has_selection = false;
 			$last_class = ( $last ) ? 'last' : '';
-			
+
 			foreach ( $this->options['value'] as $k => $v ) {
 				$selected = "";
 				if ( is_array( $this->options['selected'] ) && in_array( $v, $this->options['selected'], true ) ) {
@@ -439,12 +438,12 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 					$selected = "selected";
 					$has_selection = true;
 				}
-				$options .= sprintf( '<li class="lift-list-item %s %s" data-lift_value="%s" ><a href="#">%s</a></li>', $selected, $last, $v, $k ) ;
+				$options .= sprintf( '<li class="lift-list-item %s %s" data-lift_value="%s" ><a href="#">%s</a></li>', $selected, $last, $v, $k );
 			}
-			
+
 			$selected_class = ( $has_selection ) ? 'selected' : '';
-			
-			$html = sprintf('<li class="lift-list-toggler %s" id="lift-list-toggler-%s" data-role="list-toggler"><a href="#" class="%s">%s</a>', $last_class, $this->id, $selected_class, $this->options['label'] );
+
+			$html = sprintf( '<li class="lift-list-toggler %s" id="lift-list-toggler-%s" data-role="list-toggler"><a href="#" class="%s">%s</a>', $last_class, $this->id, $selected_class, $this->options['label'] );
 			$html .= "<ul class='lift-select-list lift-hidden' data-lift_bind='$this->id'>";
 			$html .= $options;
 			$html .= "</ul></li>";
@@ -493,7 +492,7 @@ class Lift_Form_Widget extends WP_Widget {
 	 */
 	public function __construct() {
 		parent::__construct(
-				'lift_form_widget', "Lift Search Form", array( 'description' => "Add a Lift search form" )
+			'lift_form_widget', "Lift Search Form", array( 'description' => "Add a Lift search form" )
 		);
 	}
 
@@ -505,35 +504,35 @@ class Lift_Form_Widget extends WP_Widget {
 	function widget( $args, $instance ) {
 		extract( $args );
 		$title = apply_filters( 'widget_title', empty( $instance['title'] ) ? '' : $instance['title'], $instance, $this->id_base );
-		
+
 		echo $before_widget;
 		if ( $title )
 			echo $before_title . $title . $after_title;
-		
+
 		if ( class_exists( 'Lift_Search_Form' ) ) {
 			echo Lift_Search_Form::GetInstance()->form();
 		}
 		echo $after_widget;
 	}
-	
+
 	function form( $instance ) {
-		$instance = wp_parse_args( (array) $instance, array( 'title' => '') );
+		$instance = wp_parse_args( ( array ) $instance, array( 'title' => '' ) );
 		$title = $instance['title'];
-?>
-		<p><label for="<?php echo $this->get_field_id('title'); ?>"><?php _e('Title:'); ?> <input class="widefat" id="<?php echo $this->get_field_id('title'); ?>" name="<?php echo $this->get_field_name('title'); ?>" type="text" value="<?php echo esc_attr($title); ?>" /></label></p>
-<?php
+		?>
+		<p><label for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'Title:' ); ?> <input class="widefat" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>" type="text" value="<?php echo esc_attr( $title ); ?>" /></label></p>
+		<?php
 	}
 
 	function update( $new_instance, $old_instance ) {
 		$instance = $old_instance;
-		$new_instance = wp_parse_args((array) $new_instance, array( 'title' => ''));
-		$instance['title'] = strip_tags($new_instance['title']);
+		$new_instance = wp_parse_args( ( array ) $new_instance, array( 'title' => '' ) );
+		$instance['title'] = strip_tags( $new_instance['title'] );
 		return $instance;
 	}
 
 }
 
 add_action( 'widgets_init', function() {
-			register_widget( 'Lift_Form_Widget' );
-		} );
+		register_widget( 'Lift_Form_Widget' );
+	} );
 

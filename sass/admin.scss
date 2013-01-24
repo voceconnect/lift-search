@@ -13,6 +13,12 @@
 
 #banneralert {
 	margin-bottom: 10px;
+	.clr {
+		clear: both;
+		margin: 0;
+		height: 0;
+		font-size: 0;
+	}
 }
 
 .lift-colorized {font-family:arial,sans-serif;padding:12px;border:1px #8bcce4 solid;background:#b3e2f3;/* Old browsers */
