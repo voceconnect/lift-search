@@ -138,7 +138,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 			//hooking into the index documents cron to tell AWS to start indexing documents
 			add_action( self::INDEX_DOCUMENTS_HOOK, function() {
-					$domain_name = Lift_Search::__get_setting( 'search-domain' );
+					$domain_name = Lift_Search::get_search_domain();
 
 					if ( !$domain_name ) {
 						return;
@@ -153,22 +153,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 			//hooking into endpoints cron to "asynchronously" retrieve the endpoint data 
 			//from AWS
-			add_action( self::SET_ENDPOINTS_HOOK, function() {
-					$domain_name = Lift_Search::get_search_domain();
-
-					if ( !$domain_name ) {
-						return;
-					}
-
-					$document_endpoint = Cloud_Config_Request::DocumentEndpoint( $domain_name );
-					$search_endpoint = Cloud_Config_Request::SearchEndpoint( $domain_name );
-
-					if ( $document_endpoint && $search_endpoint ) {
-						Lift_Search::__set_setting( 'document-endpoint', $document_endpoint );
-						Lift_Search::__set_setting( 'search-endpoint', $search_endpoint );
-						wp_clear_scheduled_hook( Lift_Search::SET_ENDPOINTS_HOOK );
-					}
-				} );
+			add_action( self::SET_ENDPOINTS_HOOK, array( 'Lift_Search', 'cron_set_endpoints' ) );
 		}
 
 		public function test_access( $id = '', $secret = '' ) {
@@ -428,7 +413,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		}
 
 		public static function get_indexed_post_types() {
-			return apply_filters( 'lift_indexed_post_types', array( 'post', 'page' ) );
+			return apply_filters( 'lift_indexed_post_types', get_post_types( array( 'public' => true ) ) );
 		}
 
 		public static function get_indexed_post_fields( $post_type ) {
@@ -552,6 +537,7 @@ function _lift_deactivate() {
 	delete_option( Lift_Search::INITIAL_SETUP_COMPLETE_OPTION );
 	delete_option( Lift_Search::SETTINGS_OPTION );
 	delete_option( 'lift_db_version' );
+	delete_option( Lift_Document_Update_Queue::QUEUE_IDS_OPTION );
 
 	if ( class_exists( 'Voce_Error_Logging' ) ) {
 		Voce_Error_Logging::delete_logs( array( 'lift-search' ) );
@@ -561,4 +547,12 @@ function _lift_deactivate() {
 
 	Lift_Batch_Handler::_deactivation_cleanup();
 	Lift_Document_Update_Queue::_deactivation_cleanup();
+}
+
+register_activation_hook( __FILE__, '_lift_activation' );
+
+function _lift_activation() {
+	//register the queue posts
+	Lift_Document_Update_Queue::get_active_queue_id();
+	Lift_Document_Update_Queue::get_closed_queue_id();
 }
