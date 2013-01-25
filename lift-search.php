@@ -413,7 +413,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		}
 
 		public static function get_indexed_post_types() {
-			return apply_filters( 'lift_indexed_post_types', array( 'post', 'page' ) );
+			return apply_filters( 'lift_indexed_post_types', get_post_types( array( 'public' => true ) ) );
 		}
 
 		public static function get_indexed_post_fields( $post_type ) {
@@ -537,7 +537,7 @@ function _lift_deactivate() {
 	delete_option( Lift_Search::INITIAL_SETUP_COMPLETE_OPTION );
 	delete_option( Lift_Search::SETTINGS_OPTION );
 	delete_option( 'lift_db_version' );
-	delete_option( Lift_Document_Update_Queue::QUEUE_IDS_OPTION);
+	delete_option( Lift_Document_Update_Queue::QUEUE_IDS_OPTION );
 
 	if ( class_exists( 'Voce_Error_Logging' ) ) {
 		Voce_Error_Logging::delete_logs( array( 'lift-search' ) );
@@ -549,7 +549,7 @@ function _lift_deactivate() {
 	Lift_Document_Update_Queue::_deactivation_cleanup();
 }
 
-register_activation_hook(__FILE__, '_lift_activation');
+register_activation_hook( __FILE__, '_lift_activation' );
 
 function _lift_activation() {
 	//register the queue posts
