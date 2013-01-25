@@ -30,7 +30,23 @@ class Lift_WP_Search {
 
 		add_filter( 'posts_results', array( __CLASS__, 'posts_results' ), 10, 2 );
 		add_filter( 'query_vars', function($query_vars) {
-				return array_merge( $query_vars, array( 'facet', 'date_start', 'date_end', 'post_types' ) );
+				return array_merge( $query_vars, array( 'facet', 'date_start', 'date_end', 'lift_post_type' ) );
+			} );
+		add_action( 'request', function($query_vars) {
+				if ( !isset( $query_vars['post_type'] ) && isset( $query_vars['lift_post_type'] ) ) {
+					$lift_post_type = is_array($query_vars['lift_post_type']) ? $query_vars['lift_post_type'] : array($query_vars['lift_post_type']);
+					$in_search_post_types = get_post_types( array( 'exclude_from_search' => false, 'publicly_queryable' => true ) );
+					$post_types = array();
+					foreach($lift_post_type as $_post_type) {
+						if(  in_array( $_post_type, $in_search_post_types )) {
+							$post_types[] = $_post_type;
+						}
+					}
+					if(!empty($post_types)) {
+						$query_vars['post_type'] = $post_types;
+					}
+				}
+				return $query_vars;
 			} );
 	}
 
@@ -113,6 +129,7 @@ class Lift_WP_Search {
 
 	public static function get_post_type( $wp_query ) {
 		$post_type = $wp_query->get( 'post_type' );
+		$actual_post_types = array( );
 		$post_type_expression = null;
 
 		if ( $wp_query->is_tax ) {
@@ -142,19 +159,27 @@ class Lift_WP_Search {
 			$post_type_expression = new Lift_Expression_Set();
 			foreach ( $post_type as $_post_type ) {
 				$post_type_expression->addExpression( new Lift_Expression_Field( 'post_type', $_post_type ) );
+				$actual_post_types[] = $_post_type;
 			}
 		} elseif ( !empty( $post_type ) ) {
-			$post_type_expression = new Lift_Expression_Field('post_type', $post_type);
+			$post_type_expression = new Lift_Expression_Field( 'post_type', $post_type );
+			$actual_post_types[] = $post_type;
 		} elseif ( $wp_query->is_attachment ) {
-			$post_type_expression = new Lift_Expression_Field('post_type', 'attachment');
+			$post_type_expression = new Lift_Expression_Field( 'post_type', 'attachment' );
+			$actual_post_types[] = 'attachment';
 		} elseif ( $wp_query->is_page ) {
-			$post_type_expression = new Lift_Expression_Field('post_type', 'page');
+			$post_type_expression = new Lift_Expression_Field( 'post_type', 'page' );
+			$actual_post_types[] = 'attachment';
 		} else {
-			$post_type_expression = new Lift_Expression_Field('post_type', 'post');
+			$post_type_expression = new Lift_Expression_Field( 'post_type', 'post' );
+			$actual_post_types[] = 'attachment';
 		}
 
-		if(!is_null( $post_type_expression )) {
-			return (string) $post_type_expression;
+		//setting the actual post types queried since wp_query doesn't update the query_var after making changes
+		$wp_query->query_vars['lift_post_type'] = $actual_post_types;
+
+		if ( !is_null( $post_type_expression ) ) {
+			return ( string ) $post_type_expression;
 		}
 		return '';
 	}
