@@ -113,7 +113,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		public function add_posttype_field() {
 			global $wp_query;
 			$types = Lift_Search::get_indexed_post_types();
-			$selected_types = Lift_Search_Form::get_query_var( 'post_types' );
+			$selected_types = Lift_Search_Form::get_query_var( 'lift_post_type' );
 			$label = (!$selected_types ) ? 'All Types' : '';
 			$selected_labels = array( );
 			if ( !is_array( $selected_types ) ) {
@@ -147,7 +147,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 				'value' => $values,
 				'selected' => $selected_types,
 			);
-			$this->add_field( 'post_types', 'select', $options );
+			$this->add_field( 'lift_post_type', 'select', $options );
 		}
 
 		/**
