@@ -33,16 +33,16 @@ class Lift_WP_Search {
 				return array_merge( $query_vars, array( 'facet', 'date_start', 'date_end', 'lift_post_type' ) );
 			} );
 		add_action( 'request', function($query_vars) {
-				if ( !isset( $query_vars['post_type'] ) && isset( $query_vars['lift_post_type'] ) ) {
-					$lift_post_type = is_array($query_vars['lift_post_type']) ? $query_vars['lift_post_type'] : array($query_vars['lift_post_type']);
-					$in_search_post_types = get_post_types( array( 'exclude_from_search' => false, 'publicly_queryable' => true ) );
-					$post_types = array();
-					foreach($lift_post_type as $_post_type) {
-						if(  in_array( $_post_type, $in_search_post_types )) {
+				if ( isset( $query_vars['s'] ) && !isset( $query_vars['post_type'] ) && isset( $query_vars['lift_post_type'] ) ) {
+					$lift_post_type = is_array( $query_vars['lift_post_type'] ) ? $query_vars['lift_post_type'] : array( $query_vars['lift_post_type'] );
+					$in_search_post_types = get_post_types( array( 'exclude_from_search' => false ) );
+					$post_types = array( );
+					foreach ( $lift_post_type as $_post_type ) {
+						if ( in_array( $_post_type, $in_search_post_types ) ) {
 							$post_types[] = $_post_type;
 						}
 					}
-					if(!empty($post_types)) {
+					if ( !empty( $post_types ) ) {
 						$query_vars['post_type'] = $post_types;
 					}
 				}
