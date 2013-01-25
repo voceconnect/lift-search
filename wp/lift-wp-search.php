@@ -52,14 +52,7 @@ class Lift_WP_Search {
 		// label
 		$parameters[] = sprintf( "(label '%s')", $wp_query->get( 's' ) );
 
-		// other params
-		$post_type = $wp_query->get( 'post_types' );
-		if ( $post_type && ( 'any' !== $post_type ) ) {
-			$post_type_field_obj = new Lift_Field( 'post_type', $post_type );
-			$post_type_field = new Lift_Field_Expression( array( $post_type_field_obj ) );
-
-			$parameters[] = self::build_match_expression( $post_type_field );
-		}
+		$parameters[] = self::get_post_type( $wp_query );
 
 		$parameters[] = self::get_query_post_status( $wp_query );
 
@@ -118,10 +111,58 @@ class Lift_WP_Search {
 		return $lift_search_query;
 	}
 
+	public static function get_post_type( $wp_query ) {
+		$post_type = $wp_query->get( 'post_type' );
+		$post_type_expression = null;
+
+		if ( $wp_query->is_tax ) {
+			if ( empty( $post_type ) ) {
+				// Do a fully inclusive search for currently registered post types of queried taxonomies
+				$post_type = array( );
+				$taxonomies = wp_list_pluck( $wp_query->tax_query->queries, 'taxonomy' );
+				foreach ( get_post_types( array( 'exclude_from_search' => false ) ) as $pt ) {
+					$object_taxonomies = $pt === 'attachment' ? get_taxonomies_for_attachments() : get_object_taxonomies( $pt );
+					if ( array_intersect( $taxonomies, $object_taxonomies ) )
+						$post_type[] = $pt;
+				}
+				if ( !$post_type )
+					$post_type = 'any';
+			}
+		}
+
+		if ( 'any' == $post_type ) {
+			$in_search_post_types = get_post_types( array( 'exclude_from_search' => false ) );
+			if ( !empty( $in_search_post_types ) ) {
+				$post_type_expression = new Lift_Expression_Set();
+				foreach ( $in_search_post_types as $_post_type ) {
+					$post_type_expression->addExpression( new Lift_Expression_Field( 'post_type', $_post_type ) );
+				}
+			}
+		} elseif ( !empty( $post_type ) && is_array( $post_type ) ) {
+			$post_type_expression = new Lift_Expression_Set();
+			foreach ( $post_type as $_post_type ) {
+				$post_type_expression->addExpression( new Lift_Expression_Field( 'post_type', $_post_type ) );
+			}
+		} elseif ( !empty( $post_type ) ) {
+			$post_type_expression = new Lift_Expression_Field('post_type', $post_type);
+		} elseif ( $this->is_attachment ) {
+			$post_type_expression = new Lift_Expression_Field('post_type', 'attachment');
+		} elseif ( $this->is_page ) {
+			$post_type_expression = new Lift_Expression_Field('post_type', 'page');
+		} else {
+			$post_type_expression = new Lift_Expression_Field('post_type', 'post');
+		}
+
+		if(!is_null( $post_type_expression )) {
+			return (string) $post_type_expression;
+		}
+		return '';
+	}
+
 	public static function get_query_post_status( $wp_query ) {
 
 		$q = $wp_query->query_vars;
-		
+
 		$user_ID = get_current_user_id();
 
 		//mimic wp_query logic around post_type since it isn't performed on an accessible copy
@@ -262,7 +303,7 @@ class Lift_WP_Search {
 			}
 		}
 
-		return (string) $stati_expression;
+		return ( string ) $stati_expression;
 	}
 
 	/**
