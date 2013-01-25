@@ -537,6 +537,7 @@ function _lift_deactivate() {
 	delete_option( Lift_Search::INITIAL_SETUP_COMPLETE_OPTION );
 	delete_option( Lift_Search::SETTINGS_OPTION );
 	delete_option( 'lift_db_version' );
+	delete_option( Lift_Document_Update_Queue::QUEUE_IDS_OPTION);
 
 	if ( class_exists( 'Voce_Error_Logging' ) ) {
 		Voce_Error_Logging::delete_logs( array( 'lift-search' ) );
@@ -546,4 +547,12 @@ function _lift_deactivate() {
 
 	Lift_Batch_Handler::_deactivation_cleanup();
 	Lift_Document_Update_Queue::_deactivation_cleanup();
+}
+
+register_activation_hook(__FILE__, '_lift_activation');
+
+function _lift_activation() {
+	//register the queue posts
+	Lift_Document_Update_Queue::get_active_queue_id();
+	Lift_Document_Update_Queue::get_closed_queue_id();
 }
