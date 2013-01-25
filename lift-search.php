@@ -138,7 +138,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 			//hooking into the index documents cron to tell AWS to start indexing documents
 			add_action( self::INDEX_DOCUMENTS_HOOK, function() {
-					$domain_name = Lift_Search::__get_setting( 'search-domain' );
+					$domain_name = Lift_Search::get_search_domain();
 
 					if ( !$domain_name ) {
 						return;
@@ -153,22 +153,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 			//hooking into endpoints cron to "asynchronously" retrieve the endpoint data 
 			//from AWS
-			add_action( self::SET_ENDPOINTS_HOOK, function() {
-					$domain_name = Lift_Search::get_search_domain();
-
-					if ( !$domain_name ) {
-						return;
-					}
-
-					$document_endpoint = Cloud_Config_Request::DocumentEndpoint( $domain_name );
-					$search_endpoint = Cloud_Config_Request::SearchEndpoint( $domain_name );
-
-					if ( $document_endpoint && $search_endpoint ) {
-						Lift_Search::__set_setting( 'document-endpoint', $document_endpoint );
-						Lift_Search::__set_setting( 'search-endpoint', $search_endpoint );
-						wp_clear_scheduled_hook( Lift_Search::SET_ENDPOINTS_HOOK );
-					}
-				} );
+			add_action( self::SET_ENDPOINTS_HOOK, array( 'Lift_Search', 'cron_set_endpoints' ) );
 		}
 
 		public function test_access( $id = '', $secret = '' ) {
