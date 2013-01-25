@@ -3,7 +3,7 @@ Contributors: voceplatforms
 Tags: search, cloudsearch, amazon, aws
 Requires at least: 3.4.2
 Tested up to: 3.5
-Stable tag: 1.2
+Stable tag: 1.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -111,6 +111,10 @@ By default, posts and pages are indexed. To modify this, use the `lift_indexed_p
 3. Lift search form
 
 == Changelog ==
+= 1.3 =
+* Bug Fix: Fixed scope of Lift_Search references in anonymous function callbacks within crons.
+* Bug Fix: Fixed override filter and set the front-end search form to redirect only on new searches.
+* Refactor: Renamed logging tables to errors.
 
 = 1.2 =
 * Bug Fix: Fixed bug where some fields would be deleted from AWS after update.
