@@ -392,6 +392,14 @@ jQuery(document).ready(function($) {
 			});
 		}
 	});
+
+	/**
+	 * @event
+	 */
+	$('#sync-queue-now-form').click(function(e){
+		$(this).find('button').attr("disabled", "disabled");
+		$(this).submit();
+	});
 	
 	/**
 	 * @event

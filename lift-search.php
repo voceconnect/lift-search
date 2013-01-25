@@ -444,7 +444,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 					), $post_type );
 		}
 
-		public static function RecentLogTable() {
+		public static function RecentErrorsTable() {
 			if ( !self::error_logging_enabled() ) {
 				return '<div class="notice">Error Logging is Disabled</div>';
 			}
@@ -481,7 +481,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 					$html .= '</tr>';
 				endwhile;
 			} else {
-				$html .= '<tr><td colspan="2">No Recent Logs</td></tr>';
+				$html .= '<tr><td colspan="2">No Recent Errors</td></tr>';
 			}
 			$html .= '</tbody></table>';
 			$html .= $pages;

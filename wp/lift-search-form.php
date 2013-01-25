@@ -214,7 +214,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 */
 		public function form() {
 			$search_term = (is_search()) ? get_search_query() : "";
-			$html = '<form role="search" class="lift-search" id="searchform" action="'.site_url().'/"><div>';
+			$html = '<form role="search" class="lift-search" id="searchform" '.( ! is_search() ? 'action="'.site_url().'/"' : '').'><div>';
 			$html .= "<input type='text' name='s' id='s' value='$search_term' />";
 			$html .= ' <input type="submit" id="searchsubmit" value="' . esc_attr__( 'Search' ) . '" />';
 			$html .= $this->form_filters();

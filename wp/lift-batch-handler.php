@@ -218,6 +218,14 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 		}
 
 		/**
+		 * Get batch size for queue all
+		 * @return integer
+		 */
+		public static function get_queue_all_set_size() {
+			return apply_filters( 'lift_queue_all_set_size', self::QUEUE_ALL_SET_SIZE );
+		}
+
+		/**
 		 * used by queue_all cron job to process the queue of all posts
 		 * 
 		 * @global object $wpdb
@@ -237,7 +245,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 			$args = array(
 				'post_type' => $post_types,
 				'post_status' => 'any',
-				'posts_per_page' => self::QUEUE_ALL_SET_SIZE,
+				'posts_per_page' => self::get_queue_all_set_size(),
 				'fields' => 'ids',
 				'orderby' => 'post_date',
 				'order' => 'desc',
@@ -247,7 +255,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 				WHERE post_type in ('" . implode( "','", $post_types ) . "') AND post_date_gmt < %s
 				AND post_status <> 'auto-draft'
 				ORDER BY post_date desc
-				LIMIT %d", $date_to, self::QUEUE_ALL_SET_SIZE ) );
+				LIMIT %d", $date_to, self::get_queue_all_set_size() ) );
 
 			if ( empty( $post_ids ) ) {
 				wp_clear_scheduled_hook( self::QUEUE_ALL_CRON_HOOK );
@@ -328,7 +336,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 			$closed_queue_id = Lift_Document_Update_Queue::get_closed_queue_id();
 
 			$update_query = Lift_Document_Update_Queue::query_updates( array(
-					'per_page' => self::QUEUE_ALL_SET_SIZE,
+					'per_page' => self::get_queue_all_set_size(),
 					'queue_ids' => array( $closed_queue_id )
 				) );
 
