@@ -26,7 +26,6 @@ $remote_domain_status_text = $remote_domain_status['text'];
 $domain = Lift_Search::get_search_domain();
 
 $batch_interval_display = Lift_Search::get_batch_interval_display();
-
 ?>
 <div class="wrap lift-admin" id="lift-status-page">
 	<h2 class="lift-logo">Lift: Search <em>for</em> WordPress</h2>
@@ -123,7 +122,7 @@ $batch_interval_display = Lift_Search::get_batch_interval_display();
 
 		<div class="indent">
 			<?php echo Lift_Batch_Handler::get_queue_list(); ?>	
-			<?php if(Lift_Search::error_logging_enabled()) : ?>
+			<?php if ( Lift_Search::error_logging_enabled() ) : ?>
 				<h3 class="alignleft" id="lift-logs">Recent Errors</h3> 
 				<p class="alignleft" style="padding-top:3px ;margin-left:15px;">
 					<a href="<?php echo esc_attr( admin_url( sprintf( 'edit.php?post_type=%s', Voce_Error_Logging::POST_TYPE ) ) ); ?>" class="alignleft">View All Logs</a>
