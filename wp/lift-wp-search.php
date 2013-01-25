@@ -145,9 +145,9 @@ class Lift_WP_Search {
 			}
 		} elseif ( !empty( $post_type ) ) {
 			$post_type_expression = new Lift_Expression_Field('post_type', $post_type);
-		} elseif ( $this->is_attachment ) {
+		} elseif ( $wp_query->is_attachment ) {
 			$post_type_expression = new Lift_Expression_Field('post_type', 'attachment');
-		} elseif ( $this->is_page ) {
+		} elseif ( $wp_query->is_page ) {
 			$post_type_expression = new Lift_Expression_Field('post_type', 'page');
 		} else {
 			$post_type_expression = new Lift_Expression_Field('post_type', 'post');
