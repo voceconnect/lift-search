@@ -21,7 +21,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 		 * still needed to be queued up for submission after initial install
 		 */
 
-		const QUEUE_ALL_MARKER_OPTION = 'lift-queue-all-content-timestamp';
+		const QUEUE_ALL_MARKER_OPTION = 'lift-queue-all-content-last-id';
 
 		/**
 		 * The number of documents to add to the queue at a time when doing the
@@ -212,7 +212,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 		 * queue all posts for indexing. clear the prior cron job.
 		 */
 		public static function queue_all() {
-			update_option( self::QUEUE_ALL_MARKER_OPTION, current_time( 'mysql', true ) );
+			update_option( self::QUEUE_ALL_MARKER_OPTION, -1 );
 			wp_clear_scheduled_hook( self::QUEUE_ALL_CRON_HOOK );
 			wp_schedule_event( time(), self::CRON_INTERVAL, self::QUEUE_ALL_CRON_HOOK );
 		}
@@ -233,29 +233,20 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 		public static function process_queue_all() {
 			global $wpdb;
 
-			$date_to = get_option( self::QUEUE_ALL_MARKER_OPTION );
+			$id_from = get_option( self::QUEUE_ALL_MARKER_OPTION );
 
-			if ( !$date_to ) {
+			if ( !$id_from ) {
 				wp_clear_scheduled_hook( self::QUEUE_ALL_CRON_HOOK );
 				return;
 			}
 
 			$post_types = Lift_Search::get_indexed_post_types();
 
-			$args = array(
-				'post_type' => $post_types,
-				'post_status' => 'any',
-				'posts_per_page' => self::get_queue_all_set_size(),
-				'fields' => 'ids',
-				'orderby' => 'post_date',
-				'order' => 'desc',
-			);
-
 			$post_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM $wpdb->posts 
-				WHERE post_type in ('" . implode( "','", $post_types ) . "') AND post_date_gmt < %s
+				WHERE post_type in ('" . implode( "','", $post_types ) . "') AND ID > %d
 				AND post_status <> 'auto-draft'
-				ORDER BY post_date desc
-				LIMIT %d", $date_to, self::get_queue_all_set_size() ) );
+				ORDER BY ID ASC
+				LIMIT %d", $id_from, self::get_queue_all_set_size() ) );
 
 			if ( empty( $post_ids ) ) {
 				wp_clear_scheduled_hook( self::QUEUE_ALL_CRON_HOOK );
@@ -269,9 +260,9 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 				Lift_Post_Update_Watcher::queue_entire_post( $post_id );
 			}
 
-			$new_date_to = get_post( $post_ids[count( $post_ids ) - 1] )->post_date_gmt;
+			$new_id_from = get_post( end($post_ids) )->ID;
 
-			update_option( self::QUEUE_ALL_MARKER_OPTION, $new_date_to );
+			update_option( self::QUEUE_ALL_MARKER_OPTION, $new_id_from );
 		}
 
 		/**
