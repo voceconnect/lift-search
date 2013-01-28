@@ -64,14 +64,14 @@ class Cloud_Schemas {
 			'field_type' => 'uint',
 		),
 		array(
-			'field_name' => 'taxonomy_tags_id',
+			'field_name' => 'taxonomy_post_tag_id',
 			'field_type' => 'literal',
 			'options' => array(
 				'facet' => 'true',
 			),
 		),
 		array(
-			'field_name' => 'taxonomy_tags_label',
+			'field_name' => 'taxonomy_post_tag_label',
 			'field_type' => 'text',
 		),
 	);
