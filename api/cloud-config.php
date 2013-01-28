@@ -706,6 +706,29 @@ class Cloud_Config_Request {
 		return false;
 	}
 
+	public static function DescribeIndexFields( $domain ) {
+		$payload = array(
+			'DomainName' => $domain,
+		);
+
+		list($r ) = self::__make_request( 'DescribeIndexFields', self::__flatten_keys( $payload ) );
+
+		if ( $r ) {
+
+			$r = json_decode( $r );
+
+			if ( isset( $r->Error ) ) {
+
+				self::SetLastError( $r );
+			} else if ( isset( $r->DescribeIndexFieldsResponse->DescribeIndexFieldsResult->IndexFields ) ) {
+
+				return $r->DescribeIndexFieldsResponse->DescribeIndexFieldsResult->IndexFields;
+			}
+		}
+
+		return false;
+	}
+
 	/**
 	 * Run a test to get the domains to determine if the auth keys are correct
 	 *
@@ -739,14 +762,22 @@ class Cloud_Config_Request {
 			return false;
 		}
 
+		$current_schema = ( array ) self::DescribeIndexFields( $domain );
+
+		//convert to hashtable by name for eash lookup
+		$current_schema = array_combine( array_map( function($field) {
+					return $field->Options->IndexFieldName;
+				}, $current_schema ), $current_schema );
+
 		foreach ( $schema as $index ) {
 
 			$index = array_merge( array( 'options' => array( ) ), $index );
+			if ( !isset( $current_schema[$index['field_name']] ) || $current_schema[$index['field_name']]->Options->IndexFieldType != $index['field_type'] ) {
+				$r = self::DefineIndexField( $domain, $index['field_name'], $index['field_type'], $index['options'] );
 
-			$r = self::DefineIndexField( $domain, $index['field_name'], $index['field_type'], $index['options'] );
-
-			if ( false === $r ) {
-				return false;
+				if ( false === $r ) {
+					return false;
+				}
 			}
 		}
 
