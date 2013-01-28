@@ -169,10 +169,10 @@ class Lift_WP_Search {
 			$actual_post_types[] = 'attachment';
 		} elseif ( $wp_query->is_page ) {
 			$post_type_expression = new Lift_Expression_Field( 'post_type', 'page' );
-			$actual_post_types[] = 'attachment';
+			$actual_post_types[] = 'page';
 		} else {
 			$post_type_expression = new Lift_Expression_Field( 'post_type', 'post' );
-			$actual_post_types[] = 'attachment';
+			$actual_post_types[] = 'post';
 		}
 
 		//setting the actual post types queried since wp_query doesn't update the query_var after making changes
