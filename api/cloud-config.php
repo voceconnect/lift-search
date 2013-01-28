@@ -764,7 +764,7 @@ class Cloud_Config_Request {
 
 		$current_schema = ( array ) self::DescribeIndexFields( $domain );
 
-		//convert to hashtable by name for eash lookup
+		//convert to hashtable by name for hash lookup
 		$current_schema = array_combine( array_map( function($field) {
 					return $field->Options->IndexFieldName;
 				}, $current_schema ), $current_schema );
