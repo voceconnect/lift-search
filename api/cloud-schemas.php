@@ -60,10 +60,6 @@ class Cloud_Schemas {
 			),
 		),
 		array(
-			'field_name' => 'comment_count',
-			'field_type' => 'uint',
-		),
-		array(
 			'field_name' => 'taxonomy_post_tag_id',
 			'field_type' => 'literal',
 			'options' => array(
