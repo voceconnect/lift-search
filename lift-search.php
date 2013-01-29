@@ -31,7 +31,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 */
 
 		const INITIAL_SETUP_COMPLETE_OPTION = 'lift-initial-setup-complete';
-		const DB_VERSION = 2;
+		const DB_VERSION = 3;
 
 		/**
 		 * Option name for storing all user based options 
@@ -69,6 +69,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 			if ( self::get_document_endpoint() ) {
 				add_action( 'init', array( 'Lift_Batch_Handler', 'init' ) );
+				add_action( 'lift_post_changes_to_data', array( __CLASS__, '_default_extended_post_data' ), 10, 3 );
 			}
 
 			if ( is_admin() ) {
@@ -76,7 +77,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				Lift_Admin::init();
 			}
 
-			add_action( 'init', array( __CLASS__, '__upgrade_check' ) );
+			add_action( 'init', array( __CLASS__, '_upgrade_check' ) );
 
 			//need cron hooks to be set prior to init
 			add_action( Lift_Batch_Handler::BATCH_CRON_HOOK, array( 'Lift_Batch_Handler', 'send_next_batch' ) );
@@ -474,6 +475,30 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			return $html;
 		}
 
+		public static function _default_extended_post_data( $post_data, $updated_fields, $document_id ) {
+
+			$post_data['post_author_name'] = get_the_author_meta( 'display_name', $post_data['post_author'], $document_id );
+
+			$taxonomies = array( 'category', 'post_tag' );
+
+			foreach ( $taxonomies as $taxonomy ) {
+				$terms = get_the_terms( $document_id, $taxonomy );
+				if ( !empty( $terms ) ) {
+
+					$post_data["taxonomy_{$taxonomy}_label"] = array();
+					$post_data["taxomomy_{$taxonomy}_id"] = array( );
+
+					foreach ( $terms as $term ) {
+						$post_data["taxonomy_{$taxonomy}_label"][] = $term->name ;
+						$post_data["taxomomy_{$taxonomy}_id"][] = $term->term_id;
+					}
+					
+					$post_data["taxonomy_{$taxonomy}_label"] = join(', ', $post_data["taxonomy_{$taxonomy}_label"]);
+				}
+			}
+			return $post_data;
+		}
+
 		/**
 		 * Log Events
 		 * @param type $message
@@ -488,12 +513,15 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			}
 		}
 
-		public static function __upgrade_check() {
+		public static function _upgrade_check() {
 			global $wpdb;
 
-			$db_version = get_option( 'lift_db_version', 0 );
-			if ( $db_version < 2 ) {
+			$current_db_version = get_option( 'lift_db_version', 0 );
+			$queue_all = false;
 
+
+			if ( $current_db_version < 2 ) {
+				//queue storage changes
 				$post_ids = $wpdb->get_col( "SELECT ID FROM $wpdb->posts " .
 					"WHERE post_type = '" . Lift_Document_Update_Queue::STORAGE_POST_TYPE . "'" );
 
@@ -520,6 +548,22 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				}
 
 				update_option( 'lift_db_version', 2 );
+			}
+
+			if ( $current_db_version < 3 ) {
+				//schema changes
+				Cloud_Config_Request::LoadSchema( self::get_search_domain() );
+
+
+				if ( $current_db_version > 0 ) {
+					$queue_all = true;
+				}
+
+				update_option( 'lift_db_version', 3 );
+			}
+
+			if ( $queue_all ) {
+				Lift_Batch_Handler::queue_all();
 			}
 		}
 
