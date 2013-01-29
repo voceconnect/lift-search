@@ -114,7 +114,10 @@ By default, posts and pages are indexed. To modify this, use the `lift_indexed_p
 = 1.3 =
 * Bug Fix: Fixed scope of Lift_Search references in anonymous function callbacks within crons.
 * Bug Fix: Fixed override filter and set the front-end search form to redirect only on new searches.
+* Bug Fix: Fixed issue with author name, category, and post_tag data being excluded from documents.
 * Refactor: Renamed logging tables to errors.
+* Refactor: Added/Removed fields from default schema to give better future flexibility.
+* Refactor: Adjusted post_status handling to be match of WP 3.5 logic.
 
 = 1.2 =
 * Bug Fix: Fixed bug where some fields would be deleted from AWS after update.
