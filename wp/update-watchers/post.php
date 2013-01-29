@@ -7,16 +7,7 @@ class Lift_Post_Update_Watcher {
 	}
 
 	public static function get_watched_post_fields( $post_type ) {
-		return apply_filters( 'lift_watch_post_fields', array(
-				'post_title',
-				'post_content',
-				'post_excerpt',
-				'post_date_gmt',
-				'post_excerpt',
-				'post_status',
-				'post_type',
-				'post_author'
-				), $post_type );
+		return apply_filters( 'lift_watch_post_fields', Lift_Search::get_indexed_post_fields( $post_type ), $post_type);
 	}
 
 	public static function check_post_validity( $post_status, $post_type ) {
