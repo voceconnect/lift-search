@@ -550,7 +550,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				update_option( 'lift_db_version', 2 );
 			}
 
-			if ( $current_db_version < 3 ) {
+			if ( $current_db_version < 3 && self::get_search_domain() ) {
 				//schema changes
 				Cloud_Config_Request::LoadSchema( self::get_search_domain() );
 
@@ -597,6 +597,7 @@ register_activation_hook( __FILE__, '_lift_activation' );
 
 function _lift_activation() {
 	//register the queue posts
+	Lift_Document_Update_Queue::init();
 	Lift_Document_Update_Queue::get_active_queue_id();
 	Lift_Document_Update_Queue::get_closed_queue_id();
 }

@@ -231,7 +231,7 @@ class Lift_Admin {
 			$error = true;
 		}
 
-		if ( !$error && $replacing_domain ) {
+		if ( !$error && $replacing_domain && !Lift_Search::is_setup_complete() ) {
 			self::_complete_setup();
 		}
 

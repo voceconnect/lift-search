@@ -146,7 +146,7 @@ class Lift_Document_Update_Queue {
 				'singular_name' => 'Queued Docs'
 			),
 			'publicly_queryable' => false,
-			'public' => defined( 'LIFT_QUEUE_DEBUG' ),
+			'public' => false,
 			'rewrite' => false,
 			'has_archive' => false,
 			'query_var' => false,
