@@ -1,0 +1,3 @@
+[submodule "lib/voce-error-logging"]
+	path = lib/voce-error-logging
+	url = git@github.com:voceconnect/voce-error-logging.git
