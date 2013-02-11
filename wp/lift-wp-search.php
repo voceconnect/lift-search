@@ -61,8 +61,6 @@ class Lift_WP_Search {
 
 		$lift_search_query->add_facet( apply_filters( 'lift_search_facets', self::$facets ) );
 
-		$tax_queries = self::parse_tax_queries( $wp_query->tax_query );
-
 		$parameters = array( );
 
 		// label
@@ -72,6 +70,7 @@ class Lift_WP_Search {
 
 		$parameters[] = self::get_query_post_status( $wp_query );
 
+		$tax_queries = self::parse_tax_queries( $wp_query->tax_query );
 		foreach ( array( 'post_category', 'post_tag' ) as $taxonomy ) {
 			if ( isset( $tax_queries[$taxonomy] ) ) {
 				$post_taxonomy_field_obj = new Lift_Field( $taxonomy, $tax_queries[$taxonomy], false );
@@ -80,6 +79,12 @@ class Lift_WP_Search {
 				$parameters[] = self::build_match_expression( $post_taxonomy_field );
 			}
 		}
+
+		//filter to the current blog/site
+		$parameters[] = new Lift_Expression_Set( 'and', array(
+				new Lift_Expression_Field( 'site_id', lift_get_current_site_id(), false ),
+				new Lift_Expression_Field( 'blog_id', get_current_blog_id(), false )
+			) );
 
 		$date_start = $wp_query->get( 'date_start' );
 		$date_end = $wp_query->get( 'date_end' );

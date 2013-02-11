@@ -341,6 +341,9 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 
 			$batch = new Lift_Batch();
 			$batched_meta_keys = array( );
+			
+			$blog_id = get_current_blog_id();
+			$site_id = lift_get_current_site_id();
 			foreach ( $update_query->meta_rows as $meta_row ) {
 
 				$update_data = get_post_meta( $meta_row->post_id, $meta_row->meta_key, true );
@@ -349,7 +352,8 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 					$action = $update_data['action'];
 					if ( $action == 'add' ) {
 						$post = get_post( $update_data['document_id'], ARRAY_A );
-						$post_data = array( 'ID' => $update_data['document_id'] );
+						
+						$post_data = array( 'ID' => $update_data['document_id'], 'blog_id' => $blog_id, 'side_id' => $site_id );
 
 						foreach ( Lift_Search::get_indexed_post_fields( $post['post_type'] ) as $field ) {
 							$post_data[$field] = isset( $post[$field] ) ? $post[$field] : null;

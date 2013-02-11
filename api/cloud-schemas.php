@@ -8,6 +8,14 @@ class Cloud_Schemas {
 			'field_type' => 'uint',
 		),
 		array(
+			'field_name' => 'site_id',
+			'field_type' => 'uint',
+		),
+		array(
+			'field_name' => 'blog_id',
+			'field_type' => 'uint',
+		)
+		array(
 			'field_name' => 'post_author',
 			'field_type' => 'uint',
 		),

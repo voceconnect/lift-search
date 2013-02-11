@@ -31,7 +31,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 */
 
 		const INITIAL_SETUP_COMPLETE_OPTION = 'lift-initial-setup-complete';
-		const DB_VERSION = 3;
+		const DB_VERSION = 4;
 
 		/**
 		 * Option name for storing all user based options 
@@ -561,6 +561,18 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 				update_option( 'lift_db_version', 3 );
 			}
+			
+			if ( $current_db_version < 4 && self::get_search_domain() ) {
+				//schema changes
+				Cloud_Config_Request::LoadSchema( self::get_search_domain() );
+
+
+				if ( $current_db_version > 0 ) {
+					$queue_all = true;
+				}
+
+				update_option( 'lift_db_version', 4 );
+			}
 
 			if ( $queue_all ) {
 				Lift_Batch_Handler::queue_all();
@@ -600,4 +612,9 @@ function _lift_activation() {
 	Lift_Document_Update_Queue::init();
 	Lift_Document_Update_Queue::get_active_queue_id();
 	Lift_Document_Update_Queue::get_closed_queue_id();
+}
+
+function lift_get_current_site_id() {
+	global $wpdb;
+	return ($wpdb->siteid) ? $wpdb->siteid : 1;
 }
