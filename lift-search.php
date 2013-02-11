@@ -616,5 +616,5 @@ function _lift_activation() {
 
 function lift_get_current_site_id() {
 	global $wpdb;
-	return ($wpdb->siteid) ? $wpdb->siteid : 1;
+	return ($wpdb->siteid) ? intval($wpdb->siteid) : 1;
 }

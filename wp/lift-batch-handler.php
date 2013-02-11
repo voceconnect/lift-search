@@ -353,7 +353,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 					if ( $action == 'add' ) {
 						$post = get_post( $update_data['document_id'], ARRAY_A );
 						
-						$post_data = array( 'ID' => $update_data['document_id'], 'blog_id' => $blog_id, 'side_id' => $site_id );
+						$post_data = array( 'ID' => $update_data['document_id'], 'blog_id' => $blog_id, 'site_id' => $site_id );
 
 						foreach ( Lift_Search::get_indexed_post_fields( $post['post_type'] ) as $field ) {
 							$post_data[$field] = isset( $post[$field] ) ? $post[$field] : null;
