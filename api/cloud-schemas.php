@@ -14,7 +14,7 @@ class Cloud_Schemas {
 		array(
 			'field_name' => 'blog_id',
 			'field_type' => 'uint',
-		)
+		),
 		array(
 			'field_name' => 'post_author',
 			'field_type' => 'uint',
