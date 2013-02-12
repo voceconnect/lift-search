@@ -42,7 +42,7 @@ class Lift_Admin {
 
 			// send IndexDocuments request
 			if ( current_user_can( 'manage_options' ) && isset( $_GET['lift-indexdocuments'] ) ) {
-				Cloud_Config_Request::IndexDocuments( Lift_Search::get_search_domain() );
+				Cloud_Config_API::IndexDocuments( Lift_Search::get_search_domain() );
 				wp_redirect( admin_url( 'options-general.php?page=' . self::STATUS_PAGE ) );
 			}
 
@@ -116,7 +116,7 @@ class Lift_Admin {
 		$error = false;
 
 		try {
-			if ( Cloud_Config_Request::TestConnection( $credentials ) ) {
+			if ( Cloud_Config_API::TestConnection( $credentials ) ) {
 				$status_message = 'Success';
 			} else {
 				$status_message = 'There was an error authenticating. Please check your Access Key ID and Secret Access Key and try again.';
@@ -200,13 +200,13 @@ class Lift_Admin {
 		$replacing_domain = ( Lift_Search::get_search_domain() != $domain );
 
 		try {
-			if ( Cloud_Config_Request::TestDomain( $domain ) ) {
+			if ( Cloud_Config_API::TestDomain( $domain ) ) {
 				$status_message = 'Success';
 
 				Lift_Search::set_search_domain( $domain );
 
-				$document_endpoint = Cloud_Config_Request::DocumentEndpoint( $domain );
-				$search_endpoint = Cloud_Config_Request::SearchEndpoint( $domain );
+				$document_endpoint = Cloud_Config_API::DocumentEndpoint( $domain );
+				$search_endpoint = Cloud_Config_API::SearchEndpoint( $domain );
 
 				try {
 					if ( $document_endpoint && $search_endpoint ) {
@@ -270,14 +270,14 @@ class Lift_Admin {
 		$error = false;
 		$status_messages = array( );
 
-		$r = Cloud_Config_Request::CreateDomain( $domain );
+		$r = Cloud_Config_API::CreateDomain( $domain );
 
 		if ( $r ) {
 
 			Lift_Search::set_search_domain( $domain );
 
-			if ( Cloud_Config_Request::LoadSchema( $domain ) ) {
-				$r = Cloud_Config_Request::GetDomains( $domain );
+			if ( Cloud_Config_API::LoadSchema( $domain ) ) {
+				$r = Cloud_Config_API::GetDomains( $domain );
 				if ( $r->DescribeDomainsResponse->DescribeDomainsResult->DomainStatusList ) {
 					$status_messages[] = 'Index created succesfully.';
 					Lift_Search::set_document_endpoint( '' );
@@ -288,17 +288,17 @@ class Lift_Admin {
 					$status_messages[] = 'There was an error creating an index for your domain.';
 					$error = true;
 
-					Lift_Search::event_log( 'Cloud_Config_Request::LoadSchema (http success)', $r, array( 'error' ) );
+					Lift_Search::event_log( 'Cloud_Config_API::LoadSchema (http success)', $r, array( 'error' ) );
 				}
 			} else {
 				$status_message = 'There was an error creating an index for your domain.';
 				$status_messages[] = $status_message;
 				$error = true;
 
-				Lift_Search::event_log( 'Cloud_Config_Request::LoadSchema', $status_message, array( 'error' ) );
+				Lift_Search::event_log( 'Cloud_Config_API::LoadSchema', $status_message, array( 'error' ) );
 			}
 
-			$r = Cloud_Config_Request::UpdateServiceAccessPolicies( $domain, Cloud_Config_Request::GetDefaultServiceAccessPolicy( $domain ) );
+			$r = Cloud_Config_API::UpdateServiceAccessPolicies( $domain, Cloud_Config_API::GetDefaultServiceAccessPolicy( $domain ) );
 
 			if ( $r ) {
 				$status_messages[] = 'Service Access Policies successfully configured.';
@@ -306,14 +306,14 @@ class Lift_Admin {
 				$status_messages[] = 'Service Access Policies could not be set. You will need to use the AWS Console to set them for this search domain.';
 				$error = true;
 
-				Lift_Search::event_log( 'Cloud_Config_Request::UpdateServiceAccessPolicies', $r, array( 'error' ) );
+				Lift_Search::event_log( 'Cloud_Config_API::UpdateServiceAccessPolicies', $r, array( 'error' ) );
 			}
 		} else {
 			$status_message = 'There was an error creating your domain. Please make sure the domain name follows the rules above and try again.';
 			$status_messages[] = $status_message;
 			$error = true;
 
-			Lift_Search::event_log( 'Cloud_Config_Request::CreateDomain', $status_message, array( 'error' ) );
+			Lift_Search::event_log( 'Cloud_Config_API::CreateDomain', $status_message, array( 'error' ) );
 		}
 
 		if ( !$error ) {

@@ -14,7 +14,7 @@ require_once('api/lift-batch.php');
 require_once('api/lift-http.php');
 require_once('api/cloud-api.php');
 require_once('api/cloud-search.php');
-require_once('api/cloud-config.php');
+require_once('api/cloud-config-api.php');
 require_once('lib/posts-to-sdf.php');
 require_once('wp/lift-batch-handler.php');
 require_once('wp/lift-health.php');
@@ -142,7 +142,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 						return;
 					}
 
-					$r = Cloud_Config_Request::IndexDocuments( $domain_name );
+					$r = Cloud_Config_API::IndexDocuments( $domain_name );
 
 					if ( $r ) {
 						wp_clear_scheduled_hook( Lift_Search::INDEX_DOCUMENTS_HOOK );
@@ -160,7 +160,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			$error = false;
 
 			try {
-				if ( Cloud_Config_Request::TestConnection( $credentials ) ) {
+				if ( Cloud_Config_API::TestConnection( $credentials ) ) {
 					$status_message = 'Success';
 					self::__set_setting( 'access-key-id', $id );
 					self::__set_setting( 'secret-access-key', $secret );
@@ -203,8 +203,8 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				return;
 			}
 
-			$document_endpoint = Cloud_Config_Request::DocumentEndpoint( $domain_name );
-			$search_endpoint = Cloud_Config_Request::SearchEndpoint( $domain_name );
+			$document_endpoint = Cloud_Config_API::DocumentEndpoint( $domain_name );
+			$search_endpoint = Cloud_Config_API::SearchEndpoint( $domain_name );
 
 			if ( $document_endpoint && $search_endpoint ) {
 				self::__set_setting( 'document-endpoint', $document_endpoint );
@@ -287,8 +287,8 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 		private static function __update_endpoints() {
 			if ( $search_domain = self::get_search_domain() ) {
-				$document_endpoint = Cloud_Config_Request::DocumentEndpoint( $search_domain );
-				$search_endpoint = Cloud_Config_Request::SearchEndpoint( $search_domain );
+				$document_endpoint = Cloud_Config_API::DocumentEndpoint( $search_domain );
+				$search_endpoint = Cloud_Config_API::SearchEndpoint( $search_domain );
 
 				if ( $document_endpoint && $search_endpoint ) {
 					self::__set_setting( 'document-endpoint', $document_endpoint );
@@ -429,7 +429,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		public static function update_schema() {
 			if ( self::is_setup_complete() && ($domain = self::get_search_domain()) ) {
 				$changed_fields = array( );
-				if ( !Cloud_Config_Request::LoadSchema( $domain, $changed_fields ) ) {
+				if ( !Cloud_Config_API::LoadSchema( $domain, $changed_fields ) ) {
 					return false;
 				}
 				if ( count( $changed_fields ) ) {

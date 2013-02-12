@@ -284,7 +284,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 		 */
 		public static function ready_for_batch( $domain_name ) {
 
-			$domains = Cloud_Config_Request::GetDomains( array( $domain_name ) );
+			$domains = Cloud_Config_API::GetDomains( array( $domain_name ) );
 			if ( $domains ) {
 				$ds = $domains->DescribeDomainsResponse->DescribeDomainsResult->DomainStatusList;
 				if ( !count( $ds ) ) {

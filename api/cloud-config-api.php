@@ -2,213 +2,7 @@
 
 require_once('cloud-schemas.php');
 
-class Cloud_Config {
-
-	const DATE_FORMAT_SIGV4 = 'Ymd\THis\Z';
-
-	private $endpoint = 'https://cloudsearch.us-east-1.amazonaws.com';
-	private $api_version = '2011-02-01';
-
-	public function __construct( $credentials, $api, $operation, $payload = array( ) ) {
-		$this->operation = $operation;
-		$this->payload = $payload;
-		$this->key = $credentials['access-key-id'];
-		$this->secret_key = $credentials['secret-access-key'];
-		$this->http_api = $api;
-	}
-
-	public function to_query_string( $array ) {
-		$temp = array( );
-
-		foreach ( $array as $key => $value ) {
-			if ( is_string( $key ) && !is_array( $value ) ) {
-				$temp[] = rawurlencode( $key ) . '=' . rawurlencode( $value );
-			}
-		}
-
-		return implode( '&', $temp );
-	}
-
-	public function authenticate() {
-		// Determine signing values
-		$current_time = time();
-		$timestamp = gmdate( self::DATE_FORMAT_SIGV4, $current_time );
-
-		// Initialize
-		$this->headers = array( );
-		$this->signed_headers = array( );
-		$this->canonical_headers = array( );
-		$this->query = array( 'body' => is_array( $this->payload ) ? $this->payload : array( ) );
-
-		//
-		$this->query['body']['Action'] = $this->operation;
-		$this->query['body']['Version'] = $this->api_version;
-
-		// Do a case-sensitive, natural order sort on the array keys.
-		uksort( $this->query['body'], 'strcmp' );
-
-		// Parse our request.
-		$parsed_url = parse_url( $this->endpoint );
-		$host_header = strtolower( $parsed_url['host'] );
-
-		// Generate the querystring from $this->query
-		$this->querystring = $this->to_query_string( $this->query );
-
-		// Compose the request.
-		$request_url = $this->endpoint . ( isset( $parsed_url['path'] ) ? '' : '/' );
-
-		$this->querystring = $this->canonical_querystring();
-
-		$this->headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=utf-8';
-		$this->headers['X-Amz-Date'] = $timestamp;
-		$this->headers['Content-Length'] = strlen( $this->querystring );
-		$this->headers['Content-MD5'] = $this->hex_to_base64( md5( $this->querystring ) );
-		$this->headers['Host'] = $host_header;
-		$this->headers['Accept'] = 'application/json';
-
-		// Sort headers
-		uksort( $this->headers, 'strnatcasecmp' );
-
-		// Add headers to request and compute the string to sign
-		foreach ( $this->headers as $header_key => $header_value ) {
-			// Strip line breaks and remove consecutive spaces. Services collapse whitespace in signature calculation
-			$this->headers[$header_key] = preg_replace( '/\s+/', ' ', trim( $header_value ) );
-
-			$this->canonical_headers[] = strtolower( $header_key ) . ':' . $header_value;
-			$this->signed_headers[] = strtolower( $header_key );
-		}
-
-		$this->headers['Authorization'] = $this->authorization( $timestamp );
-
-		$post = $this->http_api->post( $request_url, $this->canonical_querystring(), $this->headers );
-		$this->status_code = $this->http_api->getStatusCode();
-		return $post;
-	}
-
-	public function hex_to_base64( $str ) {
-		$raw = '';
-
-		for ( $i = 0; $i < strlen( $str ); $i += 2 ) {
-			$raw .= chr( hexdec( substr( $str, $i, 2 ) ) );
-		}
-
-		return base64_encode( $raw );
-	}
-
-	protected function canonical_querystring() {
-		if ( !isset( $this->canonical_querystring ) ) {
-			$this->canonical_querystring = $this->to_signable_string( $this->query['body'] );
-		}
-
-		return $this->canonical_querystring;
-	}
-
-	public function encode_signature2( $string ) {
-		$string = rawurlencode( $string );
-		return str_replace( '%7E', '~', $string );
-	}
-
-	public function to_signable_string( $array ) {
-		$t = array( );
-
-		foreach ( $array as $k => $v ) {
-			if ( is_array( $v ) ) {
-				// json encode value if it is an array
-				$value = $this->encode_signature2( json_encode( $v ) );
-			} else {
-				$value = $this->encode_signature2( $v );
-			}
-			$t[] = $this->encode_signature2( $k ) . '=' . $value;
-		}
-
-		return implode( '&', $t );
-	}
-
-	protected function authorization( $datetime ) {
-		$access_key_id = $this->key;
-
-		$parts = array( );
-		$parts[] = "AWS4-HMAC-SHA256 Credential=${access_key_id}/" . $this->credential_string( $datetime );
-		$parts[] = 'SignedHeaders=' . implode( ';', $this->signed_headers );
-		$parts[] = 'Signature=' . $this->hex16( $this->signature( $datetime ) );
-
-		return implode( ',', $parts );
-	}
-
-	protected function signature( $datetime ) {
-		$k_date = $this->hmac( 'AWS4' . $this->secret_key, substr( $datetime, 0, 8 ) );
-		$k_region = $this->hmac( $k_date, $this->region() );
-		$k_service = $this->hmac( $k_region, $this->service() );
-		$k_credentials = $this->hmac( $k_service, 'aws4_request' );
-		$signature = $this->hmac( $k_credentials, $this->string_to_sign( $datetime ) );
-
-		return $signature;
-	}
-
-	protected function string_to_sign( $datetime ) {
-		$parts = array( );
-		$parts[] = 'AWS4-HMAC-SHA256';
-		$parts[] = $datetime;
-		$parts[] = $this->credential_string( $datetime );
-		$parts[] = $this->hex16( $this->hash( $this->canonical_request() ) );
-
-		$this->string_to_sign = implode( "\n", $parts );
-
-		return $this->string_to_sign;
-	}
-
-	protected function credential_string( $datetime ) {
-		$parts = array( );
-		$parts[] = substr( $datetime, 0, 8 );
-		$parts[] = $this->region();
-		$parts[] = $this->service();
-		$parts[] = 'aws4_request';
-
-		return implode( '/', $parts );
-	}
-
-	protected function canonical_request() {
-		$parts = array( );
-		$parts[] = 'POST';
-		$parts[] = $this->canonical_uri();
-		$parts[] = ''; // $parts[] = $this->canonical_querystring();
-		$parts[] = implode( "\n", $this->canonical_headers ) . "\n";
-		$parts[] = implode( ';', $this->signed_headers );
-		$parts[] = $this->hex16( $this->hash( $this->canonical_querystring() ) );
-
-		$this->canonical_request = implode( "\n", $parts );
-
-		return $this->canonical_request;
-	}
-
-	protected function region() {
-		return 'us-east-1';
-	}
-
-	protected function service() {
-		return 'cloudsearch';
-	}
-
-	protected function canonical_uri() {
-		return '/';
-	}
-
-	protected function hex16( $value ) {
-		$result = unpack( 'H*', $value );
-		return reset( $result );
-	}
-
-	protected function hmac( $key, $string ) {
-		return hash_hmac( 'sha256', $string, $key, true );
-	}
-
-	protected function hash( $string ) {
-		return hash( 'sha256', $string, true );
-	}
-
-}
-
-class Cloud_Config_Request {
+class Cloud_Config_API {
 
 	static $last_error;
 
@@ -250,7 +44,7 @@ class Cloud_Config_Request {
 	 *
 	 * @param string $method
 	 * @param array $payload
-	 * @return array [response string, Cloud_Config object used for request]
+	 * @return array [response string, Cloud_Config_Request object used for request]
 	 */
 	protected static function __make_request( $method, $payload = array( ), $credentials = null, $flatten_keys = true ) {
 
@@ -266,9 +60,9 @@ class Cloud_Config_Request {
 
 		$api = Lift_Search::get_http_api();
 
-		$config = new Cloud_Config( $credentials, $api, $method, $payload );
+		$config = new Cloud_Config_Request( $credentials, $api );
 
-		$r = $config->authenticate();
+		$r = $config->send_request( $method, $payload );
 
 		if ( $r ) {
 
@@ -748,14 +542,6 @@ class Cloud_Config_Request {
 	}
 
 	/**
-	 * Push a predefined schema to CloudSearch
-	 *
-	 * @param string $domain
-	 * @param string $schema
-	 * @return bool
-	 */
-
-	/**
 	 * 
 	 * @param string $domain
 	 * @param array $changed_fields
@@ -792,6 +578,218 @@ class Cloud_Config_Request {
 		}
 
 		return self::GetDomains( array( $domain ) );
+	}
+
+}
+
+class Cloud_Config_Request {
+
+	const DATE_FORMAT_SIGV4 = 'Ymd\THis\Z';
+
+	private $endpoint = 'https://cloudsearch.us-east-1.amazonaws.com';
+	private $api_version = '2011-02-01';
+	private $key;
+	private $secret_key;
+
+	/**
+	 *
+	 * @var iLift_HTTP
+	 */
+	private $http_interface;
+
+	public function __construct( $credentials, $http_interface, $operation ) {
+		$this->key = $credentials['access-key-id'];
+		$this->secret_key = $credentials['secret-access-key'];
+		$this->http_interface = $http_interface;
+	}
+
+	public function send_request( $operation, $payload = array( ) ) {
+		// Determine signing values
+		$current_time = time();
+		$timestamp = gmdate( self::DATE_FORMAT_SIGV4, $current_time );
+
+		// Initialize
+		$this->headers = array( );
+		$this->signed_headers = array( );
+		$this->canonical_headers = array( );
+		$this->query = array( 'body' => is_array( $payload ) ? $payload : array( ) );
+
+		//
+		$this->query['body']['Action'] = $operation;
+		$this->query['body']['Version'] = $this->api_version;
+
+		// Do a case-sensitive, natural order sort on the array keys.
+		uksort( $this->query['body'], 'strcmp' );
+
+		// Parse our request.
+		$parsed_url = parse_url( $this->endpoint );
+		$host_header = strtolower( $parsed_url['host'] );
+
+		// Generate the querystring from $this->query
+		$this->querystring = $this->to_query_string( $this->query );
+
+		// Compose the request.
+		$request_url = $this->endpoint . ( isset( $parsed_url['path'] ) ? '' : '/' );
+
+		$this->querystring = $this->canonical_querystring();
+
+		$this->headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=utf-8';
+		$this->headers['X-Amz-Date'] = $timestamp;
+		$this->headers['Content-Length'] = strlen( $this->querystring );
+		$this->headers['Content-MD5'] = $this->hex_to_base64( md5( $this->querystring ) );
+		$this->headers['Host'] = $host_header;
+		$this->headers['Accept'] = 'application/json';
+
+		// Sort headers
+		uksort( $this->headers, 'strnatcasecmp' );
+
+		// Add headers to request and compute the string to sign
+		foreach ( $this->headers as $header_key => $header_value ) {
+			// Strip line breaks and remove consecutive spaces. Services collapse whitespace in signature calculation
+			$this->headers[$header_key] = preg_replace( '/\s+/', ' ', trim( $header_value ) );
+
+			$this->canonical_headers[] = strtolower( $header_key ) . ':' . $header_value;
+			$this->signed_headers[] = strtolower( $header_key );
+		}
+
+		$this->headers['Authorization'] = $this->authorization( $timestamp );
+
+		$post = $this->http_interface->post( $request_url, $this->canonical_querystring(), $this->headers );
+		$this->status_code = $this->http_interface->getStatusCode();
+		return $post;
+	}
+
+	private function to_query_string( $array ) {
+		$temp = array( );
+
+		foreach ( $array as $key => $value ) {
+			if ( is_string( $key ) && !is_array( $value ) ) {
+				$temp[] = rawurlencode( $key ) . '=' . rawurlencode( $value );
+			}
+		}
+
+		return implode( '&', $temp );
+	}
+
+	private function hex_to_base64( $str ) {
+		$raw = '';
+
+		for ( $i = 0; $i < strlen( $str ); $i += 2 ) {
+			$raw .= chr( hexdec( substr( $str, $i, 2 ) ) );
+		}
+
+		return base64_encode( $raw );
+	}
+
+	protected function canonical_querystring() {
+		if ( !isset( $this->canonical_querystring ) ) {
+			$this->canonical_querystring = $this->to_signable_string( $this->query['body'] );
+		}
+
+		return $this->canonical_querystring;
+	}
+
+	public function encode_signature2( $string ) {
+		$string = rawurlencode( $string );
+		return str_replace( '%7E', '~', $string );
+	}
+
+	public function to_signable_string( $array ) {
+		$t = array( );
+
+		foreach ( $array as $k => $v ) {
+			if ( is_array( $v ) ) {
+				// json encode value if it is an array
+				$value = $this->encode_signature2( json_encode( $v ) );
+			} else {
+				$value = $this->encode_signature2( $v );
+			}
+			$t[] = $this->encode_signature2( $k ) . '=' . $value;
+		}
+
+		return implode( '&', $t );
+	}
+
+	protected function authorization( $datetime ) {
+		$access_key_id = $this->key;
+
+		$parts = array( );
+		$parts[] = "AWS4-HMAC-SHA256 Credential=${access_key_id}/" . $this->credential_string( $datetime );
+		$parts[] = 'SignedHeaders=' . implode( ';', $this->signed_headers );
+		$parts[] = 'Signature=' . $this->hex16( $this->signature( $datetime ) );
+
+		return implode( ',', $parts );
+	}
+
+	protected function signature( $datetime ) {
+		$k_date = $this->hmac( 'AWS4' . $this->secret_key, substr( $datetime, 0, 8 ) );
+		$k_region = $this->hmac( $k_date, $this->region() );
+		$k_service = $this->hmac( $k_region, $this->service() );
+		$k_credentials = $this->hmac( $k_service, 'aws4_request' );
+		$signature = $this->hmac( $k_credentials, $this->string_to_sign( $datetime ) );
+
+		return $signature;
+	}
+
+	protected function string_to_sign( $datetime ) {
+		$parts = array( );
+		$parts[] = 'AWS4-HMAC-SHA256';
+		$parts[] = $datetime;
+		$parts[] = $this->credential_string( $datetime );
+		$parts[] = $this->hex16( $this->hash( $this->canonical_request() ) );
+
+		$this->string_to_sign = implode( "\n", $parts );
+
+		return $this->string_to_sign;
+	}
+
+	protected function credential_string( $datetime ) {
+		$parts = array( );
+		$parts[] = substr( $datetime, 0, 8 );
+		$parts[] = $this->region();
+		$parts[] = $this->service();
+		$parts[] = 'aws4_request';
+
+		return implode( '/', $parts );
+	}
+
+	protected function canonical_request() {
+		$parts = array( );
+		$parts[] = 'POST';
+		$parts[] = $this->canonical_uri();
+		$parts[] = ''; // $parts[] = $this->canonical_querystring();
+		$parts[] = implode( "\n", $this->canonical_headers ) . "\n";
+		$parts[] = implode( ';', $this->signed_headers );
+		$parts[] = $this->hex16( $this->hash( $this->canonical_querystring() ) );
+
+		$this->canonical_request = implode( "\n", $parts );
+
+		return $this->canonical_request;
+	}
+
+	protected function region() {
+		return 'us-east-1';
+	}
+
+	protected function service() {
+		return 'cloudsearch';
+	}
+
+	protected function canonical_uri() {
+		return '/';
+	}
+
+	protected function hex16( $value ) {
+		$result = unpack( 'H*', $value );
+		return reset( $result );
+	}
+
+	protected function hmac( $key, $string ) {
+		return hash_hmac( 'sha256', $string, $key, true );
+	}
+
+	protected function hash( $string ) {
+		return hash( 'sha256', $string, true );
 	}
 
 }

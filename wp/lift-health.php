@@ -125,7 +125,7 @@ if ( !class_exists( 'Lift_Health' ) ) {
 		 * @return array 
 		 */
 		public static function get_remote_status() {
-			$domain = Cloud_Config_Request::DescribeDomain( Lift_Search::get_search_domain() );
+			$domain = Cloud_Config_API::DescribeDomain( Lift_Search::get_search_domain() );
 
 			if ( !$domain ) {
 				return array(
