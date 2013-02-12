@@ -47,19 +47,16 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return bool 
 		 */
 		public static function is_setup_complete() {
-			return self::get_access_key_id() && self::get_secret_access_key()
-				&& self::get_search_domain() && get_option( self::INITIAL_SETUP_COMPLETE_OPTION, 0 );
+			return self::get_access_key_id() && self::get_secret_access_key() && self::get_search_domain() && get_option( self::INITIAL_SETUP_COMPLETE_OPTION, 0 );
 		}
 
 		public static function error_logging_enabled() {
-			return !( defined( 'DISABLE_LIFT_ERROR_LOGGING' ) && DISABLE_LIFT_ERROR_LOGGING )
-				&& ( class_exists( 'Voce_Error_Logging' ) || file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) );
+			return !( defined( 'DISABLE_LIFT_ERROR_LOGGING' ) && DISABLE_LIFT_ERROR_LOGGING ) && ( class_exists( 'Voce_Error_Logging' ) || file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) );
 		}
 
 		public static function init() {
 
-			if ( self::error_logging_enabled() && !class_exists( 'Voce_Error_Logging' )
-				&& file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) ) {
+			if ( self::error_logging_enabled() && !class_exists( 'Voce_Error_Logging' ) && file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) ) {
 				require_once (__DIR__ . '/lib/voce-error-loggin/voce-error-logging');
 			}
 
@@ -409,8 +406,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 */
 		public static function get_search_api() {
 			$lift_http = self::get_http_api();
-			return new Cloud_API( $lift_http,
-					Lift_Search::get_document_endpoint(), Lift_Search::get_search_endpoint(), '2011-02-01' );
+			return new Cloud_API( $lift_http, Lift_Search::get_document_endpoint(), Lift_Search::get_search_endpoint(), '2011-02-01' );
 		}
 
 		public static function get_indexed_post_types() {
@@ -419,15 +415,28 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 		public static function get_indexed_post_fields( $post_type ) {
 			return apply_filters( 'lift_indexed_post_fields', array(
-					'post_title',
-					'post_content',
-					'post_excerpt',
-					'post_date_gmt',
-					'post_excerpt',
-					'post_status',
-					'post_type',
-					'post_author'
-					), $post_type );
+				'post_title',
+				'post_content',
+				'post_excerpt',
+				'post_date_gmt',
+				'post_excerpt',
+				'post_status',
+				'post_type',
+				'post_author'
+				), $post_type );
+		}
+
+		public static function update_schema() {
+			if ( self::is_setup_complete() && ($domain = self::get_search_domain()) ) {
+				$changed_fields = array( );
+				if ( !Cloud_Config_Request::LoadSchema( $domain, $changed_fields ) ) {
+					return false;
+				}
+				if ( count( $changed_fields ) ) {
+					Lift_Batch_Handler::queue_all();
+				}
+			}
+			return true;
 		}
 
 		public static function RecentErrorsTable() {
@@ -485,15 +494,15 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				$terms = get_the_terms( $document_id, $taxonomy );
 				if ( !empty( $terms ) ) {
 
-					$post_data["taxonomy_{$taxonomy}_label"] = array();
+					$post_data["taxonomy_{$taxonomy}_label"] = array( );
 					$post_data["taxomomy_{$taxonomy}_id"] = array( );
 
 					foreach ( $terms as $term ) {
-						$post_data["taxonomy_{$taxonomy}_label"][] = $term->name ;
+						$post_data["taxonomy_{$taxonomy}_label"][] = $term->name;
 						$post_data["taxomomy_{$taxonomy}_id"][] = $term->term_id;
 					}
-					
-					$post_data["taxonomy_{$taxonomy}_label"] = join(', ', $post_data["taxonomy_{$taxonomy}_label"]);
+
+					$post_data["taxonomy_{$taxonomy}_label"] = join( ', ', $post_data["taxonomy_{$taxonomy}_label"] );
 				}
 			}
 			return $post_data;
@@ -518,7 +527,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 			$current_db_version = get_option( 'lift_db_version', 0 );
 			$queue_all = false;
-
+			$changed_schema_fields = array( );
 
 			if ( $current_db_version < 2 ) {
 				//queue storage changes
@@ -550,32 +559,11 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				update_option( 'lift_db_version', 2 );
 			}
 
-			if ( $current_db_version < 3 && self::get_search_domain() ) {
-				//schema changes
-				Cloud_Config_Request::LoadSchema( self::get_search_domain() );
-
-
-				if ( $current_db_version > 0 ) {
-					$queue_all = true;
-				}
-
-				update_option( 'lift_db_version', 3 );
-			}
-			
 			if ( $current_db_version < 4 && self::get_search_domain() ) {
 				//schema changes
-				Cloud_Config_Request::LoadSchema( self::get_search_domain() );
-
-
-				if ( $current_db_version > 0 ) {
-					$queue_all = true;
-				}
+				self::update_schema();
 
 				update_option( 'lift_db_version', 4 );
-			}
-
-			if ( $queue_all ) {
-				Lift_Batch_Handler::queue_all();
 			}
 		}
 
@@ -616,5 +604,5 @@ function _lift_activation() {
 
 function lift_get_current_site_id() {
 	global $wpdb;
-	return ($wpdb->siteid) ? intval($wpdb->siteid) : 1;
+	return ($wpdb->siteid) ? intval( $wpdb->siteid ) : 1;
 }

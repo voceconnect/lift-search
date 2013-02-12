@@ -92,7 +92,7 @@ class Lift_Admin {
 		<script>
 			jQuery(document).ready(function($) {
 				var $bannerAlert = $('#banneralert');
-				if ( $bannerAlert.length ) {
+				if ($bannerAlert.length) {
 					$('.wrap h2').first().after($bannerAlert);
 				}
 			});
@@ -276,9 +276,8 @@ class Lift_Admin {
 
 			Lift_Search::set_search_domain( $domain );
 
-			$r = Cloud_Config_Request::LoadSchema( $domain );
-
-			if ( $r ) {
+			if ( Cloud_Config_Request::LoadSchema( $domain ) ) {
+				$r = Cloud_Config_Request::GetDomains( $domain );
 				if ( $r->DescribeDomainsResponse->DescribeDomainsResult->DomainStatusList ) {
 					$status_messages[] = 'Index created succesfully.';
 					Lift_Search::set_document_endpoint( '' );

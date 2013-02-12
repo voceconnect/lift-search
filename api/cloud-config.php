@@ -754,11 +754,18 @@ class Cloud_Config_Request {
 	 * @param string $schema
 	 * @return bool
 	 */
-	public static function LoadSchema( $domain, $schema = 'wp_default' ) {
 
-		$schema = Cloud_Schemas::GetSchema( $schema );
+	/**
+	 * 
+	 * @param string $domain
+	 * @param array $changed_fields
+	 * @return boolean
+	 */
+	public static function LoadSchema( $domain, &$changed_fields = array( ) ) {
 
-		if ( !$schema ) {
+		$schema = apply_filters( 'lift_domain_schema', Cloud_Schemas::GetSchema() );
+
+		if ( !is_array( $schema ) ) {
 			return false;
 		}
 
@@ -778,6 +785,8 @@ class Cloud_Config_Request {
 
 				if ( false === $r ) {
 					return false;
+				} else {
+					$changed_fields[] = $index['field_name'];
 				}
 			}
 		}
