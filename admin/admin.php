@@ -26,7 +26,7 @@ class Lift_Admin {
 		//setup AJAX handlers
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 			add_action( 'wp_ajax_lift_test_access', array( __CLASS__, '_ajax_test_and_save_credentials' ) );
-			add_action( 'wp_ajax_lift_test_domain', array( __CLASS__, '_ajax_test_domain' ) );
+			add_action( 'wp_ajax_lift_test_domain', array( __CLASS__, '_ajax_test_and_save_domain' ) );
 			add_action( 'wp_ajax_lift_delete_error_logs', array( __CLASS__, '_ajax_delete_error_logs' ) );
 			add_action( 'wp_ajax_lift_update_cron_interval', array( __CLASS__, '_ajax_update_cron_interval' ) );
 			add_action( 'wp_ajax_lift_create_domain', array( __CLASS__, '_ajax_create_domain' ) );
@@ -42,7 +42,7 @@ class Lift_Admin {
 
 			// send IndexDocuments request
 			if ( current_user_can( 'manage_options' ) && isset( $_GET['lift-indexdocuments'] ) ) {
-				Cloud_Config_API::IndexDocuments( Lift_Search::get_search_domain() );
+				Lift_Search::get_domain_manager()->index_documents( Lift_Search::get_search_domain() );
 				wp_redirect( admin_url( 'options-general.php?page=' . self::STATUS_PAGE ) );
 			}
 
@@ -111,22 +111,13 @@ class Lift_Admin {
 	 * @return array 
 	 */
 	private static function test_credentials( $id = '', $secret = '' ) {
-
-		$credentials = array( 'access-key-id' => $id, 'secret-access-key' => $secret );
+		$domain_manager = Lift_Search::get_domain_manager( $id, $secret );
 		$error = false;
 
-		try {
-			if ( Cloud_Config_API::TestConnection( $credentials ) ) {
-				$status_message = 'Success';
-			} else {
-				$status_message = 'There was an error authenticating. Please check your Access Key ID and Secret Access Key and try again.';
-
-				$error = true;
-			}
-		} catch ( Exception $e ) {
-			// @todo add exception logging?
-			$status_message = 'There was an error authenticating your access keys. Please try again.';
-
+		if ( $domain_manager->credentials_are_valid() ) {
+			$status_message = 'Success';
+		} else {
+			$status_message = 'There was an error authenticating. Please check your Access Key ID and Secret Access Key and try again.';
 			$error = true;
 		}
 
@@ -186,7 +177,9 @@ class Lift_Admin {
 		die( json_encode( $result ) );
 	}
 
-	public static function _ajax_test_domain() {
+	public static function _ajax_test_and_save_domain() {
+
+		$domain_manager = Lift_Search::get_domain_manager();
 
 		$test_access = self::test_credentials( Lift_Search::get_access_key_id(), Lift_Search::get_secret_access_key() );
 		if ( $test_access['error'] ) {
@@ -196,38 +189,14 @@ class Lift_Admin {
 
 		$domain = strtolower( trim( $_POST['domain'] ) );
 
-		$error = false;
 		$replacing_domain = ( Lift_Search::get_search_domain() != $domain );
 
-		try {
-			if ( Cloud_Config_API::TestDomain( $domain ) ) {
-				$status_message = 'Success';
+		if ( $domain_manager->domain_exists( $domain_name ) ) {
+			$status_message = 'Success';
 
-				Lift_Search::set_search_domain( $domain );
-
-				$document_endpoint = Cloud_Config_API::DocumentEndpoint( $domain );
-				$search_endpoint = Cloud_Config_API::SearchEndpoint( $domain );
-
-				try {
-					if ( $document_endpoint && $search_endpoint ) {
-						Lift_Search::set_document_endpoint( $document_endpoint );
-						Lift_Search::set_search_endpoint( $search_endpoint );
-					} else {
-						$status_message = 'Unable to set endpoints. If this is a newly-created search domain it will take up to 30 minutes for endpoints to become available. Please try back later.';
-						$error = true;
-					}
-				} catch ( Exception $e ) {
-					//@todo add exception logging for endpoint failure
-					$status_message = "Unable to set endpoints. Please check the search domain's status in the AWS Console";
-					$error = true;
-				}
-			} else {
-				$status_message = 'Domain could not be found. <span class="">Would you like to <a id="lift-create-domain" data-domain="' . esc_attr( $domain ) . '" href="#">create this domain with Lift\'s default indexes</a>?</span>';
-				$error = true;
-			}
-		} catch ( Exception $e ) {
-			// @todo add exception logging for domain check failure
-			$status_message = 'There was an error checking the domain. Please try again.';
+			Lift_Search::set_search_domain( $domain );
+		} else {
+			$status_message = 'Domain could not be found. <span class="">Would you like to <a id="lift-create-domain" data-domain="' . esc_attr( $domain ) . '" href="#">create this domain with Lift\'s default indexes</a>?</span>';
 			$error = true;
 		}
 
@@ -265,71 +234,23 @@ class Lift_Admin {
 
 	public static function _ajax_create_domain() {
 
-		$domain = strtolower( trim( $_POST['domain'] ) );
+		$domain_name = strtolower( trim( $_POST['domain'] ) );
 
 		$error = false;
 		$status_messages = array( );
 
-		$r = Cloud_Config_API::CreateDomain( $domain );
+		$domain_manager = Lift_Search::get_domain_manager();
+		$result = $domain_manager->initialize_new_domain( $domain_name );
 
-		if ( $r ) {
-
-			Lift_Search::set_search_domain( $domain );
-
-			if ( Cloud_Config_API::LoadSchema( $domain ) ) {
-				$r = Cloud_Config_API::GetDomains( $domain );
-				if ( $r->DescribeDomainsResponse->DescribeDomainsResult->DomainStatusList ) {
-					$status_messages[] = 'Index created succesfully.';
-					Lift_Search::set_document_endpoint( '' );
-					Lift_Search::set_search_endpoint( '' );
-
-					Lift_Search::add_new_domain_crons(); // add crons
-				} else {
-					$status_messages[] = 'There was an error creating an index for your domain.';
-					$error = true;
-
-					Lift_Search::event_log( 'Cloud_Config_API::LoadSchema (http success)', $r, array( 'error' ) );
-				}
-			} else {
-				$status_message = 'There was an error creating an index for your domain.';
-				$status_messages[] = $status_message;
-				$error = true;
-
-				Lift_Search::event_log( 'Cloud_Config_API::LoadSchema', $status_message, array( 'error' ) );
-			}
-
-			$r = Cloud_Config_API::UpdateServiceAccessPolicies( $domain, Cloud_Config_API::GetDefaultServiceAccessPolicy( $domain ) );
-
-			if ( $r ) {
-				$status_messages[] = 'Service Access Policies successfully configured.';
-			} else {
-				$status_messages[] = 'Service Access Policies could not be set. You will need to use the AWS Console to set them for this search domain.';
-				$error = true;
-
-				Lift_Search::event_log( 'Cloud_Config_API::UpdateServiceAccessPolicies', $r, array( 'error' ) );
-			}
+		$ajx_response = ( object ) array( 'error' => false );
+		if ( !is_wp_error( $result ) ) {
+			$ajx_response->message = 'Domain created successfully.  It may take up to 45 minutes for a new domain to completely initialize.';
 		} else {
-			$status_message = 'There was an error creating your domain. Please make sure the domain name follows the rules above and try again.';
-			$status_messages[] = $status_message;
-			$error = true;
-
-			Lift_Search::event_log( 'Cloud_Config_API::CreateDomain', $status_message, array( 'error' ) );
+			$ajx_response->error = true;
+			$ajx_response->message = $result->get_error_message();
 		}
 
-		if ( !$error ) {
-			self::_complete_setup();
-
-			$status_messages[] = "New search domains take approximately 30-45 minutes to become active. Once your search domain is 
-                    available on CloudSearch, Lift will complete it's configuration, index all posts on your site, and 
-                    queue up new posts to be synced periodically.";
-		}
-
-		echo json_encode( array(
-			'error' => $error,
-			'message' => join( ' ', $status_messages ),
-		) );
-
-		exit;
+		die( json_encode( $ajx_response ) );
 	}
 
 	public static function _ajax_set_cron_status() {

@@ -4,14 +4,24 @@ require_once('cloud-schemas.php');
 
 class Cloud_Config_API {
 
-	static $last_error;
+	public $access_key;
+	public $secret_key;
+	public $http_api;
+	private $last_error;
+	private $last_status_code;
 
-	public static function GetLastError() {
-		return self::$last_error;
+	public function __construct( $access_key, $secret_key, $http_api ) {
+		$this->access_key = $access_key;
+		$this->secret_key = $secret_key;
+		$this->http_api = $http_api;
 	}
 
-	protected static function SetLastError( $error ) {
-		self::$last_error = $error;
+	public function get_last_error() {
+		return $this->last_error;
+	}
+
+	protected function set_last_error( $error ) {
+		$this->last_error = $error;
 	}
 
 	/**
@@ -21,7 +31,7 @@ class Cloud_Config_API {
 	 * @param string $prefix
 	 * @return array
 	 */
-	protected static function __flatten_keys( $array, $prefix = '' ) {
+	protected function _flatten_keys( $array, $prefix = '' ) {
 
 		$result = array( );
 
@@ -29,7 +39,7 @@ class Cloud_Config_API {
 
 			if ( is_array( $value ) ) {
 
-				$result += self::__flatten_keys( $value, ( $prefix . $key . '.' ) );
+				$result += $this->_flatten_keys( $value, ( $prefix . $key . '.' ) );
 			} else {
 
 				$result[$prefix . $key] = $value;
@@ -46,45 +56,40 @@ class Cloud_Config_API {
 	 * @param array $payload
 	 * @return array [response string, Cloud_Config_Request object used for request]
 	 */
-	protected static function __make_request( $method, $payload = array( ), $credentials = null, $flatten_keys = true ) {
+	protected function _make_request( $method, $payload = array( ), $flatten_keys = true ) {
 
 		if ( $payload && $flatten_keys ) {
-
-			$payload = self::__flatten_keys( $payload );
+			$payload = $this->_flatten_keys( $payload );
 		}
 
-		if ( !$credentials ) {
-			$credentials['access-key-id'] = Lift_Search::get_access_key_id();
-			$credentials['secret-access-key'] = Lift_Search::get_secret_access_key();
-		}
+		$credentials['access-key-id'] = $this->access_key;
+		$credentials['secret-access-key'] = $this->secret_key;
 
-		$api = Lift_Search::get_http_api();
-
-		$config = new Cloud_Config_Request( $credentials, $api );
+		$config = new Cloud_Config_Request( $credentials, $this->http_api );
 
 		$r = $config->send_request( $method, $payload );
-
+		
+		$this->last_status_code($config->status_code);
+		
 		if ( $r ) {
 
 			$r_json = json_decode( $r );
 
-			if ( isset( $r_json->Error ) ) {
+			if ( isset( $r_json->Error ) || $this->last_status_code !== '200' ) {
 
-				self::SetLastError( $r_json );
-
+				$this->set_last_error( $r_json );
 				return false;
 			}
 		}
 
-		return array( $r, $config );
+		return $r;
 	}
 
 	/**
-	 * @method GetDomains
+	 * @method DescribeDomains
 	 * @return boolean 
 	 */
-	public static function GetDomains( $domain_names = array( ) ) {
-
+	public function DescribeDomains( $domain_names = array( ) ) {
 		$payload = array( );
 
 		if ( !empty( $domain_names ) ) {
@@ -94,272 +99,55 @@ class Cloud_Config_API {
 			}
 		}
 
-		list($r, $config) = self::__make_request( 'DescribeDomains', $payload );
-
-		return ( $r ? json_decode( $r ) : false );
-	}
-
-	/**
-	 * Test if a domain exists
-	 *
-	 * @method TestDomain
-	 * @param string $domain 
-	 * @return boolean
-	 */
-	public static function TestDomain( $domain_name ) {
-		$domains = self::GetDomains( array( $domain_name ) );
-		if ( $domains ) {
-			$ds = $domains->DescribeDomainsResponse->DescribeDomainsResult->DomainStatusList;
-			return ( 1 === count( $ds ) );
-		}
-		return false;
+		return $this->_make_request( 'DescribeDomains', $payload );
 	}
 
 	/**
 	 * @method CreateDomain
 	 * @param string $domain_name 
 	 */
-	public static function CreateDomain( $domain_name ) {
-
-		list($r, $config) = self::__make_request( 'CreateDomain', array( 'DomainName' => $domain_name ) );
-
-		return ( $r ? json_decode( $r ) : false );
+	public function CreateDomain( $domain_name ) {
+		return $this->_make_request( 'CreateDomain', array( 'DomainName' => $domain_name ) );
 	}
 
-	/**
-	 * Retrieve Document Endpoint for a domain
-	 *
-	 * @method DocumentEndpoint
-	 * @param string $domain 
-	 * @return string|boolean
-	 */
-	public static function DocumentEndpoint( $domain_name ) {
-		$domains = self::GetDomains( array( $domain_name ) );
-		if ( $domains ) {
-			$d = $domains->DescribeDomainsResponse->DescribeDomainsResult->DomainStatusList;
-
-			if ( $d ) {
-				return $d[0]->DocService->Endpoint;
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * Retrieve Search Endpoint for a domain
-	 *
-	 * @method SearchEndpoint
-	 * @param string $domain 
-	 * @return string|boolean
-	 */
-	public static function SearchEndpoint( $domain_name ) {
-		$domains = self::GetDomains( array( $domain_name ) );
-		if ( $domains ) {
-			$d = $domains->DescribeDomainsResponse->DescribeDomainsResult->DomainStatusList;
-
-			if ( $d ) {
-				return $d[0]->SearchService->Endpoint;
-			}
-		}
-		return false;
-	}
-
-	public static function DescribeDomain( $domain_name ) {
-		$domains = self::GetDomains( array( $domain_name ) );
-		if ( $domains ) {
-			$d = $domains->DescribeDomainsResponse->DescribeDomainsResult->DomainStatusList;
-
-			if ( $d ) {
-				return $d[0];
-			} else {
-				return false;
-			}
-		}
-		return false;
-	}
-
-	public static function DescribeServiceAccessPolicies( $domain_name ) {
-		list($r, $config) = self::__make_request( 'DescribeServiceAccessPolicies', array( 'DomainName' => $domain_name ) );
-
-		return ( $r ? json_decode( $r ) : false );
-	}
-
-	/**
-	 * Retrieve Search Service endpoint for a domain
-	 *
-	 * @method SearchService
-	 * @param string $domain 
-	 * @return string|boolean
-	 */
-	public static function SearchService( $domain_name ) {
-		$domain = self::DescribeDomain( $domain_name );
-		if ( $domain ) {
-			return $domain->SearchService;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Retrieve Doc Service endpoint for a domain
-	 *
-	 * @method DocService
-	 * @param string $domain 
-	 * @return string|boolean
-	 */
-	public static function DocService( $domain_name ) {
-		$domain = self::DescribeDomain( $domain_name );
-		if ( $domain ) {
-			return $domain->DocService;
-		}
-
-		return false;
+	public function DescribeServiceAccessPolicies( $domain_name ) {
+		return $this->_make_request( 'DescribeServiceAccessPolicies', array( 'DomainName' => $domain_name ) );
 	}
 
 	/**
 	 * Define a new Rank Expression
 	 *
-	 * @param string $domain
+	 * @param string $domain_name
 	 * @param string $rank_name
 	 * @param string $rank_expression
 	 * @return array|bool|mixed
 	 */
-	public static function DefineRankExpression( $domain, $rank_name, $rank_expression ) {
-
+	public function DefineRankExpression( $domain_name, $rank_name, $rank_expression ) {
 		$payload = array(
-			'DomainName' => $domain,
+			'DomainName' => $domain_name,
 			'RankExpression' => array(
 				'RankName' => $rank_name,
 				'RankExpression' => $rank_expression
 			)
 		);
 
-		list($r, $config) = self::__make_request( 'DefineRankExpression', $payload );
-
-		if ( $r ) {
-
-			$r = json_decode( $r );
-
-			if ( isset( $r->DefineRankExpressionResponse->DefineRankExpressionResult->RankExpression ) ) {
-
-				return true;
-			}
-		}
-
-		return false;
+		return $this->_make_request( 'DefineRankExpression', $payload );
 	}
 
 	/**
 	 * Delete a Rank Expression
 	 *
-	 * @param string $domain
+	 * @param string $domain_name
 	 * @param string $rank_name
 	 * @return array|bool|mixed
 	 */
-	public static function DeleteRankExpression( $domain, $rank_name ) {
-
+	public function DeleteRankExpression( $domain_name, $rank_name ) {
 		$payload = array(
-			'DomainName' => $domain,
+			'DomainName' => $domain_name,
 			'RankName' => $rank_name,
 		);
 
-		list($r, $config) = self::__make_request( 'DeleteRankExpression', $payload );
-
-		if ( $r ) {
-
-			$r = json_decode( $r );
-
-			if ( isset( $r->DeleteRankExpressionResponse->DeleteRankExpressionResult->RankExpression ) ) {
-
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * get a default service access policy. try to be restrictive and use
-	 * the outbound ip/32 and fall back to allow everyone if it can't be determined
-	 * 
-	 * @param string $domain
-	 * @return boolean|array 
-	 */
-	public static function GetDefaultServiceAccessPolicy( $domain ) {
-		$search_service = self::SearchService( $domain );
-		$doc_service = self::DocService( $domain );
-
-		$services = array( $search_service, $doc_service );
-		$statement = array( );
-		$net = '0.0.0.0/0';
-		$warn = true; // for future error handling to warn of wide open access
-		// try to get the IP address external services see to be more restrictive
-		if ( $ip = Lift_Search::get_http_api()->get( 'http://ifconfig.me/ip' ) ) {
-			$net = sprintf( '%s/32', str_replace( "\n", '', $ip ) );
-			$warn = false;
-		}
-
-		foreach ( $services as $service ) {
-			if ( $service ) {
-				$statement[] = array(
-					'Effect' => 'Allow',
-					'Action' => '*',
-					'Resource' => $service->Arn,
-					'Condition' => array(
-						'IpAddress' => array(
-							'aws:SourceIp' => array( $net ),
-						)
-					)
-				);
-			}
-		}
-
-		if ( !$statement ) {
-			return false;
-		}
-
-		$policies = array( 'Statement' => $statement );
-
-		return $policies;
-	}
-
-	/**
-	 * call UpdateServiceAccessPolicies for the domain with the given policies
-	 * 
-	 * @param string $domain
-	 * @param array $policies
-	 * @return boolean 
-	 */
-	public static function UpdateServiceAccessPolicies( $domain, $policies ) {
-
-		if ( !$policies ) {
-			return false;
-		}
-
-		$payload = array(
-			'AccessPolicies' => $policies,
-			'DomainName' => $domain,
-		);
-
-		list($r, $config) = self::__make_request( 'UpdateServiceAccessPolicies', $payload, null, false );
-
-		if ( $r ) {
-			$r = json_decode( $r );
-
-			if ( isset( $r->Error ) ) {
-				self::SetLastError( $r );
-			} else if ( isset( $r->UpdateServiceAccessPoliciesResponse->UpdateServiceAccessPoliciesResult->AccessPolicies ) ) {
-				$policies = $r->UpdateServiceAccessPoliciesResponse->UpdateServiceAccessPoliciesResult->AccessPolicies;
-				if ( !$options = json_decode( $policies->Options ) || 'Processing' != $policies->Status->State ) {
-					// $policies->Options will be blank if there was a malformed request
-					return false;
-				}
-
-				return true;
-			}
-		}
-
-		return false;
+		return $this->_make_request( 'DeleteRankExpression', $payload );
 	}
 
 	/**
@@ -370,15 +158,21 @@ class Cloud_Config_API {
 	 * indexed or false if request could not be completed or domain was in a 
 	 * status that documents could not be indexed
 	 */
-	public static function IndexDocuments( $domain_name ) {
+	public function IndexDocuments( $domain_name ) {
+		return $this->_make_request( 'IndexDocuments', array( 'DomainName' => $domain_name ) );
+	}
+	
+	public function UpdateServiceAccessPolicies($domain_name, $policies) {
+		$payload = array(
+			'AccessPolicies' => $policies,
+			'DomainName' => $domain,
+		);
 
-		list($r, $config) = self::__make_request( 'IndexDocuments', array( 'DomainName' => $domain_name ) );
+		return $this->_make_request( 'UpdateServiceAccessPolicies', $payload );
 
-		return ( isset( $config->status_code ) && 200 == $config->status_code );
 	}
 
-	public static function __parse_index_options( $field_type, $passed_options = array( ) ) {
-
+	public function __parse_index_options( $field_type, $passed_options = array( ) ) {
 		$field_types = array(
 			'uint' => array(
 				'option_name' => 'UIntOptions',
@@ -454,100 +248,46 @@ class Cloud_Config_API {
 	/**
 	 * Define a new index field
 	 *
-	 * @param string $domain
+	 * @param string $domain_name
 	 * @param string $field_name
 	 * @param string $field_type
 	 * @param array $options
 	 * @return bool
 	 */
-	public static function DefineIndexField( $domain, $field_name, $field_type, $options = array( ) ) {
-
-		// @TODO: check valid domain format
-		// @TODO: check valid field name format
-		// @TODO: add support for SourceAttributes
-		// @TODO: check text field isn't both "facet" and "result"
-
+	public function DefineIndexField( $domain_name, $field_name, $field_type, $options = array( ) ) {
 		if ( !in_array( $field_type, array( 'uint', 'text', 'literal' ) ) ) {
 
 			return false;
 		}
 
 		$payload = array(
-			'DomainName' => $domain,
+			'DomainName' => $domain_name,
 			'IndexField' => array(
 				'IndexFieldName' => $field_name,
 				'IndexFieldType' => $field_type
 			)
 		);
 
-		$payload['IndexField'] += self::__parse_index_options( $field_type, $options );
+		$payload['IndexField'] += $this->__parse_index_options( $field_type, $options );
 
-		list($r, $config) = self::__make_request( 'DefineIndexField', self::__flatten_keys( $payload ) );
-
-		if ( $r ) {
-
-			$r = json_decode( $r );
-
-			if ( isset( $r->Error ) ) {
-
-				self::SetLastError( $r );
-			} else if ( isset( $r->DefineIndexFieldResponse->DefineIndexFieldResult->IndexField ) ) {
-
-				return true;
-			}
-		}
-
-		return false;
+		return $this->_make_request( 'DefineIndexField', $payload, true );
 	}
 
-	public static function DescribeIndexFields( $domain ) {
+	public function DescribeIndexFields( $domain_name ) {
 		$payload = array(
-			'DomainName' => $domain,
+			'DomainName' => $domain_name,
 		);
 
-		list($r ) = self::__make_request( 'DescribeIndexFields', self::__flatten_keys( $payload ) );
-
-		if ( $r ) {
-
-			$r = json_decode( $r );
-
-			if ( isset( $r->Error ) ) {
-
-				self::SetLastError( $r );
-			} else if ( isset( $r->DescribeIndexFieldsResponse->DescribeIndexFieldsResult->IndexFields ) ) {
-
-				return $r->DescribeIndexFieldsResponse->DescribeIndexFieldsResult->IndexFields;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Run a test to get the domains to determine if the auth keys are correct
-	 *
-	 * @method TestConnection
-	 * @static
-	 * @return boolean True if a position response
-	 */
-	public static function TestConnection( $credentials = array( ) ) {
-
-		list($r, $config) = self::__make_request( 'DescribeDomains', array( ), $credentials );
-
-		if ( !$config ) {
-			return false;
-		}
-
-		return ( 200 == $config->status_code );
+		return $this->_make_request( 'DescribeIndexFields', $payload, true );
 	}
 
 	/**
 	 * 
-	 * @param string $domain
+	 * @param string $domain_name
 	 * @param array $changed_fields
 	 * @return boolean
 	 */
-	public static function LoadSchema( $domain, &$changed_fields = array( ) ) {
+	public function LoadSchema( $domain_name, &$changed_fields = array( ) ) {
 
 		$schema = apply_filters( 'lift_domain_schema', Cloud_Schemas::GetSchema() );
 
@@ -555,7 +295,7 @@ class Cloud_Config_API {
 			return false;
 		}
 
-		$current_schema = ( array ) self::DescribeIndexFields( $domain );
+		$current_schema = ( array ) $this->DescribeIndexFields( $domain_name );
 
 		if ( count( $current_schema ) ) {
 			//convert to hashtable by name for hash lookup
@@ -567,7 +307,7 @@ class Cloud_Config_API {
 
 			$index = array_merge( array( 'options' => array( ) ), $index );
 			if ( !isset( $current_schema[$index['field_name']] ) || $current_schema[$index['field_name']]->Options->IndexFieldType != $index['field_type'] ) {
-				$r = self::DefineIndexField( $domain, $index['field_name'], $index['field_type'], $index['options'] );
+				$r = $this->DefineIndexField( $domain_name, $index['field_name'], $index['field_type'], $index['options'] );
 
 				if ( false === $r ) {
 					return false;
@@ -577,7 +317,7 @@ class Cloud_Config_API {
 			}
 		}
 
-		return self::GetDomains( array( $domain ) );
+		return $this->describe_domains( array( $domain_name ) );
 	}
 
 }
@@ -590,6 +330,7 @@ class Cloud_Config_Request {
 	private $api_version = '2011-02-01';
 	private $key;
 	private $secret_key;
+	public $status_code;
 
 	/**
 	 *
@@ -597,7 +338,7 @@ class Cloud_Config_Request {
 	 */
 	private $http_interface;
 
-	public function __construct( $credentials, $http_interface, $operation ) {
+	public function __construct( $credentials, $http_interface ) {
 		$this->key = $credentials['access-key-id'];
 		$this->secret_key = $credentials['secret-access-key'];
 		$this->http_interface = $http_interface;

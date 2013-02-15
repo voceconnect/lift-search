@@ -12,8 +12,8 @@
 require_once('lib/voce-error-logging/voce-error-logging.php');
 require_once('api/lift-batch.php');
 require_once('api/lift-http.php');
-require_once('api/cloud-api.php');
-require_once('api/cloud-search.php');
+require_once('api/cloud-search-api.php');
+require_once('api/cloud-search-query.php');
 require_once('api/cloud-config-api.php');
 require_once('lib/posts-to-sdf.php');
 require_once('wp/lift-batch-handler.php');
@@ -22,6 +22,7 @@ require_once('wp/lift-wp-search.php');
 require_once('wp/lift-search-form.php');
 require_once('wp/lift-update-queue.php');
 require_once('wp/update-watchers/post.php');
+require_once('lib/wp-asynch-events.php');
 
 if ( !class_exists( 'Lift_Search' ) ) {
 
@@ -40,6 +41,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		const INDEX_DOCUMENTS_HOOK = 'lift_index_documents';
 		const SET_ENDPOINTS_HOOK = 'lift_set_endpoints';
 		const NEW_DOMAIN_CRON_INTERVAL = 'lift-index-documents';
+		const DOMAIN_EVENT_WATCH_INTERVAL = 60;
 
 		/**
 		 * Returns whether setup has been complete by testing whether all
@@ -53,9 +55,11 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		public static function error_logging_enabled() {
 			return !( defined( 'DISABLE_LIFT_ERROR_LOGGING' ) && DISABLE_LIFT_ERROR_LOGGING ) && ( class_exists( 'Voce_Error_Logging' ) || file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) );
 		}
-
+		
 		public static function init() {
-
+			//initialize domain watcher
+			self::get_domain_event_watcher();
+			
 			if ( self::error_logging_enabled() && !class_exists( 'Voce_Error_Logging' ) && file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) ) {
 				require_once (__DIR__ . '/lib/voce-error-loggin/voce-error-logging');
 			}
@@ -152,6 +156,26 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			//hooking into endpoints cron to "asynchronously" retrieve the endpoint data 
 			//from AWS
 			add_action( self::SET_ENDPOINTS_HOOK, array( 'Lift_Search', 'cron_set_endpoints' ) );
+		}
+
+		/**
+		 * Returns an instance of the Lift_Domain_Manager
+		 * @param string $access_key
+		 * @param string $secret_key
+		 * @return Lift_Domain_Manager
+		 */
+		public static function get_domain_manager( $access_key = null, $secret_key = null ) {
+			if ( is_null( $access_key ) )
+				$access_key = self::get_access_key_id();
+			if ( is_null( $secret_key ) )
+				$secret_key = self::get_secret_access_key();
+
+
+			return new Lift_Domain_Manager( $access_key, $secret_key, $this->get_http_api() );
+		}
+		
+		public static function get_domain_event_watcher() {
+			return Asynch_Event_Watcher::GetEventWatcher('lift_domain_event', self::DOMAIN_WATCH_FREQUENCY);
 		}
 
 		public function test_access( $id = '', $secret = '' ) {
@@ -406,7 +430,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 */
 		public static function get_search_api() {
 			$lift_http = self::get_http_api();
-			return new Cloud_API( $lift_http, Lift_Search::get_document_endpoint(), Lift_Search::get_search_endpoint(), '2011-02-01' );
+			return new CloudSearch_API( $lift_http, Lift_Search::get_document_endpoint(), Lift_Search::get_search_endpoint(), '2011-02-01' );
 		}
 
 		public static function get_indexed_post_types() {

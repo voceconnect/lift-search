@@ -1,6 +1,6 @@
 <?php
 
-class Cloud_API {
+class CloudSearch_API {
 
 	private $error_messages;
 	private $submission_uri;
