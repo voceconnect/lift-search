@@ -1,6 +1,5 @@
 <?php
 
-
 class Lift_Domain_Manager {
 
 	/**
@@ -8,8 +7,8 @@ class Lift_Domain_Manager {
 	 * @var Cloud_Config_API 
 	 */
 	private $config_api;
-	
-	public function __construct( $access_key, $secret_key, $http_interface ) {
+
+	public function __construct( $access_key, $secret_key, $http_api ) {
 		$this->config_api = new Cloud_Config_API( $access_key, $secret_key, $http_api );
 	}
 
@@ -29,12 +28,12 @@ class Lift_Domain_Manager {
 		if ( is_wp_error( $error = $this->config_api->CreateDomain( $domain_name ) ) )
 			return $error;
 
-		if ( is_wp_error( $error = $this->apply_schema( $domain_name ) ) )
-			return $error;
-
+		$event_wathcher = Lift_Search::get_domain_event_watcher();
 		$access_policies = $this->get_default_access_policies( $domain_name );
-		if ( is_wp_error( $error = $this->apply_access_policy( $domain_name, $access_policies ) ) )
-			return $error;
+
+		$event_wathcher->when( array( $this, 'domain_is_created' ), array( $domain ) )
+			->then( array( $this, 'apply_schema' ), array( $domain_name ) )
+			->then( array( $this, 'apply_access_policy' ), array( $domain_name, $access_policies ) );
 
 		return true;
 	}
@@ -47,8 +46,12 @@ class Lift_Domain_Manager {
 			return false;
 		}
 
-		$current_schema = ( array ) $this->DescribeIndexFields( $domain_name );
-
+		$result = $this->config_api->DescribeIndexFields( $domain_name );
+		if ( $result ) {
+			$current_schema = $result->IndexFields;
+		} else {
+			$current_schema = array( );
+		}
 		if ( count( $current_schema ) ) {
 			//convert to hashtable by name for hash lookup
 			$current_schema = array_combine( array_map( function($field) {
@@ -62,11 +65,19 @@ class Lift_Domain_Manager {
 				$response = $this->config_api->DefineIndexField( $domain_name, $index['field_name'], $index['field_type'], $index['options'] );
 
 				if ( false === $response ) {
-					return new WP_Error( 'schema_failure', 'There was an error while applying the schema to the domain.' );
+					Lift_Search::event_log( 'There was an error while applying the schema to the domain.', $this->config_api->get_last_error(), array( 'schema', 'error' ) );
+					continue;
 				} else {
 					$changed_fields[] = $index['field_name'];
 				}
 			}
+		}
+
+		if ( count( $changed_fields ) ) {
+			Lift_Search::get_domain_event_watcher()
+				->when( array( $this, 'needs_indexing' ), array( $domain_name ) )
+				->then( array( $this, 'index_documents' ), array( $domain_name ) )
+				->then( array( 'Lift_Batch_Handler', 'queue_all' ) );
 		}
 
 		return true;
@@ -117,7 +128,26 @@ class Lift_Domain_Manager {
 			return false;
 		}
 
-		return ( bool ) $this->config_api->UpdateServiceAccessPolicies( $domain_name, $policies );
+		if ( !$this->config_api->UpdateServiceAccessPolicies( $domain_name, $policies ) ) {
+			Lift_Search::event_log( 'There was an error while applying the default access policy to the domain.', $this->config_api->get_last_error(), array( 'access policy', 'error' ) );
+			return false;
+		}
+
+		return true;
+	}
+
+	public function domain_is_created( $domain_name ) {
+		if ( $domain = $this->get_domain( $domain_name ) ) {
+			return $domain->Created;
+		}
+		return false;
+	}
+
+	public function needs_indexing( $domain_name ) {
+		if ( $domain = $this->get_domain( $domain_name ) ) {
+			return $domain->RequiresIndexDocuments;
+		}
+		return false;
 	}
 
 	public function index_documents( $domain_name ) {

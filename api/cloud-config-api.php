@@ -69,17 +69,20 @@ class Cloud_Config_API {
 
 		$r = $config->send_request( $method, $payload );
 		
-		$this->last_status_code($config->status_code);
+		$this->last_status_code = $config->status_code;
 		
 		if ( $r ) {
 
 			$r_json = json_decode( $r );
 
-			if ( isset( $r_json->Error ) || $this->last_status_code !== '200' ) {
+			if ( isset( $r_json->Error ) || $this->last_status_code != '200' ) {
 
 				$this->set_last_error( $r_json );
 				return false;
 			}
+			$response_name = $method.'Response';
+			$result_name = $method.'Result';
+			return $r_json->$response_name->$result_name;
 		}
 
 		return $r;
@@ -279,45 +282,6 @@ class Cloud_Config_API {
 		);
 
 		return $this->_make_request( 'DescribeIndexFields', $payload, true );
-	}
-
-	/**
-	 * 
-	 * @param string $domain_name
-	 * @param array $changed_fields
-	 * @return boolean
-	 */
-	public function LoadSchema( $domain_name, &$changed_fields = array( ) ) {
-
-		$schema = apply_filters( 'lift_domain_schema', Cloud_Schemas::GetSchema() );
-
-		if ( !is_array( $schema ) ) {
-			return false;
-		}
-
-		$current_schema = ( array ) $this->DescribeIndexFields( $domain_name );
-
-		if ( count( $current_schema ) ) {
-			//convert to hashtable by name for hash lookup
-			$current_schema = array_combine( array_map( function($field) {
-						return $field->Options->IndexFieldName;
-					}, $current_schema ), $current_schema );
-		}
-		foreach ( $schema as $index ) {
-
-			$index = array_merge( array( 'options' => array( ) ), $index );
-			if ( !isset( $current_schema[$index['field_name']] ) || $current_schema[$index['field_name']]->Options->IndexFieldType != $index['field_type'] ) {
-				$r = $this->DefineIndexField( $domain_name, $index['field_name'], $index['field_type'], $index['options'] );
-
-				if ( false === $r ) {
-					return false;
-				} else {
-					$changed_fields[] = $index['field_name'];
-				}
-			}
-		}
-
-		return $this->describe_domains( array( $domain_name ) );
 	}
 
 }

@@ -16,6 +16,7 @@ require_once('api/cloud-search-api.php');
 require_once('api/cloud-search-query.php');
 require_once('api/cloud-config-api.php');
 require_once('lib/posts-to-sdf.php');
+require_once('wp/domain-manager.php');
 require_once('wp/lift-batch-handler.php');
 require_once('wp/lift-health.php');
 require_once('wp/lift-wp-search.php');
@@ -55,11 +56,11 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		public static function error_logging_enabled() {
 			return !( defined( 'DISABLE_LIFT_ERROR_LOGGING' ) && DISABLE_LIFT_ERROR_LOGGING ) && ( class_exists( 'Voce_Error_Logging' ) || file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) );
 		}
-		
+
 		public static function init() {
 			//initialize domain watcher
 			self::get_domain_event_watcher();
-			
+
 			if ( self::error_logging_enabled() && !class_exists( 'Voce_Error_Logging' ) && file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) ) {
 				require_once (__DIR__ . '/lib/voce-error-loggin/voce-error-logging');
 			}
@@ -170,12 +171,11 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			if ( is_null( $secret_key ) )
 				$secret_key = self::get_secret_access_key();
 
-
-			return new Lift_Domain_Manager( $access_key, $secret_key, $this->get_http_api() );
+			return new Lift_Domain_Manager( $access_key, $secret_key, self::get_http_api() );
 		}
-		
+
 		public static function get_domain_event_watcher() {
-			return Asynch_Event_Watcher::GetEventWatcher('lift_domain_event', self::DOMAIN_WATCH_FREQUENCY);
+			return Asynch_Event_Watcher::GetEventWatcher( 'lift_domain_event', self::DOMAIN_EVENT_WATCH_INTERVAL );
 		}
 
 		public function test_access( $id = '', $secret = '' ) {
@@ -452,13 +452,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 		public static function update_schema() {
 			if ( self::is_setup_complete() && ($domain = self::get_search_domain()) ) {
-				$changed_fields = array( );
-				if ( !Cloud_Config_API::LoadSchema( $domain, $changed_fields ) ) {
-					return false;
-				}
-				if ( count( $changed_fields ) ) {
-					Lift_Batch_Handler::queue_all();
-				}
+				self::get_domain_manager()->apply_schema( $domain );
 			}
 			return true;
 		}
