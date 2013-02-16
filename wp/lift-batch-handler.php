@@ -283,19 +283,8 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 		 * @return boolean 
 		 */
 		public static function ready_for_batch( $domain_name ) {
-
-			$domains = Cloud_Config_API::GetDomains( array( $domain_name ) );
-			if ( $domains ) {
-				$ds = $domains->DescribeDomainsResponse->DescribeDomainsResult->DomainStatusList;
-				if ( !count( $ds ) ) {
-					return false;
-				}
-				foreach ( $ds as $d ) {
-					if ( $d->DomainName == $domain_name ) {
-						return ( bool ) (!$d->Deleted && !$d->Processing && !$d->RequiresIndexDocuments && $d->SearchInstanceCount > 0 );
-					}
-				}
-			}
+			$domain_manager = Lift_Search::get_domain_manager();
+			return $domain_manager->can_accept_uploads($domain_name);
 		}
 
 		/**

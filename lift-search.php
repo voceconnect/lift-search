@@ -33,15 +33,12 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 */
 
 		const INITIAL_SETUP_COMPLETE_OPTION = 'lift-initial-setup-complete';
-		const DB_VERSION = 4;
+		const DB_VERSION = 5;
 
 		/**
 		 * Option name for storing all user based options 
 		 */
 		const SETTINGS_OPTION = 'lift-settings';
-		const INDEX_DOCUMENTS_HOOK = 'lift_index_documents';
-		const SET_ENDPOINTS_HOOK = 'lift_set_endpoints';
-		const NEW_DOMAIN_CRON_INTERVAL = 'lift-index-documents';
 		const DOMAIN_EVENT_WATCH_INTERVAL = 60;
 
 		/**
@@ -70,7 +67,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			}
 
 			if ( self::get_document_endpoint() ) {
-				add_action( 'init', array( 'Lift_Batch_Handler', 'init' ) );
+				add_action( 'init', array( 'Lift_Batch_Handler', 'init' ), 9 );
 				add_action( 'lift_post_changes_to_data', array( __CLASS__, '_default_extended_post_data' ), 10, 3 );
 			}
 
@@ -120,11 +117,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				}, 10, 2 );
 
 			add_filter( 'cron_schedules', function( $schedules ) {
-					$schedules[Lift_Search::NEW_DOMAIN_CRON_INTERVAL] = array(
-						'interval' => 60 * 5, // 5 mins
-						'display' => '',
-					);
-
 					if ( Lift_Search::get_batch_interval() > 0 ) {
 						$interval = Lift_Search::get_batch_interval();
 					} else {
@@ -139,24 +131,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 					return $schedules;
 				} );
 
-			//hooking into the index documents cron to tell AWS to start indexing documents
-			add_action( self::INDEX_DOCUMENTS_HOOK, function() {
-					$domain_name = Lift_Search::get_search_domain();
-
-					if ( !$domain_name ) {
-						return;
-					}
-
-					$r = Cloud_Config_API::IndexDocuments( $domain_name );
-
-					if ( $r ) {
-						wp_clear_scheduled_hook( Lift_Search::INDEX_DOCUMENTS_HOOK );
-					}
-				} );
-
-			//hooking into endpoints cron to "asynchronously" retrieve the endpoint data 
-			//from AWS
-			add_action( self::SET_ENDPOINTS_HOOK, array( 'Lift_Search', 'cron_set_endpoints' ) );
 		}
 
 		/**
@@ -201,40 +175,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			}
 
 			return array( 'error' => $error, 'message' => $status_message );
-		}
-
-		/**
-		 * schedule crons needed for new domains. clear existing crons first.
-		 * 
-		 */
-		public static function add_new_domain_crons() {
-			wp_clear_scheduled_hook( self::INDEX_DOCUMENTS_HOOK );
-			wp_clear_scheduled_hook( self::SET_ENDPOINTS_HOOK );
-
-			wp_schedule_event( time(), self::NEW_DOMAIN_CRON_INTERVAL, self::INDEX_DOCUMENTS_HOOK );
-			wp_schedule_event( time(), self::NEW_DOMAIN_CRON_INTERVAL, self::SET_ENDPOINTS_HOOK );
-		}
-
-		/**
-		 * cron hook to set up index documents for new domains. cron
-		 * is unscheduled when the documents are indexed successfully.
-		 *
-		 */
-		public static function cron_set_endpoints() {
-			$domain_name = self::get_search_domain();
-
-			if ( !$domain_name ) {
-				return;
-			}
-
-			$document_endpoint = Cloud_Config_API::DocumentEndpoint( $domain_name );
-			$search_endpoint = Cloud_Config_API::SearchEndpoint( $domain_name );
-
-			if ( $document_endpoint && $search_endpoint ) {
-				self::__set_setting( 'document-endpoint', $document_endpoint );
-				self::__set_setting( 'search-endpoint', $search_endpoint );
-				wp_clear_scheduled_hook( self::SET_ENDPOINTS_HOOK );
-			}
 		}
 
 		/**
@@ -583,6 +523,12 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 				update_option( 'lift_db_version', 4 );
 			}
+			
+			if($current_db_version < 5 ) {
+				wp_clear_scheduled_hook( Lift_Search::INDEX_DOCUMENTS_HOOK );
+				wp_clear_scheduled_hook( Lift_Search::SET_ENDPOINTS_HOOK );
+				update_option( 'lift_db_version', 5 );
+			}
 		}
 
 	}
@@ -604,8 +550,6 @@ function _lift_deactivate() {
 	if ( class_exists( 'Voce_Error_Logging' ) ) {
 		Voce_Error_Logging::delete_logs( array( 'lift-search' ) );
 	}
-
-	wp_clear_scheduled_hook( Lift_Search::INDEX_DOCUMENTS_HOOK );
 
 	Lift_Batch_Handler::_deactivation_cleanup();
 	Lift_Document_Update_Queue::_deactivation_cleanup();

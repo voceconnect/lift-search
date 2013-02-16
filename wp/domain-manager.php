@@ -31,7 +31,7 @@ class Lift_Domain_Manager {
 		$event_wathcher = Lift_Search::get_domain_event_watcher();
 		$access_policies = $this->get_default_access_policies( $domain_name );
 
-		$event_wathcher->when( array( $this, 'domain_is_created' ), array( $domain ) )
+		$event_wathcher->when( array( $this, 'domain_is_created' ), array( $domain_name ) )
 			->then( array( $this, 'apply_schema' ), array( $domain_name ) )
 			->then( array( $this, 'apply_access_policy' ), array( $domain_name, $access_policies ) );
 
@@ -156,13 +156,18 @@ class Lift_Domain_Manager {
 
 	/**
 	 * Returns the DomainStatus object for the given domain
-	 * @param string $domain_name
+	 * @param string|stdClass $domain_name
 	 * @return DomainStatus|boolean
 	 */
 	public function get_domain( $domain_name ) {
+		if ( is_object( $domain_name ) ) {
+			//allow a domain object to be passed around instead of re-fetching
+			return $domain_name;
+		}
+
 		$response = $this->config_api->DescribeDomains( array( $domain_name ) );
 		if ( $response ) {
-			$domain_list = $response->DescribeDomainsResponse->DescribeDomainsResult->DomainStatusList;
+			$domain_list = $response->DomainStatusList;
 			if ( is_array( $domain_list ) && count( $domain_list ) ) {
 				return $domain_list[0];
 			} else {
@@ -196,53 +201,11 @@ class Lift_Domain_Manager {
 		return false;
 	}
 
-	/**
-	 * get a default service access policy. try to be restrictive and use
-	 * the outbound ip/32 and fall back to allow everyone if it can't be determined
-	 * 
-	 * @param string $domain
-	 * @return boolean|array 
-	 */
-	public function GetDefaultServiceAccessPolicy( $domain ) {
-		
-	}
-
-	/**
-	 * call UpdateServiceAccessPolicies for the domain with the given policies
-	 * 
-	 * @param string $domain
-	 * @param array $policies
-	 * @return boolean 
-	 */
-	public function UpdateServiceAccessPolicies( $domain, $policies ) {
-
-		if ( !$policies ) {
-			return false;
+	public function can_accept_uploads( $domain_name ) {
+		$domain = $this->get_domain( $domain_name );
+		if ( $domain ) {
+			return ( bool ) (!$domain->Deleted && !$domain->Processing && !$domain->RequiresIndexDocuments && $domain->SearchInstanceCount > 0 );
 		}
-
-		$payload = array(
-			'AccessPolicies' => $policies,
-			'DomainName' => $domain,
-		);
-
-		list($r, $config) = $this->_make_request( 'UpdateServiceAccessPolicies', $payload, null, false );
-
-		if ( $r ) {
-			$r = json_decode( $r );
-
-			if ( isset( $r->Error ) ) {
-				$this->set_last_error( $r );
-			} else if ( isset( $r->UpdateServiceAccessPoliciesResponse->UpdateServiceAccessPoliciesResult->AccessPolicies ) ) {
-				$policies = $r->UpdateServiceAccessPoliciesResponse->UpdateServiceAccessPoliciesResult->AccessPolicies;
-				if ( !$options = json_decode( $policies->Options ) || 'Processing' != $policies->Status->State ) {
-					// $policies->Options will be blank if there was a malformed request
-					return false;
-				}
-
-				return true;
-			}
-		}
-
 		return false;
 	}
 
