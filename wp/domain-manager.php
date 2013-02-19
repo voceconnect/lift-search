@@ -66,7 +66,7 @@ class Lift_Domain_Manager {
 	private $config_api;
 
 	public function __construct( $access_key, $secret_key, $http_api ) {
-		$this->config_api = new Cloud_Config_API( $access_key, $secret_key, $http_api );
+		$this->config_api = new Lift_Cloud_Config_API( $access_key, $secret_key, $http_api );
 	}
 
 	public function credentials_are_valid() {

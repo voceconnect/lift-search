@@ -8,8 +8,6 @@
   Author: Voce Platforms
   Author URI: http://voceconnect.com/
  */
-require_once('lib/wp-asynch-events.php');
-return;
 require_once('lib/voce-error-logging/voce-error-logging.php');
 require_once('api/lift-batch.php');
 require_once('api/lift-http.php');
@@ -24,6 +22,7 @@ require_once('wp/lift-wp-search.php');
 require_once('wp/lift-search-form.php');
 require_once('wp/lift-update-queue.php');
 require_once('wp/update-watchers/post.php');
+require_once('lib/wp-asynch-events.php');
 
 if ( !class_exists( 'Lift_Search' ) ) {
 
