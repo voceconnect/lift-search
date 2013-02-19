@@ -7,8 +7,8 @@ class Cloud_Config_API {
 	public $access_key;
 	public $secret_key;
 	public $http_api;
-	private $last_error;
-	private $last_status_code;
+	protected $last_error;
+	protected $last_status_code;
 
 	public function __construct( $access_key, $secret_key, $http_api ) {
 		$this->access_key = $access_key;

@@ -1,133 +1,158 @@
 <?php
+/**
+ * Transient Async Events
+ * Version 0.1-alpha
+ */
 
-class Asynch_Event_Watcher {
 
-	private static $watcher_instances = array( );
+/**
+ * Server for handling TAE crons, restores previous events when cron is running
+ */
+class TAE_Server {
 
-	/**
-	 * Identifier for the watcher.  Used for setting the name of the cron hook
-	 * and frequency
-	 * @var type 
-	 */
-	private $id;
+	private static $events;
 
-	/**
-	 * Seconds in between checks for condition
-	 * @var type 
-	 */
-	private $watch_frequency;
-	private $test_events;
-
-	/**
-	 * 
-	 * @param string $id Identifier for the watcher.  Used for setting the name of the cron hook and frequency
-	 * @param int $watch_frequency seconds between checks
-	 */
-	private function __construct( $id, $watch_frequency = 300 ) {
-		$this->id = $id;
-		$this->watch_frequency = $watch_frequency;
-
-		$this->test_events = get_option( 'ew_' . $this->id, array() );
-		
-		add_action('ew_'.$this->id, array($this, 'test_when'));
-		
-		add_filter( 'cron_schedules', array( $this, '_filter_cron_schedule' ) );
-
-		register_shutdown_function( array( $this, '_shutdown' ) );
+	public function __construct() {
+		add_action( 'init', array( $this, 'init' ), 9 );
 	}
 
-	/**
-	 * 
-	 * @param type $test_callback
-	 * @param type $test_params
-	 * @return AE_TestEvent
-	 */
-	public function when( $test_callback, $test_params = array( ) ) {//, $do_callback, $do_params, $test_value = true, $eval_function = null ) {
-		$key = substr(md5( serialize( $test_callback ) . serialize( $test_params ) ), 0, 30);
-		if ( !isset( $this->test_events[$key] ) ) {
-			$this->test_events[$key] = new AE_TestEvent( $test_callback, $test_params );
-			wp_schedule_event(time(), 'ew_' . $this->id, 'ew_' . $this->id, array($key));
-		}
-		return $this->test_events[$key];
-	}
-	
-	public function test_when($key) {
-		if(isset($this->test_events[$key])) {
-			if($this->test_events[$key]->execute()) {
-				wp_clear_scheduled_hook('ew_' . $this->id, array($key));
-				unset($this->test_events[$key]);
+	public function init() {
+		if ( (defined( 'DOING_CRON' ) && DOING_CRON) ||
+			(defined( 'ALTERNATE_WP_CRON' ) && ALTERNATE_WP_CRON) ) {
+			self::$events = array( );
+			add_filter( 'cron_schedules', array( __CLASS__, '_filter_cron_schedule' ) );
+
+			$keys = get_option( 'tae_event_keys', array( ) );
+			foreach ( $keys as $key ) {
+				self::$events[$key] = TAE_Async_Event::Restore( $key );
+				add_action( 'tae_event_' . $key, array( $event, 'execute' ) );
 			}
 		}
 	}
 
 	public function _filter_cron_schedule( $schedules ) {
-		$schedules['ew_' . $this->id] = array(
-			'interval' => $this->watch_frequency,
-			'display' => '',
-		);
+		foreach ( self::$events as $key => $event ) {
+			$schedules['tae_schedule_' . $key] = array(
+				'interval' => $event->frequency,
+				'display' => 'TAE Event ' . $key
+			);
+		}
 
 		return $schedules;
 	}
 
-	public function _shutdown() {
-		update_option( 'ew_' . $this->id, $this->test_events );
+}
+
+class TAE_Async_Event {
+
+	public $key;
+	public $callback;
+	public $params;
+	public $frequency;
+	public $then_events;
+
+	/**
+	 * 
+	 * @param type $callback
+	 * @param type $params
+	 * @param type $frequency
+	 * @return TAE_Async_Event
+	 */
+	public static function Schedule( $callback, $params = array( ), $frequency = 300 ) {
+
+
+		$event_key = substr( md5( serialize( $callback ) . serialize( $params ) ), 0, 30 );
+		if ( !($event = self::Restore( $event_key )) ) {
+			$event = new TAE_Async_Event( $callback, $params, $frequency );
+		}
+		return $event;
 	}
 
 	/**
-	 * Factory method for event watchers so they are unique by ID per request to prevent 
-	 * instances from stomping eachother out.
-	 * 
-	 * @param string $id Identifier for the watcher.  Used for setting the name of the cron hook and frequency
-	 * @param int $watch_frequency seconds between checks
-	 * @return Asynch_Event_Watcher
+	 * Restores an event based on the key
+	 * @param string $key
+	 * @return TAE_Async_Event|boolean
 	 */
-	public static function GetEventWatcher( $id, $watch_frequency = 300 ) {
-		if ( !isset( self::$watcher_instances[$id] ) ) {
-			self::$watcher_instances[$id] = new Asynch_Event_Watcher( $id, $watch_frequency );
+	public static function Restore( $key ) {
+		if ( $event_data = get_option( 'tae_event_' . $key, false ) ) {
+			$event = TAE_Async_Event( $event_data['callback'], $event_data['params'], $event_data['frequency'] );
+			$event->then_events = $event_data['then_events'];
+			return $event;
 		}
-		return self::$watcher_instances[$id];
+		return false;
 	}
 
-}
-
-class AE_Event {
-
-	private $callback;
-	private $params;
-
-	public function __construct( $callback, $params = array( ) ) {
+	public function __construct( $callback, $params, $frequency, $key ) {
+		$this->then_events = array( );
 		$this->callback = $callback;
 		$this->params = $params;
+		$this->frequency = $frequency;
+		$this->key = $key;
 	}
 
-	public function execute() {
-		return call_user_func_array( $this->callback, $this->params );
-	}
-
-}
-
-class AE_TestEvent extends AE_Event {
-
-	private $then_events;
-
-	public function __construct( $callback, $params = array( ) ) {
-		parent::__construct( $callback, $params );
-		$this->then_events = array( );
-	}
-
-	public function then( $then_callback, $then_params = array( ) ) {
-		$this->then_events[] = new AE_TestEvent( $then_callback, $then_params );
+	/**
+	 * 
+	 * @param type $callback
+	 * @param type $params
+	 * @param type $reschedule_on_error
+	 * @return TAE_Async_Event
+	 */
+	public function then( $callback, $params, $reschedule_on_error = false ) {
+		$key = md5(serialize($callback) . serialize($params));
+		$this->then_events[$key] = array(
+			'callback' => $callback,
+			'params' => $params,
+			'reschedule_on_error' => $reschedule_on_error
+		);
+		
+		wp_unschedule_event($timestamp, $hook);
 		return $this;
 	}
 
 	public function execute() {
-		if ( parent::execute() === true ) {
-			foreach ( $this->then_events as $event ) {
-				$event->execute();
-			}
-			return true;
+		if ( !is_callable( $this->callback ) ) {
+			_doing_it_wrong( __FUNCTION__, "TAE Events must be callable before 'init' priority '10' for cron to call them", '0.1' );
+			return false;
 		}
-		false;
+		if ( true === call_user_func_array( $this->callback, $this->params ) ) {
+			$keep_events = array( );
+			foreach ( $this->then_events as $then_key => $event ) {
+				if ( is_callable( $event['callback'] ) ) {
+					$result = call_user_func_array( $event['callback'], $event['params'] );
+					if ( $event['reschedule_on_error'] && is_wp_error( $result ) ) {
+						$keep_events[$then_key] = $event;
+					}
+				} else {
+					_doing_it_wrong( __FUNCTION__, "TAE Events must be callable before 'init' priority '10' for cron to call them", '0.1' );
+				}
+			}
+		}
+		$this->then_events = $keep_events;
+		$this->commit();
+	}
+
+	public function commit() {
+		$event_keys = get_option( 'tae_event_keys', array( ) );
+		$event_key = substr( md5( serialize( $this->callback ) . serialize( $this->params ) ), 0, 30 );
+		$next_scheduled_time = wp_next_scheduled( 'tae_event_' . $event_key );
+		if ( count( $this->then_events ) ) {
+			$event_keys = array_merge( $event_keys, array( $event_key ) );
+			delete_option( 'tae_event_' . $event_key );
+			wp_unschedule_event( $next_scheduled_time, 'tae_event_' . $event_key );
+		} else {
+			$event_keys = array_diff( $event_keys, array( $event_key ) );
+			update_option( 'tae_event_' . $event_key, array(
+				'callback' => $this->callback,
+				'params' => $this->params,
+				'frequency' => $this->frequency,
+				'then_events' => $this->then_events
+			) );
+			if ( !$next_scheduled_time ) {
+				wp_schedule_event( time() + $this->frequency, 'tae_schedule_' . $event_key, 'tae_event_' . $event_key );
+			}
+		}
+
+		update_option( 'tae_event_keys', $event_keys );
 	}
 
 }

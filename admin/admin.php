@@ -42,7 +42,7 @@ class Lift_Admin {
 
 			// send IndexDocuments request
 			if ( current_user_can( 'manage_options' ) && isset( $_GET['lift-indexdocuments'] ) ) {
-				Lift_Search::get_domain_manager()->index_documents( Lift_Search::get_search_domain() );
+				Lift_Search::get_domain_manager()->index_documents( Lift_Search::get_search_domain_name() );
 				wp_redirect( admin_url( 'options-general.php?page=' . self::STATUS_PAGE ) );
 			}
 
@@ -187,20 +187,32 @@ class Lift_Admin {
 			die;
 		}
 
-		$domain = strtolower( trim( $_POST['domain'] ) );
+		$domain_name = strtolower( trim( $_POST['domain'] ) );
 
-		$replacing_domain = ( Lift_Search::get_search_domain() != $domain );
-
-		if ( $domain_manager->domain_exists( $domain_name ) ) {
-			$status_message = 'Success';
-
-			Lift_Search::set_search_domain( $domain );
+		$replacing_domain = ( Lift_Search::get_search_domain_name() != $domain_name );
+		$error = false;
+		if ( $domain = $domain_manager->domain_exists( $domain_name ) ) {
+			$changed_fields = array( );
+			if ( !is_wp_error( $result = $domain_manager->apply_schema( $domain_name, null, $changed_fields ) ) ) {
+				if ( count( $changed_fields ) ) {
+					$status_message = 'The default schema has been applied to the domain.  It may take from 20 - 30 minutes while to domain applies the new index.';
+				} else {
+					$status_message = 'Success';
+					if ( $replacing_domain ) {
+						Lift_Batch_Handler::queue_all();
+					}
+				}
+				Lift_Search::set_search_domain_name( $domain_name );
+			} else {
+				$error = true;
+				$status_message = 'There was an error while applying the schema to the domain.';
+			}
 		} else {
 			$status_message = 'Domain could not be found. <span class="">Would you like to <a id="lift-create-domain" data-domain="' . esc_attr( $domain ) . '" href="#">create this domain with Lift\'s default indexes</a>?</span>';
 			$error = true;
 		}
 
-		if ( !$error && $replacing_domain && !Lift_Search::is_setup_complete() ) {
+		if ( !$error && !Lift_Search::is_setup_complete() ) {
 			self::_complete_setup();
 		}
 

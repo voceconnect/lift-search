@@ -47,7 +47,9 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return bool 
 		 */
 		public static function is_setup_complete() {
-			return self::get_access_key_id() && self::get_secret_access_key() && self::get_search_domain() && get_option( self::INITIAL_SETUP_COMPLETE_OPTION, 0 );
+
+			//clean up these options and make this check if the saved domain name exists
+			return self::get_access_key_id() && self::get_secret_access_key() && self::get_search_domain_name() && get_option( self::INITIAL_SETUP_COMPLETE_OPTION, 0 );
 		}
 
 		public static function error_logging_enabled() {
@@ -55,9 +57,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		}
 
 		public static function init() {
-			//initialize domain watcher
-			self::get_domain_event_watcher();
-
 			if ( self::error_logging_enabled() && !class_exists( 'Voce_Error_Logging' ) && file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) ) {
 				require_once (__DIR__ . '/lib/voce-error-loggin/voce-error-logging');
 			}
@@ -130,7 +129,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 					return $schedules;
 				} );
-
 		}
 
 		/**
@@ -146,10 +144,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				$secret_key = self::get_secret_access_key();
 
 			return new Lift_Domain_Manager( $access_key, $secret_key, self::get_http_api() );
-		}
-
-		public static function get_domain_event_watcher() {
-			return Asynch_Event_Watcher::GetEventWatcher( 'lift_domain_event', self::DOMAIN_EVENT_WATCH_INTERVAL );
 		}
 
 		public function test_access( $id = '', $secret = '' ) {
@@ -240,25 +234,12 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * Get search domain
 		 * @return string
 		 */
-		public static function get_search_domain() {
+		public static function get_search_domain_name() {
 			return apply_filters( 'lift_search_domain', self::__get_setting( 'search-domain' ) );
 		}
 
-		public static function set_search_domain( $value ) {
+		public static function set_search_domain_name( $value ) {
 			self::__set_setting( 'search-domain', $value );
-			self::__update_endpoints();
-		}
-
-		private static function __update_endpoints() {
-			if ( $search_domain = self::get_search_domain() ) {
-				$document_endpoint = Cloud_Config_API::DocumentEndpoint( $search_domain );
-				$search_endpoint = Cloud_Config_API::SearchEndpoint( $search_domain );
-
-				if ( $document_endpoint && $search_endpoint ) {
-					self::__set_setting( 'document-endpoint', $document_endpoint );
-					self::__set_setting( 'search-endpoint', $search_endpoint );
-				}
-			}
 		}
 
 		/**
@@ -266,14 +247,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return string
 		 */
 		public static function get_search_endpoint() {
-			if ( !self::__get_setting( 'search-endpoint' ) ) {
-				self::__update_endpoints();
-			}
-			return apply_filters( 'lift_search_endpoint', self::__get_setting( 'search-endpoint' ) );
-		}
-
-		public static function set_search_endpoint( $value ) {
-			self::__set_setting( 'search-endpoint', $value );
+			return self::get_domain_manager()->get_search_endpoint( self::get_search_domain_name() );
 		}
 
 		/**
@@ -281,14 +255,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return string
 		 */
 		public static function get_document_endpoint() {
-			if ( !self::__get_setting( 'document-endpoint' ) ) {
-				self::__update_endpoints();
-			}
-			return apply_filters( 'lift_document_endpoint', self::__get_setting( 'document-endpoint' ) );
-		}
-
-		public static function set_document_endpoint( $value ) {
-			self::__set_setting( 'document-endpoint', $value );
+			return self::get_domain_manager()->get_document_endpoint( self::get_search_domain_name() );
 		}
 
 		/**
@@ -391,7 +358,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		}
 
 		public static function update_schema() {
-			if ( self::is_setup_complete() && ($domain = self::get_search_domain()) ) {
+			if ( self::is_setup_complete() && ($domain = self::get_search_domain_name()) ) {
 				self::get_domain_manager()->apply_schema( $domain );
 			}
 			return true;
@@ -517,16 +484,16 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				update_option( 'lift_db_version', 2 );
 			}
 
-			if ( $current_db_version < 4 && self::get_search_domain() ) {
+			if ( $current_db_version < 4 && self::get_search_domain_name() ) {
 				//schema changes
 				self::update_schema();
 
 				update_option( 'lift_db_version', 4 );
 			}
-			
-			if($current_db_version < 5 ) {
-				wp_clear_scheduled_hook( Lift_Search::INDEX_DOCUMENTS_HOOK );
-				wp_clear_scheduled_hook( Lift_Search::SET_ENDPOINTS_HOOK );
+
+			if ( $current_db_version < 5 ) {
+				wp_clear_scheduled_hook( 'lift_index_documents' );
+				wp_clear_scheduled_hook( 'lift_set_endpoints' );
 				update_option( 'lift_db_version', 5 );
 			}
 		}

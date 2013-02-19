@@ -1,5 +1,62 @@
 <?php
 
+/**
+ * Wrapper class to Cloud_Config_API to cache certain methods
+ */
+class Lift_Cloud_Config_API extends Cloud_Config_API {
+
+	private $cached_methods;
+	private $clear_cache_methods;
+
+	public function __construct( $access_key, $secret_key, $http_api ) {
+		parent::__construct( $access_key, $secret_key, $http_api );
+
+		$this->cached_methods = array(
+			'DescribeDomains', 'DescribeServiceAccessPolicies', 'DescribeIndexFields'
+		);
+
+		$this->clear_cache_methods = array(
+			'CreateDomain' => array( 'DescribeDomains', 'DescribeServiceAccessPolicies' ),
+			'UpdateServiceAccessPolicies' => array( 'DescribeServiceAccessPolicies' ),
+			'DefineIndexField' => array( 'DescribeIndexFields' )
+		);
+	}
+
+	public function _make_request( $method, $payload = array( ), $flatten_keys = true ) {
+
+		if ( in_array( $method, $this->cached_methods ) ) {
+			if ( is_array( $cache = get_transient( 'lift_request_' . $method ) ) ) {
+				$key = substr( md5( $payload ), 0, 25 );
+				if ( isset( $cache[$key] ) ) {
+					$this->set_last_error( $cache[$key]['set_last_error'] );
+					$this->last_status_code( $cache[$key]['last_status_code'] );
+					return $cache[$key]['response'];
+				}
+			}
+		}
+
+		$result = parent::_make_request( $method, $payload, $flatten_keys );
+
+		if ( in_array( $method, $this->cached_methods ) ) {
+			if ( is_array( $cache = get_transient( 'lift_request_' . $method ) ) ) {
+				$cache = array(
+					'set_last_error' => $this->get_last_error(),
+					'last_status_code' => $this->last_status_code,
+					'response' => $result
+				);
+				set_transient( 'lift_request_' . $method, $cache, 60 );
+			}
+		} elseif ( isset( $this->clear_cache_methods[$method] ) ) {
+			foreach ( $this->clear_cache_methods[$method] as $clear_methods ) {
+				delete_transient( 'lift_request_' . $clear_methods );
+			}
+		}
+
+		return $result;
+	}
+
+}
+
 class Lift_Domain_Manager {
 
 	/**
@@ -31,9 +88,9 @@ class Lift_Domain_Manager {
 		$event_wathcher = Lift_Search::get_domain_event_watcher();
 		$access_policies = $this->get_default_access_policies( $domain_name );
 
-		$event_wathcher->when( array( $this, 'domain_is_created' ), array( $domain_name ) )
-			->then( array( $this, 'apply_schema' ), array( $domain_name ) )
-			->then( array( $this, 'apply_access_policy' ), array( $domain_name, $access_policies ) );
+		TAE_Async_Event::Schedule(array( $this, 'domain_is_created' ), array( $domain_name ), 60 )
+			->then( array( $this, 'apply_schema' ), array( $domain_name ), true )
+			->then( array( $this, 'apply_access_policy' ), array( $domain_name, $access_policies ), true );
 
 		return true;
 	}
@@ -47,11 +104,11 @@ class Lift_Domain_Manager {
 		}
 
 		$result = $this->config_api->DescribeIndexFields( $domain_name );
-		if ( $result ) {
-			$current_schema = $result->IndexFields;
-		} else {
-			$current_schema = array( );
+		if ( false === $result ) {
+			return new WP_Error( 'bad-response', 'Received an invalid repsonse when trying to describe the current schema' );
 		}
+
+		$current_schema = $result->IndexFields;
 		if ( count( $current_schema ) ) {
 			//convert to hashtable by name for hash lookup
 			$current_schema = array_combine( array_map( function($field) {
@@ -62,6 +119,7 @@ class Lift_Domain_Manager {
 		foreach ( $schema as $index ) {
 			$index = array_merge( array( 'options' => array( ) ), $index );
 			if ( !isset( $current_schema[$index['field_name']] ) || $current_schema[$index['field_name']]->Options->IndexFieldType != $index['field_type'] ) {
+				throw new Exception( 'Defining new index field, ' . $index['field_name'] );
 				$response = $this->config_api->DefineIndexField( $domain_name, $index['field_name'], $index['field_type'], $index['options'] );
 
 				if ( false === $response ) {
@@ -74,9 +132,8 @@ class Lift_Domain_Manager {
 		}
 
 		if ( count( $changed_fields ) ) {
-			Lift_Search::get_domain_event_watcher()
-				->when( array( $this, 'needs_indexing' ), array( $domain_name ) )
-				->then( array( $this, 'index_documents' ), array( $domain_name ) )
+			TAE_Async_Event::Schedule( array( $this, 'needs_indexing' ), array( $domain_name ), 60 )
+				->then( array( $this, 'index_documents' ), array( $domain_name ), true )
 				->then( array( 'Lift_Batch_Handler', 'queue_all' ) );
 		}
 
