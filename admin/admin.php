@@ -257,6 +257,7 @@ class Lift_Admin {
 		$ajx_response = ( object ) array( 'error' => false );
 		if ( !is_wp_error( $result ) ) {
 			$ajx_response->message = 'Domain created successfully.  It may take up to 45 minutes for a new domain to completely initialize.';
+			self::_complete_setup();
 		} else {
 			$ajx_response->error = true;
 			$ajx_response->message = $result->get_error_message();

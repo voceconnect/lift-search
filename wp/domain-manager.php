@@ -84,7 +84,8 @@ class Lift_Domain_Manager {
 
 		if ( is_wp_error( $error = $this->config_api->CreateDomain( $domain_name ) ) )
 			return $error;
-
+		
+		Lift_Search::set_search_domain_name($domain_name);
 		$access_policies = $this->get_default_access_policies( $domain_name );
 
 		TAE_Async_Event::Schedule(array( $this, 'domain_is_created' ), array( $domain_name ), 60 )
@@ -118,7 +119,6 @@ class Lift_Domain_Manager {
 		foreach ( $schema as $index ) {
 			$index = array_merge( array( 'options' => array( ) ), $index );
 			if ( !isset( $current_schema[$index['field_name']] ) || $current_schema[$index['field_name']]->Options->IndexFieldType != $index['field_type'] ) {
-				throw new Exception( 'Defining new index field, ' . $index['field_name'] );
 				$response = $this->config_api->DefineIndexField( $domain_name, $index['field_name'], $index['field_type'], $index['options'] );
 
 				if ( false === $response ) {
