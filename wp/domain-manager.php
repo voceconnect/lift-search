@@ -61,7 +61,7 @@ class Lift_Domain_Manager {
 
 	/**
 	 *
-	 * @var Cloud_Config_API 
+	 * @var Lift_Cloud_Config_API 
 	 */
 	private $config_api;
 

@@ -208,7 +208,7 @@ class Lift_Admin {
 				$status_message = 'There was an error while applying the schema to the domain.';
 			}
 		} else {
-			$status_message = 'Domain could not be found. <span class="">Would you like to <a id="lift-create-domain" data-domain="' . esc_attr( $domain ) . '" href="#">create this domain with Lift\'s default indexes</a>?</span>';
+			$status_message = 'Domain could not be found. <span class="">Would you like to <a id="lift-create-domain" data-domain="' . esc_attr( $domain_name ) . '" href="#">create this domain with Lift\'s default indexes</a>?</span>';
 			$error = true;
 		}
 
