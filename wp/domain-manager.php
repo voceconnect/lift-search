@@ -85,7 +85,6 @@ class Lift_Domain_Manager {
 		if ( is_wp_error( $error = $this->config_api->CreateDomain( $domain_name ) ) )
 			return $error;
 
-		$event_wathcher = Lift_Search::get_domain_event_watcher();
 		$access_policies = $this->get_default_access_policies( $domain_name );
 
 		TAE_Async_Event::Schedule(array( $this, 'domain_is_created' ), array( $domain_name ), 60 )
