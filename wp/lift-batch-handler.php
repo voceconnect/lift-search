@@ -283,19 +283,8 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 		 * @return boolean 
 		 */
 		public static function ready_for_batch( $domain_name ) {
-
-			$domains = Cloud_Config_Request::GetDomains( array( $domain_name ) );
-			if ( $domains ) {
-				$ds = $domains->DescribeDomainsResponse->DescribeDomainsResult->DomainStatusList;
-				if ( !count( $ds ) ) {
-					return false;
-				}
-				foreach ( $ds as $d ) {
-					if ( $d->DomainName == $domain_name ) {
-						return ( bool ) (!$d->Deleted && !$d->Processing && !$d->RequiresIndexDocuments && $d->SearchInstanceCount > 0 );
-					}
-				}
-			}
+			$domain_manager = Lift_Search::get_domain_manager();
+			return $domain_manager->can_accept_uploads($domain_name);
 		}
 
 		/**
@@ -305,7 +294,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 		 * @todo Add locking
 		 */
 		public static function send_next_batch() {
-			if ( !self::ready_for_batch( Lift_Search::get_search_domain() ) ) {
+			if ( !self::ready_for_batch( Lift_Search::get_search_domain_name() ) ) {
 				delete_transient( self::BATCH_LOCK );
 				Lift_Search::event_log( 'CloudSearch Not Ready for Batch ' . time(), 'The batch is locked or the search domain is either currently processing, needs indexing, or your domain does not have indexes set up.', array( 'send-queue', 'response-false', 'notice' ) );
 				return;

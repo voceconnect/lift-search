@@ -2,7 +2,7 @@
 define( 'LIFT_PATH', plugin_dir_url( 'lift-search.php' ) );
 $step_completed = array( );
 $step_completed[2] = ( Lift_Search::get_access_key_id() && Lift_Search::get_secret_access_key() );
-$step_completed[3] = ( Lift_Search::get_search_domain() );
+$step_completed[3] = ( Lift_Search::get_search_domain_name() );
 $step_completed[4] = ( get_option( Lift_Search::INITIAL_SETUP_COMPLETE_OPTION, 0 ) );
 $disabled = 'disabled="disabled"';
 ?>
@@ -69,7 +69,7 @@ $disabled = 'disabled="disabled"';
 					<tr valign="top">
 						<th scope="row">Search Domain Name</th>
 						<td>
-							<input name="search-domain" value="<?php echo esc_attr( Lift_Search::get_search_domain() ); ?>" class="regular-text" type="text">
+							<input name="search-domain" value="<?php echo esc_attr( Lift_Search::get_search_domain_name() ); ?>" class="regular-text" type="text">
 							<br><span class="lift-light-grey">
 								If you have already configured a search domain in the AWS Console, enter it here. Otherwise, you will be prompted to create a new one after clicking Save Domain below.
 							</span>
