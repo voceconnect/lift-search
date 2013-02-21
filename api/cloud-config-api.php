@@ -23,6 +23,10 @@ class Cloud_Config_API {
 	protected function set_last_error( $error ) {
 		$this->last_error = $error;
 	}
+	
+	protected function set_last_status_code( $status_code) {
+		$this->last_status_code = $status_code;
+	}
 
 	/**
 	 * Turn a nested array into dot-separated 1 dimensional array
@@ -69,7 +73,7 @@ class Cloud_Config_API {
 
 		$r = $config->send_request( $method, $payload );
 		
-		$this->last_status_code = $config->status_code;
+		$this->set_last_status_code( $config->status_code );
 		
 		if ( $r ) {
 

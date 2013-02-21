@@ -355,7 +355,13 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				'post_author'
 				), $post_type );
 		}
-
+		
+		public static function get_indexed_taxonomies() {
+			return apply_filters('lift_indexed_taxonomies', array(
+				'category', 'post_tag'
+			));
+		}
+		
 		public static function update_schema() {
 			if ( self::is_setup_complete() && ($domain = self::get_search_domain_name()) ) {
 				self::get_domain_manager()->apply_schema( $domain );
@@ -412,21 +418,21 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 			$post_data['post_author_name'] = get_the_author_meta( 'display_name', $post_data['post_author'], $document_id );
 
-			$taxonomies = array( 'category', 'post_tag' );
+			$taxonomies = self::get_indexed_taxonomies();
 
 			foreach ( $taxonomies as $taxonomy ) {
 				$terms = get_the_terms( $document_id, $taxonomy );
 				if ( !empty( $terms ) ) {
 
 					$post_data["taxonomy_{$taxonomy}_label"] = array( );
-					$post_data["taxomomy_{$taxonomy}_id"] = array( );
+					$post_data["taxonomy_{$taxonomy}_id"] = array( );
 
 					foreach ( $terms as $term ) {
 						$post_data["taxonomy_{$taxonomy}_label"][] = $term->name;
-						$post_data["taxomomy_{$taxonomy}_id"][] = $term->term_id;
+						$post_data["taxonomy_{$taxonomy}_id"][] = $term->term_id;
 					}
 
-					$post_data["taxonomy_{$taxonomy}_label"] = join( ', ', $post_data["taxonomy_{$taxonomy}_label"] );
+					$post_data["taxonomy_{$taxonomy}_label"] = implode( ', ', $post_data["taxonomy_{$taxonomy}_label"] );
 				}
 			}
 			return $post_data;

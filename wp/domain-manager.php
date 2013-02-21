@@ -26,10 +26,10 @@ class Lift_Cloud_Config_API extends Cloud_Config_API {
 
 		if ( in_array( $method, $this->cached_methods ) ) {
 			if ( is_array( $cache = get_transient( 'lift_request_' . $method ) ) ) {
-				$key = substr( md5( $payload ), 0, 25 );
+				$key = substr( md5( serialize( $payload ) ), 0, 25 );
 				if ( isset( $cache[$key] ) ) {
 					$this->set_last_error( $cache[$key]['set_last_error'] );
-					$this->last_status_code( $cache[$key]['last_status_code'] );
+					$this->set_last_status_code( $cache[$key]['last_status_code'] );
 					return $cache[$key]['response'];
 				}
 			}
@@ -38,14 +38,17 @@ class Lift_Cloud_Config_API extends Cloud_Config_API {
 		$result = parent::_make_request( $method, $payload, $flatten_keys );
 
 		if ( in_array( $method, $this->cached_methods ) ) {
-			if ( is_array( $cache = get_transient( 'lift_request_' . $method ) ) ) {
-				$cache = array(
-					'set_last_error' => $this->get_last_error(),
-					'last_status_code' => $this->last_status_code,
-					'response' => $result
-				);
-				set_transient( 'lift_request_' . $method, $cache, 60 );
-			}
+			$cache = get_transient( 'lift_request_' . $method );
+			if ( !is_array( $cache ) )
+				$cache = array( );
+
+			$key = substr( md5( serialize( $payload ) ), 0, 25 );
+			$cache[$key] = array(
+				'set_last_error' => $this->get_last_error(),
+				'last_status_code' => $this->last_status_code,
+				'response' => $result
+			);
+			set_transient( 'lift_request_' . $method, $cache, 60 );
 		} elseif ( isset( $this->clear_cache_methods[$method] ) ) {
 			foreach ( $this->clear_cache_methods[$method] as $clear_methods ) {
 				delete_transient( 'lift_request_' . $clear_methods );
@@ -84,11 +87,11 @@ class Lift_Domain_Manager {
 
 		if ( is_wp_error( $error = $this->config_api->CreateDomain( $domain_name ) ) )
 			return $error;
-		
-		Lift_Search::set_search_domain_name($domain_name);
+
+		Lift_Search::set_search_domain_name( $domain_name );
 		$access_policies = $this->get_default_access_policies( $domain_name );
 
-		TAE_Async_Event::Schedule(array( $this, 'domain_is_created' ), array( $domain_name ), 60 )
+		TAE_Async_Event::Schedule( array( $this, 'domain_is_created' ), array( $domain_name ), 60 )
 			->then( array( $this, 'apply_schema' ), array( $domain_name ), true )
 			->then( array( $this, 'apply_access_policy' ), array( $domain_name, $access_policies ), true );
 

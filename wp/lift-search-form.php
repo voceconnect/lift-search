@@ -16,30 +16,43 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 	 */
 	class Lift_Search_Form {
 
-		private static $instance;
+		private static $instances;
 		public $fields = array( );
 
 		/**
-		 * Get an instance of Lift_Search_Form
-		 * @return object instance of Lift_Search_Form
+		 * WP_Query instance reference for search
+		 * @var Lift_WP_Query 
 		 */
-		public static function GetInstance() {
-			if ( !isset( self::$instance ) ) {
-				self::$instance = new Lift_Search_Form();
+		public $lift_query;
+
+		/**
+		 * Returns an instance of the search form based on the given WP_Query instance
+		 * @global WP_Query $wp_query
+		 * @param WP_Query $a_wp_query
+		 * @return Lift_Search_Form
+		 */
+		public static function GetInstance( $a_wp_query = null ) {
+			global $wp_query;
+			if ( is_null( $a_wp_query ) ) {
+				$a_wp_query = $wp_query;
 			}
-			return self::$instance;
+
+			$query_id = spl_object_hash( $a_wp_query );
+			if ( !isset( self::$instances ) ) {
+				self::$instances = array( );
+			}
+
+			if ( !isset( self::$instances[$query_id] ) ) {
+				self::$instances[$query_id] = new Lift_Search_Form($a_wp_query);
+			}
+			return self::$instances[$query_id];
 		}
 
 		/**
 		 * Lift_Search_Form constructor.
 		 */
-		private function __construct() {
-			add_filter( 'lift_filters_default_fields', function($defaults) {
-					$remove = array( 'post_categories', 'post_tags' );
-					$filtered = array_diff( $defaults, $remove );
-					return $filtered;
-				} );
-
+		private function __construct($wp_query) {
+			$this->lift_query = Lift_WP_Query::GetInstance($wp_query);
 			$this->additional_fields();
 		}
 
@@ -48,22 +61,34 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 * Fields can be modified using the 'lift_filters_default_fields' filter.
 		 */
 		public function additional_fields() {
-			$default_fields = array( 'date', 'post_type', 'post_categories', 'post_tags', 'orderby' );
-			$fields = apply_filters( 'lift_filters_default_fields', $default_fields );
-			if ( in_array( 'date', $fields ) ) {
-				$this->add_date_fields();
+			if ( $this->lift_query->wp_query->is_search() ) {
+				$fields = array( 'date', 'post_type', 'post_categories', 'post_tags', 'orderby' );
+			} else {
+				$fields = array( );
 			}
-			if ( in_array( 'post_type', $fields ) ) {
-				$this->add_posttype_field();
-			}
-			if ( in_array( 'post_categories', $fields ) ) {
-				$this->add_taxonomy_checkbox_fields( 'post_categories', get_categories() );
-			}
-			if ( in_array( 'post_tags', $fields ) ) {
-				$this->add_taxonomy_checkbox_fields( 'tags_input', get_tags() );
-			}
-			if ( in_array( 'orderby', $fields ) ) {
-				$this->add_sort_field();
+
+			$fields = apply_filters( 'lift_form_filters', $fields, $this );
+			foreach ( $fields as $field ) {
+				switch ( $field ) {
+					case 'date':
+						$this->add_date_fields();
+						break;
+					case 'post_type':
+						$this->add_posttype_field();
+						break;
+					case 'post_categories':
+						$this->add_taxonomy_checkbox_fields( 'categories' );
+						break;
+					case 'post_tags':
+						$this->add_taxonomy_checkbox_fields( 'post_tags' );
+						break;
+					case 'orderby':
+						$this->add_sort_field();
+						break;
+					default:
+						do_action( 'lift_custom_form_filter_' . $field, $this );
+						break;
+				}
 			}
 		}
 
@@ -71,7 +96,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 * Builds the sort by dropdown/select field.
 		 */
 		public function add_sort_field() {
-			if ( !$selected = Lift_Search_Form::get_query_var( 'orderby' ) ) {
+			if ( !$selected = $this->lift_query->wp_query->get( 'orderby' ) ) {
 				$selected = 'relevancy';
 			}
 			$options = array(
@@ -90,9 +115,9 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 * @param type $tax_id Wordpress Taxonomy ID
 		 * @param array $terms Array of Wordpress term objects
 		 */
-		public function add_taxonomy_checkbox_fields( $tax_id, $terms ) {
-			global $wp_query;
-			$selected_terms = Lift_Search_Form::get_query_var( $tax_id );
+		public function add_taxonomy_checkbox_fields( $taxonomy ) {
+			return;
+			$selected_terms = Lift_Search_Form::get_query_var( $taxonomy );
 
 			foreach ( $terms as $term ) {
 				$facets = $wp_query->get( 'facets' );
@@ -103,7 +128,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 				if ( is_array( $selected_terms ) && in_array( $term->term_id, $selected_terms ) ) {
 					$options['selected'] = true;
 				}
-				$this->add_field( $tax_id, 'checkbox', $options );
+				$this->add_field( $tax_id, 'select', $options );
 			}
 		}
 
@@ -111,7 +136,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 * Builds the post type dropdown/select field.
 		 */
 		public function add_posttype_field() {
-			global $wp_query;
+
 			$types = Lift_Search::get_indexed_post_types();
 			$selected_types = Lift_Search_Form::get_query_var( 'lift_post_type' );
 			$label = (!$selected_types ) ? 'All Types' : '';
@@ -139,7 +164,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			}
 
 			if ( !$label ) {
-				$label = join( ' / ', $selected_labels );
+				$label = implode( ' / ', $selected_labels );
 			}
 
 			$options = array(
@@ -214,7 +239,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 */
 		public function form() {
 			$search_term = (is_search()) ? get_search_query() : "";
-			$html = '<form role="search" class="lift-search" id="searchform" '.( ! is_search() ? 'action="'.site_url().'/"' : '').'><div>';
+			$html = '<form role="search" class="lift-search" id="searchform" ' . (!is_search() ? 'action="' . site_url() . '/"' : '') . '><div>';
 			$html .= "<input type='text' name='s' id='s' value='$search_term' />";
 			$html .= ' <input type="submit" id="searchsubmit" value="' . esc_attr__( 'Search' ) . '" />';
 			$html .= $this->form_filters();
@@ -224,7 +249,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		}
 
 		public function loop() {
-			$path = dirname(__DIR__) . '/lift-search/templates/lift-loop.php';
+			$path = dirname( __DIR__ ) . '/lift-search/templates/lift-loop.php';
 			include_once $path;
 		}
 
