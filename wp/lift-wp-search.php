@@ -102,6 +102,9 @@ class Lift_WP_Search {
 
 		// size
 		$posts_per_page = $wp_query->get( 'posts_per_page' );
+		if($posts_per_page == -1) {
+			$posts_per_page = 999999;
+		}
 		$lift_search_query->set_size( $posts_per_page );
 
 		// start
