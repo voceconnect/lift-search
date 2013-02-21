@@ -191,7 +191,7 @@ class Lift_Domain_Manager {
 
 		if ( !$this->config_api->UpdateServiceAccessPolicies( $domain_name, $policies ) ) {
 			Lift_Search::event_log( 'There was an error while applying the default access policy to the domain.', $this->config_api->get_last_error(), array( 'access policy', 'error' ) );
-			return false;
+			return new WP_Error('There was an error while applying the default access policy to the domain.');
 		}
 
 		return true;

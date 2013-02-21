@@ -172,10 +172,10 @@ class Cloud_Config_API {
 	public function UpdateServiceAccessPolicies($domain_name, $policies) {
 		$payload = array(
 			'AccessPolicies' => $policies,
-			'DomainName' => $domain,
+			'DomainName' => $domain_name,
 		);
 
-		return $this->_make_request( 'UpdateServiceAccessPolicies', $payload );
+		return $this->_make_request( 'UpdateServiceAccessPolicies', $payload, false );
 
 	}
 
