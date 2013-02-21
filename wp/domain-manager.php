@@ -91,7 +91,7 @@ class Lift_Domain_Manager {
 		Lift_Search::set_search_domain_name( $domain_name );
 		$access_policies = $this->get_default_access_policies( $domain_name );
 
-		TAE_Async_Event::Schedule( array( $this, 'domain_is_created' ), array( $domain_name ), 60 )
+		TAE_Async_Event::WatchWhen( array( $this, 'domain_is_created' ), array( $domain_name ), 60, 'lift_domain_created_'. $domain_name )
 			->then( array( $this, 'apply_schema' ), array( $domain_name ), true )
 			->then( array( $this, 'apply_access_policy' ), array( $domain_name, $access_policies ), true )
 			->commit();
@@ -135,7 +135,7 @@ class Lift_Domain_Manager {
 		}
 
 		if ( count( $changed_fields ) ) {
-			TAE_Async_Event::Schedule( array( $this, 'needs_indexing' ), array( $domain_name ), 60 )
+			TAE_Async_Event::WatchWhen( array( $this, 'needs_indexing' ), array( $domain_name ), 60, 'lift_needs_indexing_'. $domain_name )
 				->then( array( $this, 'index_documents' ), array( $domain_name ), true )
 				->then( array( 'Lift_Batch_Handler', 'queue_all' ) )
 				->commit();

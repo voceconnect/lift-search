@@ -237,8 +237,14 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			return apply_filters( 'lift_search_domain', self::__get_setting( 'search-domain' ) );
 		}
 
-		public static function set_search_domain_name( $value ) {
-			self::__set_setting( 'search-domain', $value );
+		public static function set_search_domain_name( $domain_name ) {
+			$old_domain_name = self::get_search_domain_name();
+			if ( $old_domain_name && $domain_name != $old_domain_name ) {
+				$domain_manager = self::get_domain_manager();
+				TAE_Async_Event::Unwatch( 'lift_domain_created_' . $old_domain_name );
+				TAE_Async_Event::Unwatch( 'lift_needs_indexing_' . $old_domain_name );
+			}
+			self::__set_setting( 'search-domain', $domain_name );
 		}
 
 		/**
@@ -355,13 +361,13 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				'post_author'
 				), $post_type );
 		}
-		
+
 		public static function get_indexed_taxonomies() {
-			return apply_filters('lift_indexed_taxonomies', array(
+			return apply_filters( 'lift_indexed_taxonomies', array(
 				'category', 'post_tag'
-			));
+				) );
 		}
-		
+
 		public static function update_schema() {
 			if ( self::is_setup_complete() && ($domain = self::get_search_domain_name()) ) {
 				self::get_domain_manager()->apply_schema( $domain );
@@ -512,7 +518,13 @@ if ( !class_exists( 'Lift_Search' ) ) {
 register_deactivation_hook( __FILE__, '_lift_deactivate' );
 
 function _lift_deactivate() {
-	// @TODO Clean up batch posts and any scheduled crons
+	$domain_manager = Lift_Search::get_domain_manager();
+	if ( $domain_name = Lift_Search::get_search_domain_name() ) {
+		TAE_Async_Event::Unwatch( 'lift_domain_created_' . $domain_name );
+		TAE_Async_Event::Unwatch( 'lift_needs_indexing_' . $domain_name );
+	}
+
+
 	//clean up options
 	delete_option( Lift_Search::INITIAL_SETUP_COMPLETE_OPTION );
 	delete_option( Lift_Search::SETTINGS_OPTION );

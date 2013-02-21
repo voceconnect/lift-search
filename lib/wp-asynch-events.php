@@ -43,12 +43,24 @@ class TAE_Async_Event {
 	 * @param type $frequency
 	 * @return TAE_Async_Event
 	 */
-	public static function Schedule( $callback, $params = array( ), $frequency = 300 ) {
-		$event_key = substr( md5( serialize( $callback ) . serialize( $params ) ), 0, 30 );
+	public static function WatchWhen( $callback, $params = array( ), $frequency = 300, $event_key = null ) {
+		if(is_null($event_key))
+			$event_key = self::GenerateKey ( $callback, $params );
 		if ( !($event = self::Restore( $event_key )) ) {
 			$event = new TAE_Async_Event( $callback, $params, $frequency, $event_key );
 		}
 		return $event;
+	}
+	
+	public static function Unwatch( $event_key ) {
+		if($event = self::Restore($event_key)) {
+			$event->then_events = array();
+			$event->commit();
+		}
+	}
+	
+	public static function GenerateKey($callback, $params) {
+		return substr( md5( serialize( $callback ) . serialize( $params ) ), 0, 30 );
 	}
 
 	/**
@@ -125,26 +137,27 @@ class TAE_Async_Event {
 
 	public function commit() {
 		$event_keys = get_option( 'tae_event_keys', array( ) );
-		$event_key = substr( md5( serialize( $this->callback ) . serialize( $this->params ) ), 0, 30 );
-		$next_scheduled_time = wp_next_scheduled( 'tae_event_' . $event_key );
+		$next_scheduled_time = wp_next_scheduled( 'tae_event_' . $this->key );
 		if ( !count( $this->then_events ) ) {
-			$event_keys = array_diff( $event_keys, array( $event_key ) );
-			delete_option( 'tae_event_' . $event_key );
-			wp_unschedule_event( $next_scheduled_time, 'tae_event_' . $event_key );
+			$event_keys = array_diff( $event_keys, array( $this->key ) );
+			delete_option( 'tae_event_' . $this->key );
+			wp_unschedule_event( $next_scheduled_time, 'tae_event_' . $this->key );
 		} else {
-			$event_keys = array_merge( $event_keys, array( $event_key ) );
-			update_option( 'tae_event_' . $event_key, array(
+			$event_keys = array_merge( $event_keys, array( $this->key ) );
+			update_option( 'tae_event_' . $this->key, array(
 				'callback' => $this->callback,
 				'params' => $this->params,
 				'frequency' => $this->frequency,
 				'then_events' => $this->then_events
 			) );
 			if ( !$next_scheduled_time ) {
-				wp_schedule_event( time() + $this->frequency, 'tae_schedule_' . $event_key, 'tae_event_' . $event_key );
+				wp_schedule_event( time() + $this->frequency, 'tae_schedule_' . $this->key, 'tae_event_' . $this->key );
 			}
 		}
-
-		update_option( 'tae_event_keys', $event_keys );
+		if(empty($event_keys))
+			delete_option ( 'tae_event_keys');
+		else
+			update_option( 'tae_event_keys', $event_keys );
 	}
 
 }
@@ -155,7 +168,7 @@ add_action( 'init', function() {
 		$cur_version = 19;
 		if ( $version < $cur_version ) {
 
-			TAE_Async_Event::Schedule( 'test_time', array( time() + 120 ), 30 )
+			TAE_Async_Event::WatchWhen( 'test_time', array( time() + 120 ), 30 )
 				->then( 'do_this_now' )
 				->commit();
 			update_option( 'tae_test_v', $cur_version );
