@@ -96,8 +96,8 @@ class Lift_WP_Query {
 
 		// size
 		$posts_per_page = $this->wp_query->get( 'posts_per_page' );
-		if($post_per_page < 0) {
-			$post_per_page = 9999999;
+		if($posts_per_page < 0) {
+			$posts_per_page = 9999999;
 		}
 		$cs_query->set_size( $posts_per_page );
 
