@@ -96,6 +96,9 @@ class Lift_WP_Query {
 
 		// size
 		$posts_per_page = $this->wp_query->get( 'posts_per_page' );
+		if($post_per_page < 0) {
+			$post_per_page = 9999999;
+		}
 		$cs_query->set_size( $posts_per_page );
 
 		// start
@@ -232,7 +235,7 @@ class Lift_WP_Search {
 		$lift_query = Lift_WP_Query::GetInstance( $wp_query );
 		if ( !apply_filters( 'lift_override_post_results', true ) || !$lift_query->wp_query->is_search() )
 			return $request;
-//return $request;
+
 		// filter the lift query
 		$cs_query = apply_filters( 'lift_filter_query', $lift_query->get_cs_query() );
 
