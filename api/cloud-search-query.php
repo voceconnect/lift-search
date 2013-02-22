@@ -1,5 +1,4 @@
 <?php
-
 /*
 
   Example usage:
@@ -17,6 +16,7 @@
 class Cloud_Search_Query {
 
 	protected $facets = array( );
+	protected $facet_constraints = array();
 	protected $return_fields = array( );
 	protected $size = 10;
 	protected $start = 0;
@@ -31,8 +31,12 @@ class Cloud_Search_Query {
 		$this->boolean_query = $boolean_query;
 	}
 
-	public function add_facet( $facet ) {
-		$this->facets = array_merge( $this->facets, ( array ) $facet );
+	public function add_facet( $field ) {
+		$this->facets = array_merge( $this->facets, ( array ) $field );
+	}
+	
+	public function add_facet_contraint( $field, $constraints) {
+		$this->facet_constraints[$field] = (array) $constraints;
 	}
 
 	public function add_return_field( $field ) { // string or array
@@ -81,7 +85,12 @@ class Cloud_Search_Query {
 			'start' => $this->start,
 			'rank' => implode( ',', $ranks )
 			) );
-
+		
+		if(count($this->facet_constraints)) {
+			foreach($this->facet_constraints as $field => $constraints) {
+				$params['facet-'.$field.'-constraints'] = implode(',', $constraints);
+			}
+		}
 		return http_build_query( $params );
 	}
 

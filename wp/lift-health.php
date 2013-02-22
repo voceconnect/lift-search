@@ -46,10 +46,10 @@ if ( !class_exists( 'Lift_Health' ) ) {
 		 * @return array 
 		 */
 		public static function get_local_status() {
-			if(!Lift_Search::error_logging_enabled()) {
-				return array('severity' => 0, 'reason' => '', 'errors' => false, 'status' => 0);
+			if ( !Lift_Search::error_logging_enabled() ) {
+				return array( 'severity' => 0, 'reason' => '', 'errors' => false, 'status' => 0 );
 			}
-			
+
 			$intervals = array(
 				60 * 60 => array( 'severity' => 2, 'threshold' => 5 ), // 1 hr
 				60 * 30 => array( 'severity' => 1, 'threshold' => 2 ), // 30 mins
@@ -66,15 +66,15 @@ if ( !class_exists( 'Lift_Health' ) ) {
 				$lift_health_interval = $interval;
 				add_filter( 'posts_where', array( __CLASS__, 'filter_posts_where' ) );
 				$q = new WP_Query( array(
-						'posts_per_page' => 1,
-						'post_type' => Voce_Error_Logging::POST_TYPE,
-						'tax_query' => array( array(
-								'taxonomy' => Voce_Error_Logging::TAXONOMY,
-								'field' => 'slug',
-								'terms' => array( 'error', 'lift-search' ),
-								'operator' => 'AND'
-							) ),
-						) );
+					'posts_per_page' => 1,
+					'post_type' => Voce_Error_Logging::POST_TYPE,
+					'tax_query' => array( array(
+							'taxonomy' => Voce_Error_Logging::TAXONOMY,
+							'field' => 'slug',
+							'terms' => array( 'error', 'lift-search' ),
+							'operator' => 'AND'
+						) ),
+					) );
 				remove_filter( 'posts_where', array( __CLASS__, 'filter_posts_where' ) );
 
 				$post_count = $q->found_posts;
@@ -125,7 +125,7 @@ if ( !class_exists( 'Lift_Health' ) ) {
 		 * @return array 
 		 */
 		public static function get_remote_status() {
-			$domain = Cloud_Config_Request::DescribeDomain( Lift_Search::get_search_domain() );
+			$domain = Lift_Search::get_domain_manager()->get_domain( Lift_Search::get_search_domain_name() );
 
 			if ( !$domain ) {
 				return array(

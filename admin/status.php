@@ -23,7 +23,7 @@ if ( !isset( $remote_domain_status['fatal'] ) ) {
 }
 
 $remote_domain_status_text = $remote_domain_status['text'];
-$domain = Lift_Search::get_search_domain();
+$domain = Lift_Search::get_search_domain_name();
 
 $batch_interval_display = Lift_Search::get_batch_interval_display();
 ?>
@@ -73,7 +73,7 @@ $batch_interval_display = Lift_Search::get_batch_interval_display();
 							<form method="get" action="" id="sync-queue-now-form">
 								<input type="hidden" name="page" value="<?php echo esc_attr( Lift_Admin::STATUS_PAGE ); ?>">
 								<input type="hidden" name="sync-queue" value="1">
-								<button class="button-primary" <?php echo ( Lift_Batch_Handler::is_batch_locked() || !Lift_Batch_Handler::ready_for_batch( Lift_Search::get_search_domain() ) ) ? 'disabled' : ''; ?>>Sync Queue Now</button>
+								<button class="button-primary" <?php echo ( Lift_Batch_Handler::is_batch_locked() || !Lift_Batch_Handler::ready_for_batch( Lift_Search::get_search_domain_name() ) ) ? 'disabled' : ''; ?>>Sync Queue Now</button>
 							</form>
 						</div>
 						<div class="clr"></div>

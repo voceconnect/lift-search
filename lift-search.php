@@ -8,20 +8,21 @@
   Author: Voce Platforms
   Author URI: http://voceconnect.com/
  */
-
 require_once('lib/voce-error-logging/voce-error-logging.php');
 require_once('api/lift-batch.php');
 require_once('api/lift-http.php');
-require_once('api/cloud-api.php');
-require_once('api/cloud-search.php');
-require_once('api/cloud-config.php');
+require_once('api/cloud-search-api.php');
+require_once('api/cloud-search-query.php');
+require_once('api/cloud-config-api.php');
 require_once('lib/posts-to-sdf.php');
+require_once('wp/domain-manager.php');
 require_once('wp/lift-batch-handler.php');
 require_once('wp/lift-health.php');
 require_once('wp/lift-wp-search.php');
 require_once('wp/lift-search-form.php');
 require_once('wp/lift-update-queue.php');
 require_once('wp/update-watchers/post.php');
+require_once('lib/wp-asynch-events.php');
 
 if ( !class_exists( 'Lift_Search' ) ) {
 
@@ -31,15 +32,13 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 */
 
 		const INITIAL_SETUP_COMPLETE_OPTION = 'lift-initial-setup-complete';
-		const DB_VERSION = 4;
+		const DB_VERSION = 5;
 
 		/**
 		 * Option name for storing all user based options 
 		 */
 		const SETTINGS_OPTION = 'lift-settings';
-		const INDEX_DOCUMENTS_HOOK = 'lift_index_documents';
-		const SET_ENDPOINTS_HOOK = 'lift_set_endpoints';
-		const NEW_DOMAIN_CRON_INTERVAL = 'lift-index-documents';
+		const DOMAIN_EVENT_WATCH_INTERVAL = 60;
 
 		/**
 		 * Returns whether setup has been complete by testing whether all
@@ -47,19 +46,17 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return bool 
 		 */
 		public static function is_setup_complete() {
-			return self::get_access_key_id() && self::get_secret_access_key()
-				&& self::get_search_domain() && get_option( self::INITIAL_SETUP_COMPLETE_OPTION, 0 );
+
+			//clean up these options and make this check if the saved domain name exists
+			return self::get_access_key_id() && self::get_secret_access_key() && self::get_search_domain_name() && get_option( self::INITIAL_SETUP_COMPLETE_OPTION, 0 );
 		}
 
 		public static function error_logging_enabled() {
-			return !( defined( 'DISABLE_LIFT_ERROR_LOGGING' ) && DISABLE_LIFT_ERROR_LOGGING )
-				&& ( class_exists( 'Voce_Error_Logging' ) || file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) );
+			return !( defined( 'DISABLE_LIFT_ERROR_LOGGING' ) && DISABLE_LIFT_ERROR_LOGGING ) && ( class_exists( 'Voce_Error_Logging' ) || file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) );
 		}
 
 		public static function init() {
-
-			if ( self::error_logging_enabled() && !class_exists( 'Voce_Error_Logging' )
-				&& file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) ) {
+			if ( self::error_logging_enabled() && !class_exists( 'Voce_Error_Logging' ) && file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) ) {
 				require_once (__DIR__ . '/lib/voce-error-loggin/voce-error-logging');
 			}
 
@@ -68,7 +65,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			}
 
 			if ( self::get_document_endpoint() ) {
-				add_action( 'init', array( 'Lift_Batch_Handler', 'init' ) );
+				add_action( 'init', array( 'Lift_Batch_Handler', 'init' ), 9 );
 				add_action( 'lift_post_changes_to_data', array( __CLASS__, '_default_extended_post_data' ), 10, 3 );
 			}
 
@@ -118,11 +115,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				}, 10, 2 );
 
 			add_filter( 'cron_schedules', function( $schedules ) {
-					$schedules[Lift_Search::NEW_DOMAIN_CRON_INTERVAL] = array(
-						'interval' => 60 * 5, // 5 mins
-						'display' => '',
-					);
-
 					if ( Lift_Search::get_batch_interval() > 0 ) {
 						$interval = Lift_Search::get_batch_interval();
 					} else {
@@ -136,25 +128,21 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 					return $schedules;
 				} );
+		}
 
-			//hooking into the index documents cron to tell AWS to start indexing documents
-			add_action( self::INDEX_DOCUMENTS_HOOK, function() {
-					$domain_name = Lift_Search::get_search_domain();
+		/**
+		 * Returns an instance of the Lift_Domain_Manager
+		 * @param string $access_key
+		 * @param string $secret_key
+		 * @return Lift_Domain_Manager
+		 */
+		public static function get_domain_manager( $access_key = null, $secret_key = null ) {
+			if ( is_null( $access_key ) )
+				$access_key = self::get_access_key_id();
+			if ( is_null( $secret_key ) )
+				$secret_key = self::get_secret_access_key();
 
-					if ( !$domain_name ) {
-						return;
-					}
-
-					$r = Cloud_Config_Request::IndexDocuments( $domain_name );
-
-					if ( $r ) {
-						wp_clear_scheduled_hook( Lift_Search::INDEX_DOCUMENTS_HOOK );
-					}
-				} );
-
-			//hooking into endpoints cron to "asynchronously" retrieve the endpoint data 
-			//from AWS
-			add_action( self::SET_ENDPOINTS_HOOK, array( 'Lift_Search', 'cron_set_endpoints' ) );
+			return new Lift_Domain_Manager( $access_key, $secret_key, self::get_http_api() );
 		}
 
 		public function test_access( $id = '', $secret = '' ) {
@@ -163,7 +151,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			$error = false;
 
 			try {
-				if ( Cloud_Config_Request::TestConnection( $credentials ) ) {
+				if ( Cloud_Config_API::TestConnection( $credentials ) ) {
 					$status_message = 'Success';
 					self::__set_setting( 'access-key-id', $id );
 					self::__set_setting( 'secret-access-key', $secret );
@@ -180,40 +168,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			}
 
 			return array( 'error' => $error, 'message' => $status_message );
-		}
-
-		/**
-		 * schedule crons needed for new domains. clear existing crons first.
-		 * 
-		 */
-		public static function add_new_domain_crons() {
-			wp_clear_scheduled_hook( self::INDEX_DOCUMENTS_HOOK );
-			wp_clear_scheduled_hook( self::SET_ENDPOINTS_HOOK );
-
-			wp_schedule_event( time(), self::NEW_DOMAIN_CRON_INTERVAL, self::INDEX_DOCUMENTS_HOOK );
-			wp_schedule_event( time(), self::NEW_DOMAIN_CRON_INTERVAL, self::SET_ENDPOINTS_HOOK );
-		}
-
-		/**
-		 * cron hook to set up index documents for new domains. cron
-		 * is unscheduled when the documents are indexed successfully.
-		 *
-		 */
-		public static function cron_set_endpoints() {
-			$domain_name = self::get_search_domain();
-
-			if ( !$domain_name ) {
-				return;
-			}
-
-			$document_endpoint = Cloud_Config_Request::DocumentEndpoint( $domain_name );
-			$search_endpoint = Cloud_Config_Request::SearchEndpoint( $domain_name );
-
-			if ( $document_endpoint && $search_endpoint ) {
-				self::__set_setting( 'document-endpoint', $document_endpoint );
-				self::__set_setting( 'search-endpoint', $search_endpoint );
-				wp_clear_scheduled_hook( self::SET_ENDPOINTS_HOOK );
-			}
 		}
 
 		/**
@@ -279,25 +233,18 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * Get search domain
 		 * @return string
 		 */
-		public static function get_search_domain() {
+		public static function get_search_domain_name() {
 			return apply_filters( 'lift_search_domain', self::__get_setting( 'search-domain' ) );
 		}
 
-		public static function set_search_domain( $value ) {
-			self::__set_setting( 'search-domain', $value );
-			self::__update_endpoints();
-		}
-
-		private static function __update_endpoints() {
-			if ( $search_domain = self::get_search_domain() ) {
-				$document_endpoint = Cloud_Config_Request::DocumentEndpoint( $search_domain );
-				$search_endpoint = Cloud_Config_Request::SearchEndpoint( $search_domain );
-
-				if ( $document_endpoint && $search_endpoint ) {
-					self::__set_setting( 'document-endpoint', $document_endpoint );
-					self::__set_setting( 'search-endpoint', $search_endpoint );
-				}
+		public static function set_search_domain_name( $domain_name ) {
+			$old_domain_name = self::get_search_domain_name();
+			if ( $old_domain_name && $domain_name != $old_domain_name ) {
+				$domain_manager = self::get_domain_manager();
+				TAE_Async_Event::Unwatch( 'lift_domain_created_' . $old_domain_name );
+				TAE_Async_Event::Unwatch( 'lift_needs_indexing_' . $old_domain_name );
 			}
+			self::__set_setting( 'search-domain', $domain_name );
 		}
 
 		/**
@@ -305,14 +252,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return string
 		 */
 		public static function get_search_endpoint() {
-			if ( !self::__get_setting( 'search-endpoint' ) ) {
-				self::__update_endpoints();
-			}
-			return apply_filters( 'lift_search_endpoint', self::__get_setting( 'search-endpoint' ) );
-		}
-
-		public static function set_search_endpoint( $value ) {
-			self::__set_setting( 'search-endpoint', $value );
+			return self::get_domain_manager()->get_search_endpoint( self::get_search_domain_name() );
 		}
 
 		/**
@@ -320,14 +260,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return string
 		 */
 		public static function get_document_endpoint() {
-			if ( !self::__get_setting( 'document-endpoint' ) ) {
-				self::__update_endpoints();
-			}
-			return apply_filters( 'lift_document_endpoint', self::__get_setting( 'document-endpoint' ) );
-		}
-
-		public static function set_document_endpoint( $value ) {
-			self::__set_setting( 'document-endpoint', $value );
+			return self::get_domain_manager()->get_document_endpoint( self::get_search_domain_name() );
 		}
 
 		/**
@@ -409,8 +342,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 */
 		public static function get_search_api() {
 			$lift_http = self::get_http_api();
-			return new Cloud_API( $lift_http,
-					Lift_Search::get_document_endpoint(), Lift_Search::get_search_endpoint(), '2011-02-01' );
+			return new CloudSearch_API( $lift_http, Lift_Search::get_document_endpoint(), Lift_Search::get_search_endpoint(), '2011-02-01' );
 		}
 
 		public static function get_indexed_post_types() {
@@ -419,15 +351,28 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 		public static function get_indexed_post_fields( $post_type ) {
 			return apply_filters( 'lift_indexed_post_fields', array(
-					'post_title',
-					'post_content',
-					'post_excerpt',
-					'post_date_gmt',
-					'post_excerpt',
-					'post_status',
-					'post_type',
-					'post_author'
-					), $post_type );
+				'post_title',
+				'post_content',
+				'post_excerpt',
+				'post_date_gmt',
+				'post_excerpt',
+				'post_status',
+				'post_type',
+				'post_author'
+				), $post_type );
+		}
+
+		public static function get_indexed_taxonomies() {
+			return apply_filters( 'lift_indexed_taxonomies', array(
+				'category', 'post_tag'
+				) );
+		}
+
+		public static function update_schema() {
+			if ( self::is_setup_complete() && ($domain = self::get_search_domain_name()) ) {
+				self::get_domain_manager()->apply_schema( $domain );
+			}
+			return true;
 		}
 
 		public static function RecentErrorsTable() {
@@ -479,21 +424,21 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 			$post_data['post_author_name'] = get_the_author_meta( 'display_name', $post_data['post_author'], $document_id );
 
-			$taxonomies = array( 'category', 'post_tag' );
+			$taxonomies = self::get_indexed_taxonomies();
 
 			foreach ( $taxonomies as $taxonomy ) {
 				$terms = get_the_terms( $document_id, $taxonomy );
 				if ( !empty( $terms ) ) {
 
-					$post_data["taxonomy_{$taxonomy}_label"] = array();
-					$post_data["taxomomy_{$taxonomy}_id"] = array( );
+					$post_data["taxonomy_{$taxonomy}_label"] = array( );
+					$post_data["taxonomy_{$taxonomy}_id"] = array( );
 
 					foreach ( $terms as $term ) {
-						$post_data["taxonomy_{$taxonomy}_label"][] = $term->name ;
-						$post_data["taxomomy_{$taxonomy}_id"][] = $term->term_id;
+						$post_data["taxonomy_{$taxonomy}_label"][] = $term->name;
+						$post_data["taxonomy_{$taxonomy}_id"][] = $term->term_id;
 					}
-					
-					$post_data["taxonomy_{$taxonomy}_label"] = join(', ', $post_data["taxonomy_{$taxonomy}_label"]);
+
+					$post_data["taxonomy_{$taxonomy}_label"] = implode( ', ', $post_data["taxonomy_{$taxonomy}_label"] );
 				}
 			}
 			return $post_data;
@@ -518,7 +463,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 			$current_db_version = get_option( 'lift_db_version', 0 );
 			$queue_all = false;
-
+			$changed_schema_fields = array( );
 
 			if ( $current_db_version < 2 ) {
 				//queue storage changes
@@ -550,32 +495,17 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				update_option( 'lift_db_version', 2 );
 			}
 
-			if ( $current_db_version < 3 && self::get_search_domain() ) {
+			if ( $current_db_version < 4 && self::get_search_domain_name() ) {
 				//schema changes
-				Cloud_Config_Request::LoadSchema( self::get_search_domain() );
-
-
-				if ( $current_db_version > 0 ) {
-					$queue_all = true;
-				}
-
-				update_option( 'lift_db_version', 3 );
-			}
-			
-			if ( $current_db_version < 4 && self::get_search_domain() ) {
-				//schema changes
-				Cloud_Config_Request::LoadSchema( self::get_search_domain() );
-
-
-				if ( $current_db_version > 0 ) {
-					$queue_all = true;
-				}
+				self::update_schema();
 
 				update_option( 'lift_db_version', 4 );
 			}
 
-			if ( $queue_all ) {
-				Lift_Batch_Handler::queue_all();
+			if ( $current_db_version < 5 ) {
+				wp_clear_scheduled_hook( 'lift_index_documents' );
+				wp_clear_scheduled_hook( 'lift_set_endpoints' );
+				update_option( 'lift_db_version', 5 );
 			}
 		}
 
@@ -588,7 +518,13 @@ if ( !class_exists( 'Lift_Search' ) ) {
 register_deactivation_hook( __FILE__, '_lift_deactivate' );
 
 function _lift_deactivate() {
-	// @TODO Clean up batch posts and any scheduled crons
+	$domain_manager = Lift_Search::get_domain_manager();
+	if ( $domain_name = Lift_Search::get_search_domain_name() ) {
+		TAE_Async_Event::Unwatch( 'lift_domain_created_' . $domain_name );
+		TAE_Async_Event::Unwatch( 'lift_needs_indexing_' . $domain_name );
+	}
+
+
 	//clean up options
 	delete_option( Lift_Search::INITIAL_SETUP_COMPLETE_OPTION );
 	delete_option( Lift_Search::SETTINGS_OPTION );
@@ -598,8 +534,6 @@ function _lift_deactivate() {
 	if ( class_exists( 'Voce_Error_Logging' ) ) {
 		Voce_Error_Logging::delete_logs( array( 'lift-search' ) );
 	}
-
-	wp_clear_scheduled_hook( Lift_Search::INDEX_DOCUMENTS_HOOK );
 
 	Lift_Batch_Handler::_deactivation_cleanup();
 	Lift_Document_Update_Queue::_deactivation_cleanup();
@@ -616,5 +550,5 @@ function _lift_activation() {
 
 function lift_get_current_site_id() {
 	global $wpdb;
-	return ($wpdb->siteid) ? intval($wpdb->siteid) : 1;
+	return ($wpdb->siteid) ? intval( $wpdb->siteid ) : 1;
 }

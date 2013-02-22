@@ -186,7 +186,7 @@ class Lift_Document_Update_Queue {
 		$limit = 'LIMIT ' . ($page - 1) * $per_page . ', ' . $per_page;
 
 		$query = "SELECT SQL_CALC_FOUND_ROWS meta_id, meta_key, post_id FROM $wpdb->postmeta " .
-			"WHERE post_id in (" . join( ',', $queue_ids ) . ") AND meta_key like 'lift_update_%' " .
+			"WHERE post_id in (" . implode( ',', $queue_ids ) . ") AND meta_key like 'lift_update_%' " .
 			"ORDER BY meta_id " .
 			$limit;
 
