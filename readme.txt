@@ -3,7 +3,7 @@ Contributors: voceplatforms
 Tags: search, cloudsearch, amazon, aws
 Requires at least: 3.4.2
 Tested up to: 3.5
-Stable tag: 1.3
+Stable tag: 1.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -87,6 +87,8 @@ The Query Parameter to enter (step #8) is "s".
 The index fields are set as follows:
 `Field                    Type     Facet          Result   Search
 -----------------------  -------  -------------  ------   -------------
+blog_id                  uint     Yes (default)  Yes      Yes (default)
+site_id                  uint     Yes (default)  Yes      Yes (default)
 id                       uint     Yes (default)  No       Yes (default)
 post_author              uint     Yes (default)  No       Yes (default)
 post_author_name         text     No             Yes      Yes (default)
@@ -110,6 +112,13 @@ By default, posts and pages are indexed. To modify this, use the `lift_indexed_p
 3. Lift search form
 
 == Changelog ==
+= 1.4 =
+* Bug Fix: Fixed stability issues around initial setup and using an already existing domain.
+* Bug Fix: Fixed issue handling -1 posts_per_page parameter.
+* Improvement: added site ID and blog ID to allow MS sites to share a single domain.
+* Refactor: Improved error response handling from CloudSearch.
+* Refactor: Cleaned up the configuration API and schema updating.
+
 = 1.3 =
 * Bug Fix: Fixed scope of Lift_Search references in anonymous function callbacks within crons.
 * Bug Fix: Fixed override filter and set the front-end search form to redirect only on new searches.
