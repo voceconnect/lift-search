@@ -219,7 +219,7 @@ class Lift_WP_Search {
 				return $query_vars;
 			} );
 
-		$bq_callbacks = array( '_bq_filter_post_type', '_bq_filter_post_status', '_bq_filter_taxonomies' );
+		$bq_callbacks = array( '_bq_filter_post_type', '_bq_filter_post_date', '_bq_filter_post_status', '_bq_filter_taxonomies' );
 		foreach ( $bq_callbacks as $callback_name ) {
 			add_filter( 'list_search_bq_parameters', array( __CLASS__, $callback_name ), 10, 2 );
 		}
