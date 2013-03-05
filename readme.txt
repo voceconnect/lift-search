@@ -3,7 +3,7 @@ Contributors: voceplatforms
 Tags: search, cloudsearch, amazon, aws
 Requires at least: 3.4.2
 Tested up to: 3.5
-Stable tag: 1.4
+Stable tag: 1.4.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -112,6 +112,9 @@ By default, posts and pages are indexed. To modify this, use the `lift_indexed_p
 3. Lift search form
 
 == Changelog ==
+= 1.4.1 =
+* Bug Fix: Added back missing date filter
+
 = 1.4 =
 * Bug Fix: Fixed stability issues around initial setup and using an already existing domain.
 * Bug Fix: Fixed issue handling -1 posts_per_page parameter.
