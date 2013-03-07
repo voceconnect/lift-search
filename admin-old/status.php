@@ -71,7 +71,7 @@ $batch_interval_display = Lift_Search::get_batch_interval_display();
 						<div class="clr"></div>
 						<div class="lift-index-now">
 							<form method="get" action="" id="sync-queue-now-form">
-								<input type="hidden" name="page" value="<?php echo esc_attr( Lift_Admin::STATUS_PAGE ); ?>">
+								<input type="hidden" name="page" value="<?php echo esc_attr( Lift_Admin_Old::STATUS_PAGE ); ?>">
 								<input type="hidden" name="sync-queue" value="1">
 								<button class="button-primary" <?php echo ( Lift_Batch_Handler::is_batch_locked() || !Lift_Batch_Handler::ready_for_batch( Lift_Search::get_search_domain_name() ) ) ? 'disabled' : ''; ?>>Sync Queue Now</button>
 							</form>
@@ -97,7 +97,7 @@ $batch_interval_display = Lift_Search::get_batch_interval_display();
 					<div class="clr"></div>
 				</td>
 				<td class="edit">
-					<a class="button" href="<?php echo admin_url( 'options-general.php?page=' . Lift_Admin::LANDING_PAGE ); ?>">Settings</a>
+					<a class="button" href="<?php echo admin_url( 'options-general.php?page=' . Lift_Admin_Old::LANDING_PAGE ); ?>">Settings</a>
 					<div class="clr"></div>
 					<br />
 					<a class="button button-secondary" href="http://getliftsearch.com/documentation/" target="_blank">Documentation</a>
@@ -110,7 +110,7 @@ $batch_interval_display = Lift_Search::get_batch_interval_display();
 				Amazon CloudSearch search domain status for <i><?php echo esc_html( $domain ); ?></i>: 
 				<b><?php echo esc_html( strtoupper( $remote_domain_status_text ) ); ?></b>
 				<?php if ( $remote_domain_status && !( isset( $remote_domain_status['fatal'] ) ) && $remote_domain_status['needs_indexing'] ) : ?>
-					<a href="<?php echo admin_url( 'options-general.php?page=' . Lift_Admin::STATUS_PAGE . '&lift-indexdocuments' ); ?>" class="button">Index Now</a>
+					<a href="<?php echo admin_url( 'options-general.php?page=' . Lift_Admin_Old::STATUS_PAGE . '&lift-indexdocuments' ); ?>" class="button">Index Now</a>
 				<?php endif; ?>.
 				<?php if ( !isset( $remote_domain_status['fatal'] ) ) : ?>
 					Your index has <?php echo esc_html( $remote_domain_status['num_searchable_docs'] ); ?> searchable <?php echo $remote_document_text; ?>
