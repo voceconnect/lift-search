@@ -182,7 +182,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 */
 		private static function __get_setting( $setting ) {
 			// Note: batch-interval should be in seconds, regardless of what batch-interval-units is set to
-			$default_settings = array( 'batch-interval' => 300, 'batch-interval-units' => 'm' );
+			$default_settings = array( 'batch-interval' => 300, 'batch-interval-units' => 'm', 'override-search' => true);
 
 			$settings = get_option( self::SETTINGS_OPTION, array( ) );
 
@@ -206,7 +206,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return string
 		 */
 		public static function get_access_key_id() {
-			return apply_filters( 'lift_access_key_id', self::__get_setting( 'access-key-id' ) );
+			return (string) apply_filters( 'lift_access_key_id', self::__get_setting( 'access-key-id' ) );
 		}
 
 		/**
@@ -222,7 +222,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return string
 		 */
 		public static function get_secret_access_key() {
-			return apply_filters( 'lift_secret_access_key', self::__get_setting( 'secret-access-key' ) );
+			return (string) apply_filters( 'lift_secret_access_key', self::__get_setting( 'secret-access-key' ) );
 		}
 
 		/**
@@ -266,6 +266,14 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		public static function get_document_endpoint() {
 			return self::get_domain_manager()->get_document_endpoint( self::get_search_domain_name() );
 		}
+		
+		public static function set_override_search($value) {
+			self::__set_setting( 'override-search', (bool) $value );
+		}
+		
+		public static function get_override_search() {
+			self::__get_setting('override-search');
+		}
 
 		/**
 		 * Get batch interval setting
@@ -284,9 +292,12 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				case 'h':
 					$value /= 60;
 				case 'm':
+					$value /= 60;
+					break;
 				default:
 					$unit = 'm';
 					$value /= 60;
+					break;
 			}
 
 			return apply_filters( 'lift_batch_interval_display', compact( 'value', 'unit' ) );
@@ -316,9 +327,12 @@ if ( !class_exists( 'Lift_Search' ) ) {
 					case 'h':
 						$interval *= 60;
 					case 'm':
+						$interval *= 60;
+						break;
 					default:
 						$unit = 'm';
 						$interval *= 60;
+						break;
 				}
 
 				self::__set_setting( 'batch-interval-unit', $unit );

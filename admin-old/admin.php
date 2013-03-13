@@ -20,8 +20,6 @@ class Lift_Admin_Old {
 	public function _admin_init() {
 
 
-		add_filter( 'plugin_row_meta', array( __CLASS__, 'settings_link' ), 10, 2 );
-		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( __CLASS__, 'settings_link' ), 10, 2 );
 
 		//setup AJAX handlers
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
@@ -53,13 +51,6 @@ class Lift_Admin_Old {
 			}
 		}
 
-		if ( !Lift_Search::is_setup_complete() ) {
-			if ( !isset( $_GET['page'] ) || (isset( $_GET['page'] ) && self::LANDING_PAGE != $_GET['page']) ) {
-				add_action( 'admin_enqueue_scripts', array( __CLASS__, '_enqueue_style' ) );
-				add_action( 'user_admin_notices', array( __CLASS__, '_print_configuration_nag' ) );
-				add_action( 'admin_notices', array( __CLASS__, '_print_configuration_nag' ) );
-			}
-		}
 	}
 
 	/**
