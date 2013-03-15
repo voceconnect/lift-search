@@ -4,55 +4,83 @@
 	liftAdmin.App = Backbone.Router.extend({
 		el: '#lift-status-page',
 		initialize: function() {
+			var that = this;
+
 			Backbone.emulateHTTP = true;
 			Backbone.emulateJSON = true;
-			that = this;
 
-			this.settingsCollection = new liftAdmin.settingsCollection();
+			this.settings = new liftAdmin.SettingsCollection();
+			this.domains = new liftAdmin.DomainsCollection();
+			this.bind('sync_error', function(){that.domain_sync_error()});
 
-			$.when(this.settingsCollection.fetch())
-							.then(function() {
-				var state = that.determine_state();
-				that.render_state(state);
-			});
+			$.when(this.settings.fetch()).then(function(){that.render()});
+		},
+		render: function() {
+			var state = this.determine_state();
+			state && this.render_state(state);
 		},
 		determine_state: function() {
-			var state;
-			if (this.settingsCollection.getValue('setup_complete')) {
-				state = 'dashboard';
+			var state, credentials, that = this;
+			
+			credentials = this.settings.getValue('credentials');
+			if (!(credentials.accessKey && credentials.secretKey)) {
+				state = 'set_credentials';
 			} else {
-				if (!this.settingsCollection.getValue('accessKey') || this.settingsCollection.getValue('secretKey') || this.models.credentials.get('error')) {
-					state = 'set_credentials';
-				} else if (!this.settingsCollection.getValue('domainname')) {
-					state = 'set_domainname';
+				var foo = typeof this.domains.deferred;
+				if ( typeof this.domains.deferred === 'object' && 'then' in this.domains.deferred ) {
+					//rerender after domains have completely loaded
+					$.when(this.domains.deferred).then(function() {
+						that.render();
+					});
 				} else {
-					state = 'processing_setup';
+					if (!this.settings.getValue('domainname')) {
+						state = 'set_domainname';
+					} else if (!this.settings.getValue('setup_complete')) {
+						state = 'processing_setup';
+					} else {
+						state = 'dashboard';
+					}
 				}
 			}
+
 			return state;
 		},
 		render_state: function(state) {
 			var state_views = {
-				set_credentials: {view: 'setCredentialsView', args: {model: this.settingsCollection}},
-				set_domainname: {view: 'setDomainView', args: {model: this.settingsCollection}},
-				processing_setup: {view: 'setupProcessingView', args: {}},
-				dashboard: {view: 'dashboardView', args: {model: this.settingsCollection}}
+				set_credentials: {view: liftAdmin.SetCredentialsView, args: {model: this.settings}},
+				set_domainname: {view: liftAdmin.SetDomainView, args: {model: this.settings, domains: this.domains}},
+				processing_setup: {view: liftAdmin.SetupProcessingView, args: {model: this.domains.get(this.settings.getValue('domainname'))}},
+				dashboard: {view: liftAdmin.DashboardView, args: {model: this.settings}}
 			};
 
 			var new_view = state_views[state];
-			if (!typeof new_view)
-				return;
 
 			// only process if setting a new view
-			if (this.currentView && this.currentView instanceof new_view.view)
+			if (this.currentView && (this.currentView instanceof new_view.view))
 				return;
 
 			// clean up the old view
 			this.currentView && this.currentView.undelegateEvents();
 
-			this.currentView = new liftAdmin[new_view.view](new_view.args);
+			this.currentView = new new_view.view(new_view.args);
 			this.currentView.setElement(this.el);
 			this.currentView.render();
+		},
+		domain_sync_error: function(collection, error, options) {
+			var modal;
+			if (error.code == 'invalid_credentials') {
+				modal = new ModalSetCredentialsView({_template: 'modal-error-set-credentials', model: this.settings});
+			}
+		},
+		open_modal: function(view) {
+			view.setElement($('#modal_content'));
+			view.render();
+			$('#lift_modal').show();
+		},
+		close_modal: function(view) {
+			view.undelegateEvents();
+			$('#modal_content').html('');
+			$('#lift_modal').hide();
 		}
 	});
 
@@ -80,24 +108,22 @@
 		url: function() {
 			return window.ajaxurl + '?action=lift_' + this.action;
 		},
-		initialize: function() {
-			this.deferred = this.fetch();
-		}
 	});
 
-	liftAdmin.settingModel = Backbone.Model.extend({
+	liftAdmin.SettingModel = Backbone.Model.extend({
 		url: function() {
 			return window.ajaxurl + '?action=lift_setting&setting=' + this.get('id') + '&nonce=' + this.collection.getValue('nonce');
 		},
-		parse: function(res, options) {
+		parse: function(res) {
+			//if came from collection
 			if (res.id)
 				return res;
 			return res.data || null;
 		}
 	});
 
-	liftAdmin.settingsCollection = Backbone.Collection.extend({
-		model: liftAdmin.settingModel,
+	liftAdmin.SettingsCollection = Backbone.Collection.extend({
+		model: liftAdmin.SettingModel,
 		url: function() {
 			return window.ajaxurl + '?action=lift_settings';
 		},
@@ -114,13 +140,42 @@
 		}
 	});
 
-	liftAdmin.domainModel = liftAdmin.Model.extend({
-		action: 'domain'
+	liftAdmin.DomainModel = liftAdmin.Model.extend({
+		action: 'domain',
+		idAttribute: 'DomainName',
 	});
 
-	liftAdmin.setCredentialsView = Backbone.View.extend({
+	liftAdmin.DomainsCollection = Backbone.Collection.extend({
+		model: liftAdmin.DomainModel,
 		initialize: function() {
-			this.template = _.template(liftAdmin.templateLoader.getTemplate('set-credentials'));
+			var that = this;
+			this.bind('sync', function(){that.syncCheck()});
+			this.deferred = this.fetch({
+				success: function(model) {
+					delete model.deferred;
+				}
+			});
+		},
+		url: function() {
+			return window.ajaxurl + '?action=lift_domains';
+		},
+		parse: function(resp) {
+			return resp.domains;
+		},
+		syncCheck: function(collection, resp, options) {
+			if (resp.error) {
+				this.sync_error = error;
+				collection.trigger('sync_error', collection, resp.error, options);
+			}
+		}
+	});
+
+	liftAdmin.SetCredentialsView = Backbone.View.extend({
+		_template: 'set-credentials',
+		initialize: function() {
+			var that = this;
+			this.template = _.template(liftAdmin.templateLoader.getTemplate(this._template));
+			this.model.get('credentials').bind('validated:invalid', function(){that.invalidCredentials()});
 		},
 		events: {
 			'click #save_credentials': 'update_credentials'
@@ -130,31 +185,44 @@
 		},
 		before_save: function() {
 			$('#errors').hide();
-			$('#save_credentials').disable();
+			$('#save_credentials').attr('disabled', 'disabled');
 		},
 		after_save: function() {
-			$('#save_credentials').enable();
+			$('#save_credentials').removeAttr('disabled');
 		},
 		update_credentials: function() {
+			this.before_save();
 			var credentials = {
 				accessKey: $('#accessKey').val(),
 				secretKey: $('#secretKey').val()
 			};
+			this.model.get('credentials').save({value: credentials}, {
+				success: this.save_success,
+				error: this.save_error
+			}).always(this.after_save);
+		},
+		save_success: function() {
+			adminApp.render();
+		},
+		save_error: function(model, xhr, options) {
+			var errors = $.parseJSON(xhr.responseText).errors;
+			model.trigger('validated:invalid', model, errors, options || {});
+		},
+		invalidCredentials: function(model, errors) {
+			var template = liftAdmin.templateLoader.getTemplate('errors');
+			$('#errors').html(_.template(template, {errors: errors})).show();
+		}
 
-			this.model.get('credentials')
-							.save({value: credentials}, {
-				success: function(model, xhr, options) {
-					var success = xhr;
-				},
-				error: function(model, xhr, options) {
-					var foo = xhr;
-				}
-			});
+	});
+
+	liftAdmin.ModalSetCredentialsView = liftAdmin.SetCredentialsView.extend({
+		_template: 'modal-set-credentials',
+		save_success: function() {
+			adminApp.closeModal(this);
 		}
 	});
 
-
-	liftAdmin.dashboardView = Backbone.View.extend({
+	liftAdmin.DashboardView = Backbone.View.extend({
 		initialize: function() {
 			this.template = _.template(liftAdmin.templateLoader.getTemplate('dashboard'));
 		},
@@ -189,30 +257,110 @@
 
 	});
 
-	liftAdmin.setDomainView = Backbone.View.extend({
+	liftAdmin.SetDomainView = Backbone.View.extend({
 		initialize: function() {
+			var that = this;
+			this.domains = this.options.domains;
 			this.template = _.template(liftAdmin.templateLoader.getTemplate('set-domain'));
+			this.model.get('domainname').bind('validated:invalid', function(){that.invalidDomainName()});
 		},
 		events: {
+			'click #save_domainname': 'set_domainname',
+			'click #cancel': 'go_back'
+		},
+		render: function() {
+			this.el.innerHTML = this.template(this.model.toJSONObject());
+		},
+		before_save: function() {
+			$('#errors').hide();
+			$('#save_domainname').attr('disabled', 'disabled');
+		},
+		after_save: function() {
+			$('#save_domainname').removeAttr('disabled');
+		},
+		set_domainname: function() {
+			var domainname, domain, modalView, that = this;
+			this.before_save();
+			domainname = $('#domainname').val();
+			domain = this.domains.get(domainname);
+
+			if (!domain) {
+				//if domain doesn't exist, create it
+				this.create_domain(domainname);
+			} else {
+				//have user confirm to override the existing domain
+				modalView = new liftAdmin.ModalConfirmDomainView({model: this.domains.get(domainname)});
+				modalView.bind('cancelled', function(view, model){that.modal_cancelled(view, model)});
+				modalView.bind('confirmed', function(view, model){that.modal_confirmed(view, model)});
+				adminApp.open_modal(modalView);
+			}
+			//this.model.get('domainname').set({value:domainname});
+
+		},
+		modal_cancelled: function(view, model) {
+			$('#save_domainname').removeAttr('disabled');
+			adminApp.close_modal(view);
+		},
+		modal_confirmed: function(view, domain) {
+			adminApp.close_modal(view);
+			this.use_domain(domain);
+		},
+		create_domain: function(domainname) {
+			var domain, that = this;
+			domain = new liftAdmin.DomainModel({DomainName: domainname});
+			this.domains.add(domain);
+			domain.save(null, {success: function() {that.use_domain(domain)} });
+		},
+		invalid_domainname: function(model, errors) {
+			var template = liftAdmin.templateLoader.getTemplate('errors');
+			$('#errors').html(_.template(template, {errors: errors})).show();
+		},
+		go_back: function() {
+			adminApp.render_state('set_credentials');
+		},
+		use_domain: function(domain) {
+			adminApp.settings.get('domainname').save({value: domain.get('DomainName')}, {
+				success: function(){adminApp.render()}
+			});
+		}
+	});
+
+	liftAdmin.ModalConfirmDomainView = Backbone.View.extend({
+		initialize: function() {
+			this.template = _.template(liftAdmin.templateLoader.getTemplate('modal-confirm-domain'));
+		},
+		events: {
+			'click #confirm_domain': 'confirm',
+			'click #cancel_domain': 'cancel'
 		},
 		render: function() {
 			this.el.innerHTML = this.template(this.model.toJSON());
+		},
+		confirm: function() {
+			this.trigger('confirmed', this, this.model);
+		},
+		cancel: function() {
+			this.trigger('cancelled', this, this.model);
 		}
 
 	});
 
-	liftAdmin.setupProcessingView = Backbone.View.extend({
+	liftAdmin.SetupProcessingView = Backbone.View.extend({
 		initialize: function() {
 			this.template = _.template(liftAdmin.templateLoader.getTemplate('setup-processing'));
 		},
 		events: {
+			'click #skip_status': 'fake_status_complete'
 		},
 		render: function() {
 			this.el.innerHTML = this.template(this.model.toJSON());
+		},
+		fake_status_complete: function() {
+			adminApp.render_state('dashboard');
 		}
 
 	});
 
-	new liftAdmin.App();
+	var adminApp = new liftAdmin.App();
 
 })(jQuery, window);

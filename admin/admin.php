@@ -10,8 +10,8 @@ class Lift_Admin {
 
 		//setup AJAX handlers
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX && current_user_can( $this->get_manage_capability() ) ) {
+			add_action( 'wp_ajax_lift_domains', array( $this, 'action__wp_ajax_lift_domains' ) );
 			add_action( 'wp_ajax_lift_domain', array( $this, 'action__wp_ajax_lift_domain' ) );
-			add_action( 'wp_ajax_lift_credentials', array( $this, 'action__wp_ajax_lift_credentials' ) );
 			add_action( 'wp_ajax_lift_settings', array( $this, 'action__wp_ajax_lift_settings' ) );
 			add_action( 'wp_ajax_lift_setting', array( $this, 'action__wp_ajax_lift_setting' ) );
 		}
@@ -78,6 +78,7 @@ class Lift_Admin {
 		wp_localize_script( 'lift-admin', 'lift_data', array(
 			'template_dir' => plugins_url( '/templates/', __FILE__ )
 		) );
+		$this->__admin_enqueue_style();
 	}
 
 	public function __admin_enqueue_style() {
@@ -94,33 +95,8 @@ class Lift_Admin {
 		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( __CLASS__, 'filter__plugin_row_meta' ), 10, 2 );
 	}
 
-	public function action__wp_ajax_lift_credentials() {
-		$current_state = array(
-			'accessKey' => Lift_Search::get_access_key_id(),
-			'secretKey' => Lift_Search::get_secret_access_key(),
-		);
-
-
-
-		if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
-			var_dump( $_POST );
-			$settable_attributes = array( 'domainname', 'batch_interval', 'override_search' );
-		}
-
-		$response = json_encode( $current_state );
-		die( $response );
-	}
-
 	public function action__wp_ajax_lift_setting() {
 		if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['model'] ) ) {
-			if ( !isset( $_GET['nonce'] ) || !wp_verify_nonce( $_GET['nonce'], 'lift_setting' ) ) {
-				status_header( 403 );
-				die( json_encode( array( 'error' => array(
-							'code' => 'invalid_nonce',
-							'message' => 'The request was missing required authentication data.'
-						) ) ) );
-			}
-
 			$settings_data = json_decode( stripslashes( $_POST['model'] ) );
 
 			$response = array(
@@ -134,7 +110,7 @@ class Lift_Admin {
 
 			$error = new WP_Error();
 
-			if ( isset( $settings_data->nonce ) && wp_verify_nonce( $settings_data->nonce, 'lift_setting' ) ) {
+			if ( isset( $_GET['nonce'] ) && wp_verify_nonce( $_GET['nonce'], 'lift_setting' ) ) {
 
 				switch ( $setting_key ) {
 					case 'credentials':
@@ -156,6 +132,27 @@ class Lift_Admin {
 						Lift_Search::set_batch_interval_display( $value, $unit );
 						$response['model']['value'] = Lift_Search::get_batch_interval_display();
 						break;
+					case 'domainname':
+						$domain_manager = Lift_Search::get_domain_manager();
+						$replacing_domain = ( Lift_Search::get_search_domain_name() != $setting_value );
+						if ( $domain = $domain_manager->domain_exists( $setting_value ) ) {
+							$changed_fields = array( );
+							if ( !is_wp_error( $result = $domain_manager->apply_schema( $setting_value, null, $changed_fields ) ) ) {
+								if ( $replacing_domain ) {
+									Lift_Batch_Handler::queue_all();
+								}
+								Lift_Search::set_search_domain_name( $setting_value );
+							} else {
+								$error->add('schema_error', 'There was an error while applying the schema to the domain.');
+							}
+						} else {
+							$error->add( 'invalid_domain', 'The given domain does not exist.' );
+						}
+						$response['model']['value'] = Lift_Search::get_search_domain_name();
+						break;
+					default:
+						$error->add( 'invalid_setting', 'The name of the setting you are trying to set is invalid.' );
+						break;
 				}
 			} else {
 				$error->add( 'invalid_nonce', 'The request was missing required authentication data.' );
@@ -167,7 +164,7 @@ class Lift_Admin {
 					$response['errors'][] = array( 'code' => $code, 'message' => $error->get_error_message( $code ) );
 				}
 				status_header( 400 );
-				header('Content-Type: application/json');
+				header( 'Content-Type: application/json' );
 				$response['status'] = 'FAILURE';
 			}
 			die( json_encode( $response ) );
@@ -200,6 +197,21 @@ class Lift_Admin {
 		die( $response );
 	}
 
+	public function action__wp_ajax_lift_domains() {
+		$dm = Lift_Search::get_domain_manager();
+		$response = array(
+			'domains' => array( ),
+			'error' => false
+		);
+		$domains = $dm->get_domains();
+		if ( $domains === false ) {
+			$response['error'] = $dm->get_last_error();
+		} else {
+			$response['domains'] = $domains;
+		}
+		die( json_encode( $response ) );
+	}
+
 	public function action__wp_ajax_lift_domain() {
 		$dm = Lift_Search::get_domain_manager();
 		$domain_name = Lift_Search::get_search_domain_name();
@@ -228,6 +240,13 @@ class Lift_Admin {
 	public function callback__render_options_page() {
 		?>
 		<div class="wrap lift-admin" id="lift-status-page">
+		</div>
+		<div id="lift_modal"  class="lift_modal">
+			<div class="modal_overlay">&nbsp;</div>
+			<div class="modal_wrapper">
+				<div id="modal_content" class="modal_content">
+				</div>
+			</div>
 		</div>
 
 		<?php

@@ -238,7 +238,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return string
 		 */
 		public static function get_search_domain_name() {
-			return apply_filters( 'lift_search_domain', self::__get_setting( 'search-domain' ) );
+			return (string) apply_filters( 'lift_search_domain', self::__get_setting( 'search-domain' ) );
 		}
 
 		public static function set_search_domain_name( $domain_name ) {

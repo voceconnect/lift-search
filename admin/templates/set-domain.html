@@ -1,1 +1,14 @@
-<p>Set the domain</p>
+<h1>Enter a Search Domain Name</h1>
+<p>
+	This must be a unique string to your AWS account. Lift will create the domain
+	on AWS for you.  If the domain already exists, Lift will need to apply it's
+	default schema on top of the existing instance.
+</p>
+<form>
+	<label for="domainname">Search Domain Name</label>
+	<input type="text" id="domainname" value="<%- domainname %>" />
+	
+	<p id="errors" style="display:none;"></p>
+	<input type="button" id="cancel" value="Cancel" />
+	<input type="button" id="save_domainname" value="Save Domain Name" />
+</form>

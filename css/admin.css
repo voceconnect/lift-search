@@ -139,3 +139,12 @@ td.lift-sync { padding-bottom: .5em; }
 .lift-admin .dashboard #set-cron-status.disabled, .lift-admin .dashboard #set-cron-status.disabled span:hover, .lift-admin .dashboard #set-cron-status.disabled span:focus { cursor: default !important; border-color: #bbb; }
 /* line 368, ../sass/admin.scss */
 .lift-admin .dashboard #set-cron-status.disabled .on, .lift-admin .dashboard #set-cron-status.disabled .on:hover { background: gray; border: 1px solid #999; box-shadow: none; -moz-box-shadow: none; -webkit-box-shadow: none; border-color: #999; }
+
+/* line 383, ../sass/admin.scss */
+div.lift_modal { display: none; z-index: 1000; position: fixed; top: 0; left: 0; }
+/* line 389, ../sass/admin.scss */
+div.lift_modal .modal_overlay { position: fixed; width: 100%; height: 100%; background-color: #000; opacity: .5; z-index: 1000; }
+/* line 397, ../sass/admin.scss */
+div.lift_modal .modal_wrapper { position: fixed; top: 25%; width: 100%; z-index: 1001; }
+/* line 403, ../sass/admin.scss */
+div.lift_modal .modal_content { width: 500px; position: relative; margin: 0 auto; background-color: #fff; }

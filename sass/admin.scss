@@ -379,3 +379,31 @@ td.lift-sync {
 	}
 	
 }
+
+div.lift_modal {
+	display:none;
+	z-index: 1000;
+	position:fixed;
+	top: 0;
+	left: 0;
+	.modal_overlay {
+		position:fixed;
+		width: 100%;
+		height: 100%;
+		background-color: #000;
+		opacity: .5;
+		z-index: 1000;
+	}
+	.modal_wrapper {
+		position: fixed;
+		top: 25%;
+		width: 100%;
+		z-index: 1001;
+	}
+	.modal_content{
+		width: 500px;
+		position: relative;
+		margin: 0 auto;
+		background-color: #fff;
+	}
+}
