@@ -143,7 +143,7 @@ class Lift_Admin {
 								}
 								Lift_Search::set_search_domain_name( $setting_value );
 							} else {
-								$error->add('schema_error', 'There was an error while applying the schema to the domain.');
+								$error->add( 'schema_error', 'There was an error while applying the schema to the domain.' );
 							}
 						} else {
 							$error->add( 'invalid_domain', 'The given domain does not exist.' );
@@ -201,7 +201,8 @@ class Lift_Admin {
 		$dm = Lift_Search::get_domain_manager();
 		$response = array(
 			'domains' => array( ),
-			'error' => false
+			'error' => false,
+			'nonce' => wp_create_nonce( 'lift_domain' )
 		);
 		$domains = $dm->get_domains();
 		if ( $domains === false ) {
@@ -213,6 +214,43 @@ class Lift_Admin {
 	}
 
 	public function action__wp_ajax_lift_domain() {
+		if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['model'] ) ) {
+			$model = json_decode( stripslashes( $_POST['model'] ) );
+
+			$response = array(
+				'status' => 'SUCCESS',
+				'data' => array( ),
+				'errors' => array( ),
+			);
+
+			$error = new WP_Error();
+
+			if ( isset( $_GET['nonce'] ) && wp_verify_nonce( $_GET['nonce'], 'lift_domain' ) ) {
+				$dm = Lift_Search::get_domain_manager();
+				$result = $dm->initialize_new_domain( $model->DomainName );
+				if ( is_wp_error( $result ) ) {
+					$error = $result;
+				} else {
+					$response['data'] = $dm->get_domain( $model->DomainName );
+				}
+			} else {
+				$error->add( 'invalid_nonce', 'The request was missing required authentication data.' );
+			}
+
+			if ( count( $error->get_error_codes() ) ) {
+
+				foreach ( $error->get_error_codes() as $code ) {
+					$response['errors'][] = array( 'code' => $code, 'message' => $error->get_error_message( $code ) );
+				}
+				status_header( 400 );
+				header( 'Content-Type: application/json' );
+				$response['status'] = 'FAILURE';
+			}
+			die( json_encode( $response ) );
+		}
+
+
+
 		$dm = Lift_Search::get_domain_manager();
 		$domain_name = Lift_Search::get_search_domain_name();
 		$domain = $dm->get_domain( $domain_name );

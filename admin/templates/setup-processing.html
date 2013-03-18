@@ -1,10 +1,36 @@
 <h1>Your domain is being setup!</h1>
-
 <ul>
-	<li>Domain Created</li>
-	<li>Applying Schema</li>
-	<li>Applying Default Access Policy</li>
+	<% if (!Created) { %>
+	<li>Creating Document Domain</li>
+	<li>Apply Schema And Default Access Policies</li>
+	<li>Initialize Document Service</li>
+	<li>Process Indexes</li>
+	<li>Upload Documents</li>
+	<% } else if( RequiresIndexDocuments ) { %>
+	<li>Document Domain Created</li>
+	<li>Applying Schema And Default Access Policies</li>
+	<li>Initialize Document Service</li>
+	<li>Process Indexes</li>
+	<li>Upload Documents</li>
+	<% } else if( !DocService.Endpoint ) { %>
+	<li>Document Domain Created</li>
+	<li>Applied Schema And Default Access Policies</li>
+	<li>Initializing Document Service</li>
+	<li>Process Indexes</li>
+	<li>Upload Documents</li>
+	<% } else if( Processing ) { %>
+	<li>Document Domain Created</li>
+	<li>Applied Schema And Default Access Policies</li>
+	<li>Initialized Document Service</li>
+	<li>Processing Indexes</li>
+	<li>Upload Documents</li>
+	<% } else if( !NumSearchableDocs ) { %>
+	<li>Document Domain Created</li>
+	<li>Applied Schema And Default Access Policies</li>
+	<li>Initialized Document Service</li>
+	<li>Processed Indexes</li>
 	<li>Uploading Documents</li>
+	<% } %>
 </ul>
 
 <input type="button" id="skip_status" value="Skip" />
