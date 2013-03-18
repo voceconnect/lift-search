@@ -164,10 +164,15 @@
       this.fetchWithDeferred();
     },
     fetchWithDeferred: function() {
+      var _this = this,
+          intervalUpdate = function() {
+            _this.fetchWithDeferred();
+          };
+      
       this.deferred = this.fetch({
         success: function(model) {
           delete model.deferred;
-          //setTimeout(this.fetchWithDeferred, )
+          _this.updateTimeout = setTimeout(intervalUpdate, 60000);
         }
       });
       return this;
@@ -395,7 +400,7 @@
     initialize: function() {
       var _this = this;
       this.template = _.template(liftAdmin.templateLoader.getTemplate('setup-processing'));
-      this.model.bind('all', this.render, this);
+      this.model.bind('change', this.render, this);
     },
     events: {
       'click #skip_status': 'fakeStatusComplete'
