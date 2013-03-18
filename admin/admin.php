@@ -75,8 +75,8 @@ class Lift_Admin {
 
 	public function action__options_page_enqueue() {
 		wp_enqueue_script( 'lift-admin', plugins_url( 'js/admin.js', __DIR__ ), array( 'backbone' ), '0.1', true );
-		wp_localize_script( 'lift-admin', 'lift_data', array(
-			'template_dir' => plugins_url( '/templates/', __FILE__ )
+		wp_localize_script( 'lift-admin', 'liftData', array(
+			'templateDir' => plugins_url( '/templates/', __FILE__ )
 		) );
 		$this->__admin_enqueue_style();
 	}
