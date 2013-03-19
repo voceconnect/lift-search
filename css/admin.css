@@ -7,7 +7,7 @@
 /* line 13, ../sass/_grid.scss */
 .lift-admin .grid-pad { padding: 20px 0 20px 20px; }
 /* line 17, ../sass/_grid.scss */
-.lift-admin [class*='col-'], .lift-admin .col { -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box; float: left; padding-right: 20px; }
+.lift-admin [class*='col-'], .lift-admin .col { -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box; float: left; padding-right: 40px; }
 /* line 23, ../sass/_grid.scss */
 .lift-admin .col-1-8 { width: 12.5%; }
 /* line 24, ../sass/_grid.scss */
@@ -39,7 +39,7 @@
 /* line 35, ../sass/admin.scss */
 .lift-admin .aside { background: #f2f2f2; padding: 10px 20px; }
 /* line 39, ../sass/admin.scss */
-.lift-admin ul.instructions { list-style: none; margin: 0; padding: 0; }
+.lift-admin ul.instructions { list-style: none; margin: 20px 0; padding: 0; }
 /* line 43, ../sass/admin.scss */
 .lift-admin ul.instructions li { padding: 0 0 0 80px; background: transparent none no-repeat left top; margin: 0 0 20px; }
 /* line 48, ../sass/admin.scss */
@@ -47,17 +47,29 @@
 /* line 52, ../sass/admin.scss */
 .lift-admin ul.instructions .documentation { background-image: url("../img/documentation.png"); min-height: 90px; }
 /* line 56, ../sass/admin.scss */
-.lift-admin ul.instructions .notFree { background-image: url("../img/blue-inverse-box.png"); min-height: 80px; }
-/* line 62, ../sass/admin.scss */
-.lift-admin .form-block label { display: block; }
+.lift-admin ul.instructions .cloudSearch { background-image: url("../img/amazon-cloud-search.png"); min-height: 80px; }
+/* line 60, ../sass/admin.scss */
+.lift-admin ul.instructions .a-z { background-image: url("../img/a-z.png"); }
+/* line 63, ../sass/admin.scss */
+.lift-admin ul.instructions .numerals { background-image: url("../img/0-9.png"); }
 /* line 66, ../sass/admin.scss */
-.lift-admin .form-block input[type="text"], .lift-admin .form-block input[type="search"] { width: 66%; }
+.lift-admin ul.instructions .hyphen { background-image: url("../img/hyphen.png"); }
+/* line 69, ../sass/admin.scss */
+.lift-admin ul.instructions .a-z, .lift-admin ul.instructions .numerals, .lift-admin ul.instructions .hyphen { min-height: 60px; }
+/* line 74, ../sass/admin.scss */
+.lift-admin .form-block label { display: block; }
+/* line 78, ../sass/admin.scss */
+.lift-admin .form-block input[type="text"], .lift-admin .form-block input[type="search"] { width: 100%; }
+/* line 82, ../sass/admin.scss */
+.lift-admin .form-row { margin-bottom: 20px; }
+/* line 85, ../sass/admin.scss */
+.lift-admin .button-row { text-align: center; margin-top: 40px; }
 
-/* line 73, ../sass/admin.scss */
+/* line 92, ../sass/admin.scss */
 div.lift_modal { display: none; z-index: 1000; position: fixed; top: 0; left: 0; }
-/* line 79, ../sass/admin.scss */
+/* line 98, ../sass/admin.scss */
 div.lift_modal .modal_overlay { position: fixed; width: 100%; height: 100%; background-color: #000; opacity: .5; z-index: 1000; }
-/* line 87, ../sass/admin.scss */
+/* line 106, ../sass/admin.scss */
 div.lift_modal .modal_wrapper { position: fixed; top: 25%; width: 100%; z-index: 1001; }
-/* line 93, ../sass/admin.scss */
+/* line 112, ../sass/admin.scss */
 div.lift_modal .modal_content { width: 500px; position: relative; margin: 0 auto; background-color: #fff; }

@@ -38,7 +38,7 @@
 	}
 	ul.instructions {
 		list-style: none;
-		margin: 0;
+		margin: $pad 0;
 		padding: 0;
 		li {
 			padding: 0 0 0 80px;
@@ -53,9 +53,21 @@
 			background-image: url($imgLoc+'documentation.png');
 			min-height: 90px;
 		}
-		.notFree {
-			background-image: url($imgLoc+'blue-inverse-box.png');	
+		.cloudSearch {
+			background-image: url($imgLoc+'amazon-cloud-search.png');	
 			min-height: 80px;		
+		}
+		.a-z {
+			background-image: url($imgLoc+'a-z.png');
+		}
+		.numerals {
+			background-image: url($imgLoc+'0-9.png');
+		}
+		.hyphen {
+			background-image: url($imgLoc+'hyphen.png');
+		}
+		.a-z, .numerals, .hyphen {
+			min-height: 60px;
 		}
 	}
 	.form-block {
@@ -64,8 +76,15 @@
 		}
 		input[type="text"],
 		input[type="search"] {
-			width: 66%;
+			width: 100%;
 		}
+	}
+	.form-row {
+		margin-bottom: $pad;
+	}
+	.button-row {
+		text-align: center;
+		margin-top: $pad*2;
 	}
 
 }
