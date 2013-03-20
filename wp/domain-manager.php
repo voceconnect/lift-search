@@ -77,6 +77,7 @@ class Lift_Domain_Manager {
 	}
 
 	public function credentials_are_valid() {
+		delete_transient('lift_request_DescribeDomains'); //make sure we're not getting a cached copy
 		return ( bool ) $this->config_api->DescribeDomains();
 	}
 
