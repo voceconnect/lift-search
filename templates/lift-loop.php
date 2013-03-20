@@ -17,7 +17,7 @@
 				<?php endif; ?>
 				<?php the_excerpt(); ?>
 				<p class="search-date">
-					<?php the_time( 'F j, Y' ) ?>  - <a href="">By <?php the_author(); ?></a>
+					<?php the_time( ) ?>  - <a href="<?php echo esc_url( get_author_posts_url( get_the_author_meta( 'ID' ) ) )  ?>">By <?php the_author(); ?></a>
 				</p>
 				<div class="clr"></div>
 			</div> <!-- end search-result -->
