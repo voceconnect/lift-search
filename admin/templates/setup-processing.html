@@ -1,36 +1,50 @@
-<h1>Your domain is being setup!</h1>
-<ul>
-	<% if (!Created) { %>
-	<li>Creating Document Domain</li>
-	<li>Apply Schema And Default Access Policies</li>
-	<li>Initialize Document Service</li>
-	<li>Process Indexes</li>
-	<li>Upload Documents</li>
-	<% } else if( RequiresIndexDocuments ) { %>
-	<li>Document Domain Created</li>
-	<li>Applying Schema And Default Access Policies</li>
-	<li>Initialize Document Service</li>
-	<li>Process Indexes</li>
-	<li>Upload Documents</li>
-	<% } else if( !DocService.Endpoint ) { %>
-	<li>Document Domain Created</li>
-	<li>Applied Schema And Default Access Policies</li>
-	<li>Initializing Document Service</li>
-	<li>Process Indexes</li>
-	<li>Upload Documents</li>
-	<% } else if( Processing ) { %>
-	<li>Document Domain Created</li>
-	<li>Applied Schema And Default Access Policies</li>
-	<li>Initialized Document Service</li>
-	<li>Processing Indexes</li>
-	<li>Upload Documents</li>
-	<% } else if( !NumSearchableDocs ) { %>
-	<li>Document Domain Created</li>
-	<li>Applied Schema And Default Access Policies</li>
-	<li>Initialized Document Service</li>
-	<li>Processed Indexes</li>
-	<li>Uploading Documents</li>
-	<% } %>
-</ul>
-
-<input type="button" id="skip_status" value="Skip" />
+<h1 class="banner">Lift: Search for WordPress</h1>
+<div class="grid">
+	<div class="col-1-2">
+		<h1>Your domain is being set up!</h1>
+	</div>
+	<div class="col-1-2 textright">
+		<span class="progressCircle">1</span>
+		<span class="progressCircle">2</span>
+		<span class="progressCircle active">3</span>
+	</div>
+</div>
+<p>If this is a new search domain, it will take approximately 30-40 minutes for it to become active and ready to index your documents.</p>
+<div class="progressIndicator">
+	<ul>
+		<% if (!Created) { %>
+		<li class="active"><span>Creating Document Domain</span></li>
+		<li><span>Apply Schema And Default Access Policies</span></li>
+		<li><span>Initialize Document Service</span></li>
+		<li><span>Process Indexes</span></li>
+		<li><span>Upload Documents</span></li>
+		<% } else if( RequiresIndexDocuments ) { %>
+		<li class="completed"><span>Document Domain Created</span></li>
+		<li class="active"><span>Applying Schema And Default Access Policies</span></li>
+		<li><span>Initialize Document Service</span></li>
+		<li><span>Process Indexes</span></li>
+		<li><span>Upload Documents</span></li>
+		<% } else if( !DocService.Endpoint ) { %>
+		<li class="completed"><span>Document Domain Created</span></li>
+		<li class="completed"><span>Applied Schema And Default Access Policies</span></li>
+		<li class="active"><span>Initializing Document Service</span></li>
+		<li><span>Process Indexes</span></li>
+		<li><span>Upload Documents</span></li>
+		<% } else if( Processing ) { %>
+		<li class="completed"><span>Document Domain Created</span></li>
+		<li class="completed"><span>Applied Schema And Default Access Policies</span></li>
+		<li class="completed"><span>Initialized Document Service</span></li>
+		<li class="active"><span>Processing Indexes</span></li>
+		<li><span>Upload Documents</span></li>
+		<% } else if( !NumSearchableDocs ) { %>
+		<li class="completed"><span>Document Domain Created</span></li>
+		<li class="completed"><span>Applied Schema And Default Access Policies</span></li>
+		<li class="completed"><span>Initialized Document Service</span></li>
+		<li class="completed"><span>Processed Indexes</span></li>
+		<li class="active"><span>Uploading Documents</span></li>
+		<% } %>
+	</ul>
+</div>
+<div class="button-row">
+	<input type="button" id="skip_status" value="Skip" />
+</div>

@@ -17,7 +17,7 @@
 [class*='col-'], .col {
 	@include box-sizing(border-box);
 	float: left;
-	padding-right: $pad;
+	padding-right: $pad*2;
 }
 
 .col-1-8 { width: 12.5%; }

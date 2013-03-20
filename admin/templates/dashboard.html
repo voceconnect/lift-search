@@ -1,43 +1,48 @@
-<div>
-	<table>
-		<tr>
-			<td>
-				<h3>normal</h3>
-			</td>
-			<td>
-				<h3>CloudSearch Document Syncronization</h3>
-				<div>
-					Last: <%- settings.last_sync %>
-				</div>
-				<div>
-					Next: <%- settings.next_sync %>
-				</div>
-			</td>
-			<td>
-				<input id="batch_interval" value="<%- settings.batch_interval.value %>" type="text" />
+<h1 class="banner">Lift: Search for WordPress</h1>
+<div class="dashboard-box">
+	<div class="grid">
+		<div class="col-1-8 textcenter">
+			<div class="lift-status good">normal</div>
+		</div>
+		<div class="col-3-8">
+			<h2>CloudSearch Document Sync</h2>
+			<div class="col-1-2">
+				Last: <%- settings.last_sync %>
+			</div>
+			<div class="col-1-2">
+			Next: <%- settings.next_sync %>
+			</div>
+		</div>
+		<div class="col-1-2">
+			<div class="col-2-3">
+				<input id="batch_interval" value="<%- settings.batch_interval.value %>" class="small-text" type="text" />
 				<select id="batch_interval_unit">
 					<option value="m">Minutes</option>
 					<option value="h">Hours</option>
 					<option value="d">Days</option>
 				</select>
-				<input type="button" id="batch_interval_update" value="Save"/>
-			</td>
-			<td>
-				<input type="button" id="batch_sync_now" value="Sync Queue Now"/>
-			</td>
-		</tr>
-	</table>
-</div>
-<div>
-	<div>
-		Override Search
-		Off | On
-	</div>
-	<div>
-		<input type="button" id="lift_update_keys" value="Change AWS Keys"/>
-		<input type="button" id="lift_reset" value="Reset Lift"/>
+				<input type="button" id="batch_interval_update" class="button-primary" value="Save"/>
+			</div>
+			<div class="col-1-3 textright">
+				<input type="button" id="batch_sync_now" class="button-primary" value="Sync Queue Now"/>
+			</div>
+		</div>
 	</div>
 </div>
+
+<div class="dashboard-box">
+	<div class="grid">
+		<div class="col-1-2">
+			Override Search
+			Off | On
+		</div>
+		<div class="col-1-2 textright">
+			<input type="button" id="lift_update_keys" class="button-primary" value="Change AWS Keys"/>
+			<input type="button" id="lift_reset" class="button-primary" value="Reset Lift"/>
+		</div>
+	</div>
+</div>
+
 <div id="document_queue">
 	<h3>Documents to be Synced</h3>
 	<span>Documents in Queue: 30</span>
