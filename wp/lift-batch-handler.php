@@ -174,7 +174,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 							if ( $meta_value['action'] == 'add' ) {
 								$html .= '<tr>';
 								$html .= '<td class="column-date">' . $post_id . '</td>';
-								$html .= '<td class="column-title"><a href="' . get_edit_post_link( $post_id ) . '">' . esc_html( get_the_title( $post_id ) ) . '</a></td>';
+								$html .= '<td class="column-title"><a href="' . esc_url( get_edit_post_link( $post_id ) ) . '">' . esc_html( get_the_title( $post_id ) ) . '</a></td>';
 								$html .= '<td class="column-author">' . (isset( $last_user->display_name ) ? $last_user->display_name : '') . '</td>';
 								$html .= '<td class="column-categories">' . mysql2date( 'D. M d Y g:ia', $meta_value['update_date'] ) . '</td>';
 								$html .= '</tr>';
@@ -260,7 +260,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 				Lift_Post_Update_Watcher::queue_entire_post( $post_id );
 			}
 
-			$new_id_from = get_post( end($post_ids) )->ID;
+			$new_id_from = get_post( end( $post_ids ) )->ID;
 
 			update_option( self::QUEUE_ALL_MARKER_OPTION, $new_id_from );
 		}
@@ -284,7 +284,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 		 */
 		public static function ready_for_batch( $domain_name ) {
 			$domain_manager = Lift_Search::get_domain_manager();
-			return $domain_manager->can_accept_uploads($domain_name);
+			return $domain_manager->can_accept_uploads( $domain_name );
 		}
 
 		/**
@@ -330,7 +330,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 
 			$batch = new Lift_Batch();
 			$batched_meta_keys = array( );
-			
+
 			$blog_id = get_current_blog_id();
 			$site_id = lift_get_current_site_id();
 			foreach ( $update_query->meta_rows as $meta_row ) {
@@ -341,7 +341,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 					$action = $update_data['action'];
 					if ( $action == 'add' ) {
 						$post = get_post( $update_data['document_id'], ARRAY_A );
-						
+
 						$post_data = array( 'ID' => $update_data['document_id'], 'blog_id' => $blog_id, 'site_id' => $site_id );
 
 						foreach ( Lift_Search::get_indexed_post_fields( $post['post_type'] ) as $field ) {

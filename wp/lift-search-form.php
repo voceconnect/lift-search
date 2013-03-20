@@ -43,7 +43,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			}
 
 			if ( !isset( self::$instances[$query_id] ) ) {
-				self::$instances[$query_id] = new Lift_Search_Form($a_wp_query);
+				self::$instances[$query_id] = new Lift_Search_Form( $a_wp_query );
 			}
 			return self::$instances[$query_id];
 		}
@@ -51,8 +51,8 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		/**
 		 * Lift_Search_Form constructor.
 		 */
-		private function __construct($wp_query) {
-			$this->lift_query = Lift_WP_Query::GetInstance($wp_query);
+		private function __construct( $wp_query ) {
+			$this->lift_query = Lift_WP_Query::GetInstance( $wp_query );
 			$this->additional_fields();
 		}
 
@@ -190,9 +190,9 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			$date_start = $query_start ? $query_start : 0;
 			$values = array(
 				'All Dates' => '',
-				'24 Hours' => $date_end - 86400,
-				'7 Days' => $date_end - (86400 * 7),
-				'30 Days' => $date_end - (86400 * 30)
+				'24 Hours' => $date_end - DAY_IN_SECONDS,
+				'7 Days' => $date_end - (DAY_IN_SECONDS * 7),
+				'30 Days' => $date_end - (DAY_IN_SECONDS * 30)
 			);
 
 			$selected_label = 'Date';
@@ -239,7 +239,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 */
 		public function form() {
 			$search_term = (is_search()) ? get_search_query() : "";
-			$html = '<form role="search" class="lift-search" id="searchform" ' . (!is_search() ? 'action="' . site_url() . '/"' : '') . '><div>';
+			$html = '<form role="search" class="lift-search" id="searchform" ' . (!is_search() ? 'action="' . esc_url( site_url() ) . '/"' : '') . '><div>';
 			$html .= "<input type='text' name='s' id='s' value='$search_term' />";
 			$html .= ' <input type="submit" id="searchsubmit" value="' . esc_attr__( 'Search' ) . '" />';
 			$html .= $this->form_filters();
@@ -367,10 +367,10 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			$html = "
 				<label class='lift-field-label'>
 				<input type='checkbox' 
-					name='" . $this->id . "[]' 
-					id='" . $this->id . "' 
-					value='" . $this->options['value'] . "' 
-					class='" . $this->options['css'] . " ' 
+					name='" . esc_attr( $this->id ) . "[]' 
+					id='" . esc_attr( $this->id ) . "' 
+					value='" . esc_attr( $this->options['value'] ) . "' 
+					class='" . sanitize_html_class( $this->options['css'] ) . " ' 
 					$selected
 				/>" . $this->options['label'] . "</label>";
 			return $html;
@@ -387,11 +387,11 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			}
 			$html .="
 				<input type='text' 
-					name='" . $this->id . "' 
-					id='" . $this->id . "' 
-					value='" . $this->options['value'] . "' 
-					class='" . $this->options['css'] . " ' 
-					placeholder='" . $this->options['placeholder'] . "'
+					name='" . esc_attr( $this->id ) . "' 
+					id='" . esc_attr( $this->id ) . "' 
+					value='" . esc_attr( $this->options['value'] ) . "' 
+					class='" . sanitize_html_class( $this->options['css'] ) . " ' 
+					placeholder='" . esc_attr( $this->options['placeholder'] ) . "'
 				/>";
 			if ( $this->id == 's' ) {
 				$html .= '</span>';
@@ -407,10 +407,10 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			$html = "
 				<label class='lift-field-label'>
 				<input type='hidden' 
-					name='" . $this->id . "' 
-					id='" . $this->id . "' 
-					value='" . $this->options['value'] . "' 
-					class='" . $this->options['css'] . " ' 
+					name='" . esc_attr( $this->id ) . "' 
+					id='" . esc_attr( $this->id ) . "' 
+					value='" . esc_attr( $this->options['value'] ) . "' 
+					class='" . sanitize_html_class( $this->options['css'] ) . " ' 
 				/> </label>";
 			return $html;
 		}
@@ -423,9 +423,9 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			$html = "
 				<label>" . $this->options['label'] . "
 				<select
-				id='$this->id'
-				name='$this->id'
-				class='" . $this->id . " " . $this->options['css'] . "'
+				id='" . esc_attr( $this->id ) . "'
+				name='" . esc_attr( $this->id ) . "'
+				class='" . sanitize_html_class( $this->id ) . " " . sanitize_html_class( $this->options['css'] ) . "'
 				>";
 			foreach ( $this->options['value'] as $k => $v ) {
 				$selected = "";
@@ -434,7 +434,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 				} else if ( $this->options['selected'] === $v ) {
 					$selected = "selected='selected'";
 				}
-				$html .= '<option value="' . $v . '" ' . $selected . '>' . $k . '</option>';
+				$html .= '<option value="' . esc_attr( $v ) . '" ' . $selected . '>' . esc_html( $k ) . '</option>';
 			}
 			$html .= '</select></label>';
 
@@ -463,13 +463,13 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 					$selected = "selected";
 					$has_selection = true;
 				}
-				$options .= sprintf( '<li class="lift-list-item %s %s" data-lift_value="%s" ><a href="#">%s</a></li>', $selected, $last, $v, $k );
+				$options .= sprintf( '<li class="lift-list-item %s %s" data-lift_value="%s" ><a href="#">%s</a></li>', $selected, $last, esc_attr( $v ), sanitize_html_class( $k ) );
 			}
 
 			$selected_class = ( $has_selection ) ? 'selected' : '';
 
-			$html = sprintf( '<li class="lift-list-toggler %s" id="lift-list-toggler-%s" data-role="list-toggler"><a href="#" class="%s">%s</a>', $last_class, $this->id, $selected_class, $this->options['label'] );
-			$html .= "<ul class='lift-select-list lift-hidden' data-lift_bind='$this->id'>";
+			$html = sprintf( '<li class="lift-list-toggler %s" id="lift-list-toggler-%s" data-role="list-toggler"><a href="#" class="%s">%s</a>', $last_class, esc_attr( $this->id ), $selected_class, esc_html( $this->options['label'] ) );
+			$html .= "<ul class='lift-select-list lift-hidden' data-lift_bind='" . esc_attr( $this->id ) . "'>";
 			$html .= $options;
 			$html .= "</ul></li>";
 			return $html;
@@ -532,7 +532,7 @@ class Lift_Form_Widget extends WP_Widget {
 
 		echo $before_widget;
 		if ( $title )
-			echo $before_title . $title . $after_title;
+			echo $before_title . esc_html($title) . $after_title;
 
 		if ( class_exists( 'Lift_Search_Form' ) ) {
 			echo Lift_Search_Form::GetInstance()->form();
