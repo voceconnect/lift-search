@@ -1,7 +1,65 @@
 @import "compass";
+@import "vars";
+@import "grid";
+
+
+// Message on Plugins page. NEEDS TO BE CLEANED UP.
+#banneralert {
+	margin-bottom: 10px;
+	.clr {
+		clear: both;
+		margin: 0;
+		height: 0;
+		font-size: 0;
+	}
+	&.lift-colorized {font-family:arial,sans-serif;padding:12px;border:1px #8bcce4 solid;background:#b3e2f3;/* Old browsers */
+		background:-moz-linear-gradient(top,#b3e2f3 59%,#ffffff 94%);/* FF3.6+ */
+		background:-webkit-gradient(linear,left top,left bottom,color-stop(59%,#b3e2f3),color-stop(94%,#ffffff));/* Chrome,Safari4+ */
+		background:-webkit-linear-gradient(top,#b3e2f3 59%,#ffffff 94%);/* Chrome10+,Safari5.1+ */
+		background:-o-linear-gradient(top,#b3e2f3 59%,#ffffff 94%);/* Opera 11.10+ */
+		background:-ms-linear-gradient(top,#b3e2f3 59%,#ffffff 94%);/* IE10+ */
+		background:linear-gradient(to bottom,#b3e2f3 59%,#ffffff 94%);/* W3C */
+		filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#b3e2f3',endColorstr='#ffffff',GradientType=0 );/* IE6-9 */
+		/* radii */
+		-moz-border-radius:3px;-webkit-border-radius:3px;border-radius:3px;
+	}
+	.lift-message{
+		width:75%;
+		font-weight:normal;
+		text-shadow:rgba(0,0,0,0.10) 0px 1px 0px;
+		color:#056d94;
+		font-size:18px;
+		line-height:24px;
+	}
+	
+	.lift-balloon{
+		float:right;
+	}
+
+
+}
+
+
+.form-block {
+	label { 
+		display: block;
+	}
+	input[type="text"],
+	input[type="search"] {
+		width: 100%;
+	}
+}
+.form-row {
+	margin-bottom: $pad;
+}
+.button-row {
+	text-align: center;
+	margin-top: $pad*2;
+}
+
+
+// Lift admin page.
 .lift-admin {
-	@import "vars";
-	@import "grid";
 	h1,h2 {
 		font-weight: normal;
 		line-height: 1.2;
@@ -30,6 +88,59 @@
 		margin: 0 0 0 $pad;
 		&.active {
 			background-color: $liftBlue;
+		}
+	}
+	.progressIndicator {
+		display: table;
+		width: 100%;
+		margin: $pad 0;
+		ul { 
+			display: table-row;
+		}
+		li {
+			display: table-cell;
+			height: 46px;
+			vertical-align: middle;
+			background-color: $lightGray;
+			text-align: center;
+			span {
+				padding: 0 5px;
+				position: relative;
+				z-index: 3;
+			}
+			&.completed {
+				background-color: $completedBlue;
+				color: #fff;
+			}
+			&.active {
+				background-color: $liftBlue;
+				color: #fff;
+				span {
+					display: block;
+					padding: 0 23px;
+					z-index: 2;
+					&:before, &:after {
+						content: '';
+						display: block;
+						width: 0;
+						height: 0;
+						border: 23px solid transparent;
+						position: absolute;
+						top: 50%;
+						margin-top: -23px;
+					}
+					&:before {
+						border-left-color: $completedBlue;
+						left: 0;
+					}
+					&:after {
+						border-top-color: $lightGray;
+						border-bottom-color: $lightGray;
+						margin-right: -23px;
+						right: 0;
+					}					
+				}
+			}
 		}
 	}
 	.aside {
@@ -68,27 +179,48 @@
 		}
 		.a-z, .numerals, .hyphen {
 			min-height: 60px;
+			line-height: 60px;
 		}
 	}
-	.form-block {
-		label { 
-			display: block;
+	.dashboard-box {
+		@include box-sizing(border-box);
+		display: table;
+		width: 100%;
+		border: 1px solid $lightGray;
+		border-radius: 5px;
+		margin: $pad 0;
+		padding: $pad/2;
+		.grid {
+			display: table-row;
+			[class*='col-'] {
+				display: table-cell;
+				float: none;
+				vertical-align: middle;
+				[class*='col-'] {
+					display: block;
+					float: left;
+				}
+			}
 		}
-		input[type="text"],
-		input[type="search"] {
-			width: 100%;
+		.lift-status {
+			width: 50px;
+			height: 50px;
+			line-height: 50px;
+			text-align: center;
+			color: #fff;
+			border-radius: 50%;
+			background-color: #666;
+			&.good {
+				background-color: #39b54a;
+			}
+			&.bad {
+				background-color: #e02121;
+			}
 		}
 	}
-	.form-row {
-		margin-bottom: $pad;
-	}
-	.button-row {
-		text-align: center;
-		margin-top: $pad*2;
-	}
-
 }
 
+// Lift Modals
 div.lift_modal {
 	display:none;
 	z-index: 1000;
@@ -113,6 +245,7 @@ div.lift_modal {
 		width: 500px;
 		position: relative;
 		margin: 0 auto;
-		background-color: #fff;
+		padding: $pad;
+		background-color: #f2f2f2;
 	}
 }
