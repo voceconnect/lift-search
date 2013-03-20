@@ -8,7 +8,6 @@
   Author: Voce Platforms
   Author URI: http://voceconnect.com/
  */
-require_once('lib/voce-error-logging/voce-error-logging.php');
 require_once('api/lift-batch.php');
 require_once('api/lift-http.php');
 require_once('api/cloud-search-api.php');
@@ -122,7 +121,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 					if ( Lift_Search::get_batch_interval() > 0 ) {
 						$interval = Lift_Search::get_batch_interval();
 					} else {
-						$interval = 86400;
+						$interval = DAY_IN_SECONDS;
 					}
 
 					$schedules[Lift_Batch_Handler::CRON_INTERVAL] = array(
