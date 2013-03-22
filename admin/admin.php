@@ -78,6 +78,7 @@ class Lift_Admin {
 		wp_localize_script( 'lift-admin', 'liftData', array(
 			'templateDir' => plugins_url( '/templates/', __FILE__ )
 		) );
+		wp_enqueue_script( 'modernizr', plugins_url( 'js/modernizr.min.js', __DIR__ ), array(), '2.6.2', true );
 		$this->__admin_enqueue_style();
 	}
 
