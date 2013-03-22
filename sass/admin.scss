@@ -68,11 +68,43 @@
 	h2 {
 		font-size: 18px;
 	}
-	.banner {
-		@include hide-text;
-		height: 130px;
-		margin-bottom: $pad;
-		background: transparent url($imgLoc+'lift-admin-header.png') no-repeat;
+	.button-primary {
+		background: $buttonBlue;
+	}
+	.liftBanner {
+		height: 140px;
+		width: 100%;
+		position: relative;
+		@include filter-gradient(#0075a8, #00a5e5);
+		background-color: #00a5e5;
+		@include background-image(linear-gradient(#0075a8, #00a5e5));
+		h1 {
+			@include hide-text;
+			position: absolute;
+			top: 16px;
+			left: 16px;
+			width: 102px;
+			height: 56px;
+			background: transparent url($imgLoc+'logo-102x56.png') no-repeat;
+		}
+		&:before,&:after {
+			content: '';
+			display: block;
+			position: absolute;
+			bottom: 0;
+		}
+		&:before {
+			background: transparent url($imgLoc+'cloud1.png') no-repeat bottom left;
+			width: 591px;
+			height: 119px;
+			left: -1px;
+		}
+		&:after {
+			background: transparent url($imgLoc+'cloud2.png') no-repeat bottom right;
+			width: 514px;
+			height: 117px;
+			right: -1px;
+		}		
 	}
 	.progressCircle {
 		display: inline-block;
@@ -115,6 +147,7 @@
 			&.active {
 				background-color: $liftBlue;
 				color: #fff;
+				overflow: hidden;
 				span {
 					display: block;
 					padding: 0 23px;
@@ -124,24 +157,28 @@
 						display: block;
 						width: 0;
 						height: 0;
-						border: 23px solid transparent;
+						border: 46px solid transparent;
 						position: absolute;
 						top: 50%;
-						margin-top: -23px;
+						margin-top: -46px;
 					}
 					&:before {
 						border-left-color: $completedBlue;
 						left: 0;
+						margin-left: -23px
 					}
 					&:after {
 						border-top-color: $lightGray;
 						border-bottom-color: $lightGray;
-						margin-right: -23px;
+						margin-right: -46px;
 						right: 0;
 					}					
 				}
 			}
 		}
+	}
+	select {
+		vertical-align: middle;
 	}
 	.aside {
 		background: #f2f2f2;
@@ -211,13 +248,147 @@
 			border-radius: 50%;
 			background-color: #666;
 			&.good {
-				background-color: #39b54a;
+				background-color: $green;
 			}
 			&.bad {
-				background-color: #e02121;
+				background-color: $red;
 			}
 		}
 	}
+	// A lot of this nesting is required for overwriting default WordPress styles.
+	table {
+		border: 0px none;
+		background: #fff;
+		thead {  
+			tr {
+				th {
+					background: $tableBlue;
+					color: #fff;
+					font-family: Arial, Helvetica, sans-serif;
+					text-shadow: none;
+					&:first-of-type {
+						border-top-left-radius: 5px;
+					}
+					&:last-of-type {
+						border-top-right-radius: 5px;
+					}
+				}
+			}
+		}
+		tbody {
+			tr {
+				&:nth-of-type(even) {
+					background-color: #f2f2f2;
+				}
+				&:last-of-type {
+					td {
+						border-bottom: 1px solid #e6e6e6;
+						&:first-of-type {
+							border-bottom-left-radius: 5px;
+						}
+						&:last-of-type {
+							border-bottom-right-radius: 5px;
+						}
+					}
+				}
+				td {
+					border: 0px none;
+					padding: 6px 7px 4px;
+					&:first-of-type {
+						border-left: 1px solid #e6e6e6;
+					}
+					&:last-of-type {
+						border-right: 1px solid #e6e6e6;
+					}
+					&.column-title {
+						font-style: italic;
+						color: #999;
+						strong,p {
+							font-style: normal;
+							color: #555;
+						}
+						hr {
+							border: 0px none;
+							height: 1px;
+							background: #aaa;
+						}
+					}
+				}
+			}
+		}
+	}
+	.toggle {
+		display: inline-block;
+		margin: 0 20px;
+	}
+	.multiplebgs & .toggle {
+		$toggleWidth: 6em;
+		$toggleHeight: 2em;
+		@include box-sizing(border-box);
+		width: $toggleWidth;
+		height: $toggleHeight;
+		position: relative;
+		@include border-radius(5px);
+		box-shadow: 0 0 7px rgba(0,0,0,.5);
+		vertical-align: middle;
+		&:before, &:after {
+			position: absolute;
+			top: 0;
+			width: 50%;
+			height: 100%;
+			line-height: $toggleHeight;  
+			text-align: center;
+			color: #fff;
+			font-weight: bold;
+			text-shadow: 0 1px 0 rgba(0,0,0,.25);
+			box-shadow: inset 0 0 1px rgba(0,0,0,.75);
+			z-index: 0;
+		}
+		&:before {
+			content: 'off';
+			left: 0;
+			background: $red;
+			@include border-radius(5px 0 0 5px);
+		}
+		&:after {
+			content: 'on';
+			right: 0;
+			background: $green;
+			@include border-radius(0 5px 5px 0);
+		}
+		.switch {
+			@include box-sizing(border-box);
+			position: absolute;
+			cursor: pointer;
+			top: -10%;
+			right: -2%;
+			width: 54%;
+			height: 120%;
+			background: #f2f2f2;
+			box-shadow: inset 0 0 1px rgba(0,0,0,.5);
+			z-index: 1;
+			border-radius: 5px;
+			@include transition-property(right);
+			@include transition-duration(.3s);
+			@include background-image(linear-gradient(rgba(255,255,255,.35)0%, rgba(255,255,255,0) 20%), linear-gradient(rgba(0,0,0,0) 80%, rgba(0,0,0,.35) 100%));
+		}
+		input[type="checkbox"] {
+			@include opacity(0);
+			cursor: pointer;
+			position: absolute;
+			left: 0;
+			top: 0;
+			width: 100%;
+			height: 100%;
+			z-index: 2;
+			&:checked + .switch {
+			   right: 48%;
+			}
+		}
+	}	
+}
+#error_log {
+	margin-top: $pad*2;
 }
 
 // Lift Modals
