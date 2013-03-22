@@ -406,7 +406,7 @@
       'click #skip_status': 'fakeStatusComplete'
     },
     render: function() {
-      console.log(this.model);
+      //console.log(this.model);
       this.el.innerHTML = this.template(this.model.toJSON());
     },
     fakeStatusComplete: function() {
