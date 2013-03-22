@@ -75,6 +75,7 @@
 		height: 140px;
 		width: 100%;
 		position: relative;
+		margin-bottom: $pad;
 		@include filter-gradient(#0075a8, #00a5e5);
 		background-color: #00a5e5;
 		@include background-image(linear-gradient(#0075a8, #00a5e5));
