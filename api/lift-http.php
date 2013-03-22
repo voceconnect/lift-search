@@ -9,12 +9,16 @@ interface iLift_HTTP {
 	public function getStatusCode();
 
 	public function getResponse();
+	
+	public function getLastError();
 }
 
 class Lift_HTTP_WP implements iLift_HTTP {
 
 	protected $response_code;
 	protected $response;
+	protected $last_error;
+	
 
 	private function makeRequest( $url, $method = 'POST', $data = '', $headers = array( ) ) {
 		// @TODO: better error handling to pass up to caller
@@ -31,8 +35,8 @@ class Lift_HTTP_WP implements iLift_HTTP {
 		);
 
 		$this->response = wp_remote_request( $url, $args );
-
 		if ( is_wp_error( $this->response ) ) {
+			$this->last_error = $this->response->get_error_message();
 			return false;
 		}
 
@@ -64,6 +68,10 @@ class Lift_HTTP_WP implements iLift_HTTP {
 	public function getResponse() {
 		return $this->response;
 	}
+	
+	public function getLastError() {
+		return $this->last_error;
+	}
 
 }
 
@@ -74,6 +82,7 @@ class Lift_HTTP_WP_VIP extends Lift_HTTP_WP implements iLift_HTTP {
 		$this->response = vip_safe_wp_remote_get( $url, '', 3, 1, 20, compact( 'headers' ) );
 
 		if ( is_wp_error( $this->response ) ) {
+			$this->last_error = $this->response->get_error_message();
 			return false;
 		}
 
@@ -152,4 +161,7 @@ class Lift_HTTP_Curl implements iLift_HTTP {
 		return $this->response;
 	}
 
+	public function getLastError() {
+		throw new Exception('Unimplemented getLastError method called');
+	}
 }

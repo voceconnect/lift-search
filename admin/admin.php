@@ -2,7 +2,7 @@
 
 class Lift_Admin {
 
-	const OPTIONS_SLUG = '/lift-search';
+	const OPTIONS_SLUG = 'lift-search';
 
 	public function init() {
 		add_action( 'admin_menu', array( $this, 'action__admin_menu' ) );
@@ -16,8 +16,8 @@ class Lift_Admin {
 			add_action( 'wp_ajax_lift_setting', array( $this, 'action__wp_ajax_lift_setting' ) );
 		}
 
-		if ( !Lift_Search::is_setup_complete() ) {
-			if ( !isset( $_GET['page'] ) || (isset( $_GET['page'] ) && self::OPTIONS_SLUG != $_GET['page']) ) {
+		if ( !Lift_Search::get_search_domain_name() ) {
+			if ( !isset( $_GET['page'] ) || (isset( $_GET['page'] ) && $_GET['page'] !== self::OPTIONS_SLUG ) ) {
 				add_action( 'admin_enqueue_scripts', array( $this, '__admin_enqueue_style' ) );
 				add_action( 'user_admin_notices', array( $this, '_print_configuration_nag' ) );
 				add_action( 'admin_notices', array( $this, '_print_configuration_nag' ) );
@@ -47,7 +47,7 @@ class Lift_Admin {
 	 * @param string $secret
 	 * @return array 
 	 */
-	private static function test_credentials( $id = '', $secret = '' ) {
+	private function test_credentials( $id = '', $secret = '' ) {
 		$domain_manager = Lift_Search::get_domain_manager( $id, $secret );
 		$error = false;
 
@@ -114,12 +114,18 @@ class Lift_Admin {
 
 				switch ( $setting_key ) {
 					case 'credentials':
-						$result = self::test_credentials( $setting_value->accessKey, $setting_value->secretKey );
-						if ( $result['error'] ) {
-							$error->add( 'invalid_credentials', $result['message'] );
+						if ( '' === $setting_value->accessKey && '' === $setting_value->secretKey ) {
+							//empty values are used to reset
+							Lift_Search::set_access_key_id( '' );
+							Lift_Search::set_secret_access_key( '' );
 						} else {
-							Lift_Search::set_access_key_id( $setting_value->accessKey );
-							Lift_Search::set_secret_access_key( $setting_value->secretKey );
+							$result = $this->test_credentials( $setting_value->accessKey, $setting_value->secretKey );
+							if ( $result['error'] ) {
+								$error->add( 'invalid_credentials', $result['message'] );
+							} else {
+								Lift_Search::set_access_key_id( $setting_value->accessKey );
+								Lift_Search::set_secret_access_key( $setting_value->secretKey );
+							}
 						}
 						$response['model']['value'] = array(
 							'accessKey' => Lift_Search::get_access_key_id(),
@@ -135,11 +141,17 @@ class Lift_Admin {
 					case 'domainname':
 						$domain_manager = Lift_Search::get_domain_manager();
 						$replacing_domain = ( Lift_Search::get_search_domain_name() != $setting_value );
-						if ( $domain = $domain_manager->domain_exists( $setting_value ) ) {
+						if ( $setting_value === '' ) {
+							//assume that empty domain name means that we're clearing the set domain
+							Lift_Search::set_search_domain_name( '' );
+							Lift_Batch_Handler::_deactivation_cleanup();
+							$response['model']['value'] = '';
+						} elseif ( $domain = $domain_manager->domain_exists( $setting_value ) ) {
 							$changed_fields = array( );
 							if ( !is_wp_error( $result = $domain_manager->apply_schema( $setting_value, null, $changed_fields ) ) ) {
 								if ( $replacing_domain ) {
 									Lift_Batch_Handler::queue_all();
+									Lift_Batch_Handler::enable_cron();
 								}
 								Lift_Search::set_search_domain_name( $setting_value );
 							} else {
@@ -183,7 +195,6 @@ class Lift_Admin {
 			'next_sync' => Lift_Batch_Handler::get_next_cron_time(),
 			'batch_interval' => Lift_Search::get_batch_interval_display(),
 			'override_search' => Lift_Search::get_override_search(),
-			'setup_complete' => Lift_Search::is_setup_complete(),
 			'nonce' => wp_create_nonce( 'lift_setting' ),
 		);
 
@@ -194,22 +205,32 @@ class Lift_Admin {
 		$current_state = $c_state;
 
 		$response = json_encode( $current_state );
+
+		header( 'Content-Type: application/json' );
 		die( $response );
 	}
 
 	public function action__wp_ajax_lift_domains() {
-		$dm = Lift_Search::get_domain_manager();
+		
 		$response = array(
 			'domains' => array( ),
 			'error' => false,
 			'nonce' => wp_create_nonce( 'lift_domain' )
 		);
-		$domains = $dm->get_domains();
-		if ( $domains === false ) {
-			$response['error'] = $dm->get_last_error();
+		if(!Lift_Search::get_access_key_id() && !Lift_Search::get_secret_access_key()) {
+			status_header( 400 );
+			$response['error'] = array('code' => 'emptyCredentials', 'message' => 'The Access Credential are not yet set.' );
 		} else {
-			$response['domains'] = $domains;
+			$dm = Lift_Search::get_domain_manager();
+			$domains = $dm->get_domains();
+			if ( $domains === false ) {
+				status_header( 400 );
+				$response['error'] = $dm->get_last_error();
+			} else {
+				$response['domains'] = $domains;
+			}
 		}
+		header( 'Content-Type: application/json' );
 		die( json_encode( $response ) );
 	}
 
@@ -248,18 +269,6 @@ class Lift_Admin {
 			}
 			die( json_encode( $response ) );
 		}
-
-
-
-		$dm = Lift_Search::get_domain_manager();
-		$domain_name = Lift_Search::get_search_domain_name();
-		$domain = $dm->get_domain( $domain_name );
-		$response = json_encode( array(
-			'domainname' => $domain_name,
-			'domain' => $domain,
-			'error' => '????'
-			) );
-		die( $response );
 	}
 
 	/**

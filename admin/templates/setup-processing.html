@@ -16,32 +16,17 @@
 		<li class="active"><span>Creating Document Domain</span></li>
 		<li><span>Apply Schema And Default Access Policies</span></li>
 		<li><span>Initialize Document Service</span></li>
-		<li><span>Process Indexes</span></li>
-		<li><span>Upload Documents</span></li>
+		<li><span>Done</span></li>
 		<% } else if( RequiresIndexDocuments ) { %>
 		<li class="completed"><span>Document Domain Created</span></li>
 		<li class="active"><span>Applying Schema And Default Access Policies</span></li>
 		<li><span>Initialize Document Service</span></li>
-		<li><span>Process Indexes</span></li>
-		<li><span>Upload Documents</span></li>
+		<li><span>Done</span></li>
 		<% } else if( !DocService.Endpoint ) { %>
 		<li class="completed"><span>Document Domain Created</span></li>
 		<li class="completed"><span>Applied Schema And Default Access Policies</span></li>
 		<li class="active"><span>Initializing Document Service</span></li>
-		<li><span>Process Indexes</span></li>
-		<li><span>Upload Documents</span></li>
-		<% } else if( Processing ) { %>
-		<li class="completed"><span>Document Domain Created</span></li>
-		<li class="completed"><span>Applied Schema And Default Access Policies</span></li>
-		<li class="completed"><span>Initialized Document Service</span></li>
-		<li class="active"><span>Processing Indexes</span></li>
-		<li><span>Upload Documents</span></li>
-		<% } else if( !NumSearchableDocs ) { %>
-		<li class="completed"><span>Document Domain Created</span></li>
-		<li class="completed"><span>Applied Schema And Default Access Policies</span></li>
-		<li class="completed"><span>Initialized Document Service</span></li>
-		<li class="completed"><span>Processed Indexes</span></li>
-		<li class="active"><span>Uploading Documents</span></li>
+		<li><span>Done</span></li>
 		<% } %>
 	</ul>
 </div>

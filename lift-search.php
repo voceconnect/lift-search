@@ -39,17 +39,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		const SETTINGS_OPTION = 'lift-settings';
 		const DOMAIN_EVENT_WATCH_INTERVAL = 60;
 
-		/**
-		 * Returns whether setup has been complete by testing whether all
-		 * required data is set
-		 * @return bool 
-		 */
-		public static function is_setup_complete() {
-
-			//clean up these options and make this check if the saved domain name exists
-			return self::get_access_key_id() && self::get_secret_access_key() && self::get_search_domain_name() && get_option( self::INITIAL_SETUP_COMPLETE_OPTION, 0 );
-		}
-
 		public static function error_logging_enabled() {
 			return !( defined( 'DISABLE_LIFT_ERROR_LOGGING' ) && DISABLE_LIFT_ERROR_LOGGING ) && ( class_exists( 'Voce_Error_Logging' ) || file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) );
 		}
@@ -386,7 +375,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		}
 
 		public static function update_schema() {
-			if ( self::is_setup_complete() && ($domain = self::get_search_domain_name()) ) {
+			if ( $domain = self::get_search_domain_name() ) {
 				self::get_domain_manager()->apply_schema( $domain );
 			}
 			return true;

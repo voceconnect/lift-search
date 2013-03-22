@@ -249,7 +249,6 @@ class Lift_Domain_Manager {
 	 * @return DomainStatus|boolean
 	 */
 	public function get_domains(  ) {
-		
 		$response = $this->config_api->DescribeDomains( );
 		if ( $response ) {
 			return $response->DomainStatusList;
