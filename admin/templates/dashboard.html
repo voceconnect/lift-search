@@ -1,4 +1,6 @@
-<h1 class="banner">Lift: Search for WordPress</h1>
+<div class="liftBanner">
+	<h1>Lift:Search for Wordpress</h1>
+</div>
 <div class="dashboard-box">
 	<div class="grid">
 		<div class="col-1-8 textcenter">
@@ -14,18 +16,14 @@
 			</div>
 		</div>
 		<div class="col-1-2">
-			<div class="col-2-3">
-				<input id="batch_interval" value="<%- settings.batch_interval.value %>" class="small-text" type="text" />
-				<select id="batch_interval_unit">
-					<option value="m">Minutes</option>
-					<option value="h">Hours</option>
-					<option value="d">Days</option>
-				</select>
-				<input type="button" id="batch_interval_update" class="button-primary" value="Save"/>
-			</div>
-			<div class="col-1-3 textright">
-				<input type="button" id="batch_sync_now" class="button-primary" value="Sync Queue Now"/>
-			</div>
+			<input id="batch_interval" value="<%- settings.batch_interval.value %>" class="small-text" type="text" />
+			<select id="batch_interval_unit">
+				<option value="m">Minutes</option>
+				<option value="h">Hours</option>
+				<option value="d">Days</option>
+			</select>
+			<input type="button" id="batch_interval_update" class="button-primary" value="Save"/>
+			<input type="button" id="batch_sync_now" class="button-primary right" value="Sync Queue Now"/>
 		</div>
 	</div>
 </div>
@@ -34,7 +32,10 @@
 	<div class="grid">
 		<div class="col-1-2">
 			Override Search
-			Off | On
+			<div class="toggle">
+				<input id="searchOverride" name="searchOverride" type="checkbox" />
+				<label for="searchOverride" class="switch"></label>
+			</div>			
 		</div>
 		<div class="col-1-2 textright">
 			<input type="button" id="lift_update_keys" class="button-primary" value="Change AWS Keys"/>
@@ -44,9 +45,15 @@
 </div>
 
 <div id="document_queue">
-	<h3>Documents to be Synced</h3>
-	<span>Documents in Queue: 30</span>
-	<table class="wp-list-table widefat fixed posts">
+	<div class="grid">
+		<div class="col-1-2">
+			<h2>Documents to be Synced</h2>
+		</div>
+		<div class="col-1-2 textright">
+			<span>Documents in Queue: 30</span>
+		</div>
+	</div>
+	<table class="wp-list-table widefat">
 		<thead>
 			<tr>
 				<th class="column-title">Title</th>
@@ -97,10 +104,16 @@
 
 </div> <!--end #document_queue -->
 <div id="error_log">
-	<h3>Recent Errors</h3>
-	<a href="#">View All Logs</a>
-	<input type="button" id="error_logs_clear" value="Clear Errors"/>
-	<table class="wp-list-table widefat fixed posts">
+	<div class="grid">
+		<div class="col-1-2">
+			<h2>Recent Errors</h2>
+		</div>
+		<div class="col-1-2 textright">
+			<a href="#" class="button-primary">View All Logs</a>
+			<input type="button" id="error_logs_clear" class="button" value="Clear Errors"/>
+		</div>
+	</div>
+	<table class="wp-list-table widefat">
 		<thead>
 			<tr>
 				<th class="column-title">Error</th>
