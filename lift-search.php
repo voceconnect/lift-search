@@ -48,7 +48,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				require_once (__DIR__ . '/lib/voce-error-logging/voce-error-logging.php');
 			}
 
-			if ( self::get_search_endpoint() ) {
+			if ( self::get_search_endpoint() && self::get_override_search() ) {
 				add_action( 'init', array( 'Lift_WP_Search', 'init' ) );
 			}
 
@@ -58,9 +58,6 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			}
 
 			if ( is_admin() ) {
-				require_once(__DIR__ . '/admin-old/admin.php');
-				Lift_Admin_Old::init();
-				
 				require_once(__DIR__ . '/admin/admin.php');
 				$admin = new Lift_Admin();
 				$admin->init();

@@ -145,6 +145,7 @@
           }
         };
         _this.settings.get('credentials').save({value: {accessKey: '', secretKey: ''}}, options);
+        _this.domains.disablePolling();
         return this;
       };
       this.unsetDomainName(options);
