@@ -243,7 +243,7 @@
           .always(function() {
         delete _this.deferred;
         if (_this.pollingEnabled) {
-          _this.pollingTimeout = setTimeout(intervalUpdate, 20000);
+          _this.pollingTimeout = setTimeout(intervalUpdate, 60000);
         }
         if (_this.error && _this.pollingEnabled) {
           _this.trigger('sync_error', this, _this.error);
@@ -331,7 +331,7 @@
           .always(function() {
         delete _this.deferred;
         if (_this.pollingEnabled) {
-          _this.pollingTimeout = setTimeout(intervalUpdate, 20000);
+          _this.pollingTimeout = setTimeout(intervalUpdate, 60000);
         }
         if (_this.error && _this.pollingEnabled) {
           _this.trigger('sync_error', this, _this.error);
@@ -493,7 +493,7 @@
           .always(function() {
         delete _this.deferred;
         if (_this.pollingEnabled) {
-          _this.pollingTimeout = setTimeout(intervalUpdate, 20000);
+          _this.pollingTimeout = setTimeout(intervalUpdate, 60000);
         }
         if (_this.error && _this.pollingEnabled) {
           _this.trigger('sync_error', this, _this.error);
