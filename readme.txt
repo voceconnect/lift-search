@@ -38,7 +38,7 @@ Minimum requirements:
 
 3. Enter your Amazon Access Key ID and Secret Access Key.
 
-4. Click "Save Configuration." If the test fails, check that both of 
+4. Click "Save Save Amazon Keys." If the test fails, check that both of 
 your keys are entered correctly and that you are connected to Amazon. 
 
 5. Enter a Search Domain Name. This must be a unique string to your AWS account.
@@ -46,13 +46,12 @@ The domain name string can only contain the following characters: a-z (lowercase
 0-9, and - (hyphen). Uppercase letters and underscores are not allowed. 
 The string has a max length of 28 characters.
 
-6. Click "Save Domain". If the domain does not exist, Lift will ask if you would 
-like the domain created for you. Click the link and the plugin will create and 
-configure everything for you.
+6. Click "Save Domain Name". Lift will create the new domain for you.  If the 
+domain already exist, Lift will confirm if you would like to override the existing 
+domain before applying it's schema to the existing domain.
 
-7. Once the tests are successful, you're now ready to go. Click "View Lift 
-Search Dashboard". Once CloudSearch is ready, Lift will begin to index your site. 
-This can take a few hours depending on the amount of content on your site.
+7. Lift will display a progress screen while your new domain is setup.  Once
+complete, you will be taken to the Lift Dashboard.
 
 == Frequently Asked Questions ==
 
@@ -107,9 +106,10 @@ By default, posts and pages are indexed. To modify this, use the `lift_indexed_p
 
 == Screenshots ==
 
-1. Lift setup
-2. Lift status dashboard
-3. Lift search form
+1. Lift Setup Step 1 - Set Amazon Credentials
+2. Lift Setup Step 2 - Set Search Domain Name
+3. Lift Status Dashboard
+4. Lift Search Form
 
 == Changelog ==
 = 1.4.1 =
