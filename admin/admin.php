@@ -14,6 +14,8 @@ class Lift_Admin {
 			add_action( 'wp_ajax_lift_domain', array( $this, 'action__wp_ajax_lift_domain' ) );
 			add_action( 'wp_ajax_lift_settings', array( $this, 'action__wp_ajax_lift_settings' ) );
 			add_action( 'wp_ajax_lift_setting', array( $this, 'action__wp_ajax_lift_setting' ) );
+			add_action( 'wp_ajax_lift_update_queue', array( $this, 'action__wp_ajax_lift_update_queue' ) );
+			add_action( 'wp_ajax_lift_error_log', array( $this, 'action__wp_ajax_lift_error_log' ) );
 		}
 
 		if ( !Lift_Search::get_search_domain_name() ) {
@@ -78,7 +80,7 @@ class Lift_Admin {
 		wp_localize_script( 'lift-admin', 'liftData', array(
 			'templateDir' => plugins_url( '/templates/', __FILE__ )
 		) );
-		wp_enqueue_script( 'modernizr', plugins_url( 'js/modernizr.min.js', __DIR__ ), array(), '2.6.2', true );
+		wp_enqueue_script( 'modernizr', plugins_url( 'js/modernizr.min.js', __DIR__ ), array( ), '2.6.2', true );
 		$this->__admin_enqueue_style();
 	}
 
@@ -163,6 +165,15 @@ class Lift_Admin {
 						}
 						$response['model']['value'] = Lift_Search::get_search_domain_name();
 						break;
+					case 'next_sync':
+						//for now just assume that anh post for next_sync is to fire sync immediately
+						Lift_Batch_Handler::disable_cron();
+						Lift_Batch_Handler::enable_cron( time() );
+						break;
+					case 'override_search':
+						Lift_Search::set_override_search((bool) $setting_value);
+						$resonse['model']['value'] = Lift_Search::get_override_search();
+						break;
 					default:
 						$error->add( 'invalid_setting', 'The name of the setting you are trying to set is invalid.' );
 						break;
@@ -212,15 +223,15 @@ class Lift_Admin {
 	}
 
 	public function action__wp_ajax_lift_domains() {
-		
+
 		$response = array(
 			'domains' => array( ),
 			'error' => false,
 			'nonce' => wp_create_nonce( 'lift_domain' )
 		);
-		if(!Lift_Search::get_access_key_id() && !Lift_Search::get_secret_access_key()) {
+		if ( !Lift_Search::get_access_key_id() && !Lift_Search::get_secret_access_key() ) {
 			status_header( 400 );
-			$response['error'] = array('code' => 'emptyCredentials', 'message' => 'The Access Credential are not yet set.' );
+			$response['error'] = array( 'code' => 'emptyCredentials', 'message' => 'The Access Credential are not yet set.' );
 		} else {
 			$dm = Lift_Search::get_domain_manager();
 			$domains = $dm->get_domains();
@@ -270,6 +281,112 @@ class Lift_Admin {
 			}
 			die( json_encode( $response ) );
 		}
+	}
+
+	public function action__wp_ajax_lift_update_queue() {
+
+		$response = ( object ) array(
+				'error' => false,
+		);
+
+		$page = max( abs( $_GET['paged'] ), 1 );
+		$update_query = Lift_Document_Update_Queue::query_updates( array(
+				'page' => $page,
+				'per_page' => 10,
+				'queue_ids' => array( Lift_Document_Update_Queue::get_active_queue_id(), Lift_Document_Update_Queue::get_closed_queue_id() )
+			) );
+
+		$response->current_page = $page;
+		$response->per_page = 10;
+		$response->found_rows = $update_query->found_rows;
+		$response->updates = array( );
+
+		foreach ( $update_query->meta_rows as $meta_row ) {
+			$meta_value = get_post_meta( $meta_row->post_id, $meta_row->meta_key, true );
+			switch ( $meta_value['document_type'] ) {
+				case 'post';
+					$post_id = $meta_value['document_id'];
+					if ( $meta_value['action'] == 'add' ) {
+						$last_user = '';
+						if ( $last_id = get_post_meta( $post_id, '_edit_last', true ) ) {
+							$last_user = get_userdata( $last_id );
+						}
+						$response->updates[] = array(
+							'id' => $post_id,
+							'action' => 'add',
+							'title' => get_the_title( $post_id ),
+							'edit_url' => esc_url( get_edit_post_link( $post_id ) ),
+							'author_name' => (isset( $last_user->display_name ) ? $last_user->display_name : ''),
+							'queue_date' => mysql2date( 'D. M d Y g:ia', $meta_value['update_date'] )
+						);
+					} else {
+						$response->updates[] = array(
+							'id' => $post_id,
+							'action' => 'delete',
+							'title' => sprintf( 'Post Deletion (%d)', $post_id ),
+							'edit_url' => '#',
+							'author_name' => '',
+							'queue_date' => mysql2date( 'D. M d Y g:ia', $meta_value['update_date'] )
+						);
+					}
+					break;
+				default:
+					continue;
+			}
+		}
+
+		header( 'Content-Type: application/json' );
+		die( json_encode( $response ) );
+	}
+
+	public function action__wp_ajax_lift_error_log() {
+
+		$response = ( object ) array(
+				'error' => false,
+				'nonce' => wp_create_nonce( 'lift_error_log' ),
+				'view_all_url' => esc_url( admin_url( sprintf( 'edit.php?post_type=%s', Voce_Error_Logging::POST_TYPE ) ) )
+		);
+
+		if ( Lift_Search::error_logging_enabled() ) {
+			if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
+				$response = Voce_Error_Logging::delete_logs( array( 'lift-search' ) );
+			} else {
+				$args = array(
+					'post_type' => Voce_Error_Logging::POST_TYPE,
+					'posts_per_page' => 5,
+					'post_status' => 'any',
+					'orderby' => 'date',
+					'order' => 'DESC',
+					'tax_query' => array( array(
+							'taxonomy' => Voce_Error_Logging::TAXONOMY,
+							'field' => 'slug',
+							'terms' => array( 'error', 'lift-search' ),
+							'operator' => 'AND'
+						) ),
+				);
+				$query = new WP_Query( $args );
+
+				$response->current_page = $query->get( 'paged' );
+				$response->per_page = $query->get( 'posts_per_page' );
+				$response->found_rows = $query->found_posts;
+				$response->errors = array( );
+
+				foreach ( $query->posts as $post ) {
+					$response->errors[] = array(
+						'error_html' => sprintf( '<strong>%s</strong><pre>%s</pre>', esc_html( $post->post_title ), wpautop( $post->post_content ) ),
+						'date' => mysql2date( 'D. M d Y g:ia', $post->post_date )
+					);
+				}
+			}
+		} else {
+			status_header( 400 );
+			$response->error = array( 'code' => 'logging_disabled', 'Error Logging is Disabled' );
+		}
+
+
+
+		header( 'Content-Type: application/json' );
+		die( json_encode( $response ) );
 	}
 
 	/**

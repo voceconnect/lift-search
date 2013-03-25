@@ -33,7 +33,7 @@
 		<div class="col-1-2">
 			Override Search
 			<div class="toggle">
-				<input id="searchOverride" name="searchOverride" type="checkbox" />
+				<input id="override_search" name="searchOverride" type="checkbox"<%= settings.override_search ? 'checked="checked"' : '' %> />
 				<label for="searchOverride" class="switch"></label>
 			</div>			
 		</div>
@@ -45,121 +45,7 @@
 </div>
 
 <div id="document_queue">
-	<div class="grid">
-		<div class="col-1-2">
-			<h2>Documents to be Synced</h2>
-		</div>
-		<div class="col-1-2 textright">
-			<span>Documents in Queue: 30</span>
-		</div>
-	</div>
-	<table class="wp-list-table widefat">
-		<thead>
-			<tr>
-				<th class="column-title">Title</th>
-				<th class="column-author">Author</th>
-				<th class="column-categories">Date Queued</th>
-			</tr>
-		</thead>
-		<tbody>
-			<tr>
-				<td class="column-title"><a href="#">Hello world!</a></td>
-				<td class="column-author">John Smith</td>
-				<td class="column-categories">Fri. Mar 08 2013 2:32pm</td>
-			</tr>
-			<tr>
-				<td class="column-title"><a href="#">Hello world!</a></td>
-				<td class="column-author">John Smith</td>
-				<td class="column-categories">Fri. Mar 08 2013 2:32pm</td>
-			</tr>
-			<tr>
-				<td class="column-title"><a href="#">Hello world!</a></td>
-				<td class="column-author">John Smith</td>
-				<td class="column-categories">Fri. Mar 08 2013 2:32pm</td>
-			</tr>
-			<tr>
-				<td class="column-title"><a href="#">Hello world!</a></td>
-				<td class="column-author">John Smith</td>
-				<td class="column-categories">Fri. Mar 08 2013 2:32pm</td>
-			</tr>
-			<tr>
-				<td class="column-title"><a href="#">Hello world!</a></td>
-				<td class="column-author">John Smith</td>
-				<td class="column-categories">Fri. Mar 08 2013 2:32pm</td>
-			</tr>
-		</tbody>
-	</table>
-
-	<div class="tablenav bottom">
-		<div class="tablenav-pages">
-			<span class="pagination-links">
-				<span class="page-numbers current">1</span>
-				<a class="page-numbers" href="http://lifttest.staging.voceconnect.dev/wp-admin/options-general.php?page=lift-search%2Fadmin-old%2Fstatus.php&amp;paged=2">2</a>
-				<a class="page-numbers" href="http://lifttest.staging.voceconnect.dev/wp-admin/options-general.php?page=lift-search%2Fadmin-old%2Fstatus.php&amp;paged=3">3</a>
-				<span class="page-numbers dots">…</span>
-				<a class="page-numbers" href="http://lifttest.staging.voceconnect.dev/wp-admin/options-general.php?page=lift-search%2Fadmin-old%2Fstatus.php&amp;paged=10">10</a>
-				<a class="next page-numbers" href="http://lifttest.staging.voceconnect.dev/wp-admin/options-general.php?page=lift-search%2Fadmin-old%2Fstatus.php&amp;paged=2">Next »</a></span>
-		</div>
-	</div>
-
 </div> <!--end #document_queue -->
 <div id="error_log">
-	<div class="grid">
-		<div class="col-1-2">
-			<h2>Recent Errors</h2>
-		</div>
-		<div class="col-1-2 textright">
-			<a href="#" class="button-primary">View All Logs</a>
-			<input type="button" id="error_logs_clear" class="button" value="Clear Errors"/>
-		</div>
-	</div>
-	<table class="wp-list-table widefat">
-		<thead>
-			<tr>
-				<th class="column-title">Error</th>
-				<th class="column-date">Date/Time</th>
-			</tr>
-		</thead>
-		<tbody>
-			<tr>
-				<td class="column-title">
-					<strong>CloudSearch Not Ready for Batch 1362599506</strong>
-					<p>
-						The batch is locked or the search domain is either currently processing, needs indexing, or your domain does not have indexes set up.
-					<hr>
-					event_log - (/Users/prettyboymp/projects/lifttest/wp-content/plugins/lift-search/wp/lift-batch-handler.php:299)
-					<br>
-					send_next_batch
-					</p>
-				</td>
-				<td class="column-date">Fri. Mar 08 2013 2:32pm</td>
-			</tr>
-			<tr>
-				<td class="column-title">
-					<strong>CloudSearch Not Ready for Batch 1362599506</strong>
-					<p>
-						The batch is locked or the search domain is either currently processing, needs indexing, or your domain does not have indexes set up.
-					<hr>
-					event_log - (/Users/prettyboymp/projects/lifttest/wp-content/plugins/lift-search/wp/lift-batch-handler.php:299)
-					<br>
-					send_next_batch
-					</p>
-				</td>
-				<td class="column-date">Fri. Mar 08 2013 2:32pm</td>
-			</tr>
-			<tr>
-				<td class="column-title">
-					<strong>CloudSearch Not Ready for Batch 1362599506</strong>
-					<p>
-						The batch is locked or the search domain is either currently processing, needs indexing, or your domain does not have indexes set up.
-					<hr>
-					event_log - (/Users/prettyboymp/projects/lifttest/wp-content/plugins/lift-search/wp/lift-batch-handler.php:299)
-					<br>
-					send_next_batch
-					</p>
-				</td>
-				<td class="column-date">Fri. Mar 08 2013 2:32pm</td>
-			</tr>
-		</tbody>
-	</table>
+	
 </div> <!--end #error_log -->

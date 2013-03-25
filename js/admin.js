@@ -162,7 +162,6 @@
       this.settings.get('domainname').save({value: ''}, options);
       return this;
     }
-
   });
 
   liftAdmin.templateLoader = {
@@ -215,6 +214,246 @@
       }));
     }
   });
+
+  liftAdmin.UpdateQueue = Backbone.Collection.extend({
+    initialize: function() {
+      this.meta = {page: 1};
+      this.disablePolling();
+    },
+    enablePolling: function() {
+      this.pollingEnabled || this.fetchWithDeferred();
+      this.pollingEnabled = true;
+      return this;
+    },
+    disablePolling: function() {
+      this.pollingEnabled && clearTimeout(this.pollingTimeout);
+      this.pollingEnabled = false;
+      return this;
+    },
+    fetchWithDeferred: function() {
+      var _this = this,
+          intervalUpdate = function() {
+        _this.fetchWithDeferred();
+      };
+
+      return this.deferred = this.fetch()
+          .always(function() {
+        delete _this.deferred;
+        if (_this.pollingEnabled) {
+          _this.pollingTimeout = setTimeout(intervalUpdate, 20000);
+        }
+        if (_this.error && _this.pollingEnabled) {
+          _this.trigger('sync_error', this, _this.error);
+        }
+
+      });
+    },
+    url: function() {
+      return window.ajaxurl + '?action=lift_update_queue&paged=' + this.meta.page;
+    },
+    fetchPage: function(page) {
+      this.meta.page = page;
+      return this.fetch();
+    },
+    parse: function(resp) {
+      this.meta.page = resp.current_page;
+      this.meta.per_page = resp.per_page;
+      this.meta.found_rows = resp.found_rows;
+      this.meta.total_pages = Math.ceil(resp.found_rows / resp.per_page);
+      return resp.updates;
+    },
+    getMeta: function(name) {
+      return this.meta[name];
+    }
+  });
+
+  liftAdmin.UpdateQueueView = Backbone.View.extend({
+    _template: 'update-queue',
+    initialize: function() {
+      this.template = _.template(liftAdmin.templateLoader.getTemplate(this._template));
+      this.collection = new liftAdmin.UpdateQueue();
+      this.collection.on('sync', this.render, this).enablePolling();
+    },
+    events: {
+      'click a.page-numbers': 'onClickGoToPage'
+    },
+    render: function() {
+      var _this = this;
+      if (typeof this.collection.deferred === 'object' && 'then' in this.collection.deferred) {
+        //rerender after domains have completely loaded
+        $.when(this.collection.deferred).then(function() {
+          _this.render();
+          return;
+        });
+      }
+      $(this.el).html(this.template({updates: this.collection.toJSON(), meta: this.collection.meta}));
+      $('#lift_queue_nav').liftPaginator({
+        totalPages: this.collection.getMeta('total_pages'),
+        currentPage: this.collection.getMeta('page')
+      });
+      return this;
+    },
+    onClickGoToPage: function(e) {
+      var page = $(e.target).attr('href').replace(/\D/g, '');
+      e.preventDefault();
+      this.goToPage(page);
+    },
+    goToPage: function(page) {
+      this.collection.fetchPage(page);
+    }
+  });
+
+  liftAdmin.ErrorLog = Backbone.Collection.extend({
+    initialize: function() {
+      this.meta = {};
+      this.disablePolling();
+    },
+    enablePolling: function() {
+      this.pollingEnabled || this.fetchWithDeferred();
+      this.pollingEnabled = true;
+      return this;
+    },
+    disablePolling: function() {
+      this.pollingEnabled && clearTimeout(this.pollingTimeout);
+      this.pollingEnabled = false;
+      return this;
+    },
+    fetchWithDeferred: function() {
+      var _this = this,
+          intervalUpdate = function() {
+        _this.fetchWithDeferred();
+      };
+
+      return this.deferred = this.fetch()
+          .always(function() {
+        delete _this.deferred;
+        if (_this.pollingEnabled) {
+          _this.pollingTimeout = setTimeout(intervalUpdate, 20000);
+        }
+        if (_this.error && _this.pollingEnabled) {
+          _this.trigger('sync_error', this, _this.error);
+        }
+
+      });
+    },
+    url: function() {
+      return window.ajaxurl + '?action=lift_error_log&nonce=' + this.meta.nonce;
+    },
+    parse: function(resp) {
+      this.meta.nonce = resp.meta;
+      this.meta.view_all_url = resp.view_all_url;
+      return resp.errors;
+    }
+  });
+
+  liftAdmin.ErrorLogView = Backbone.View.extend({
+    _template: 'error-logs',
+    initialize: function() {
+      this.isCollectionSynced = false;
+      this.template = _.template(liftAdmin.templateLoader.getTemplate(this._template));
+      this.collection = new liftAdmin.ErrorLog();
+      this.collection.on('all', this.render, this).enablePolling();
+    },
+    events: {
+      'click #clear-logs': 'onClickClearLogs'
+    },
+    render: function() {
+      var _this = this;
+      if (typeof this.collection.deferred === 'object' && 'then' in this.collection.deferred) {
+        //rerender after domains have completely loaded
+        $.when(this.collection.deferred).then(function() {
+          _this.render();
+          return;
+        });
+      }
+      $(this.el).html(this.template({errors: this.collection.toJSON()}));
+      return this;
+    },
+    onClickClearLogs: function(e) {
+      e.preventDefault();
+
+    }
+  });
+
+  liftAdmin.DashboardView = Backbone.View.extend({
+    initialize: function() {
+      this.updateView = new liftAdmin.UpdateQueueView({el: $('#document_queue')});
+      this.errorView = new liftAdmin.ErrorLogView({el: $('#error_log')});
+      this.template = _.template(liftAdmin.templateLoader.getTemplate('dashboard'));
+      this.model.domains.on('reset', this.render, this);
+      this.model.settings.on('reset', this.render, this);
+    },
+    onClose: function() {
+      this.model.domains.off('reset', this.render, this);
+    },
+    events: {
+      'click #batch_interval_update': 'updateBatchInterval',
+      'click #batch_sync_now': 'setSyncNow',
+      'click #lift_reset': 'resetLift',
+      'click #override_search': 'setOverrideSearch',
+      'click #lift_update_keys': 'updateKeys'
+    },
+    render: function() {
+      this.el.innerHTML = this.template({settings: this.model.settings.toJSONObject(), domain: this.model.domains.toJSON()});
+      $('#batch_interval_unit').val(this.model.settings.getValue('batch_interval').unit);
+      this.updateView.setElement($('#document_queue')).render();
+      this.errorView.setElement($('#error_log')).render();
+      return this;
+    },
+    updateBatchInterval: function() {
+      var _this = this,
+          batchInterval = {
+        value: $('#batch_interval').val(),
+        unit: $('#batch_interval_unit').val()
+      };
+      this.beforeSave();
+      this.model.settings.get('batch_interval')
+          .save({value: batchInterval}, {
+      }).always(function() {
+        _this.afterSave();
+      });
+      return this;
+    },
+    setSyncNow: function() {
+      var _this = this;
+      this.beforeSave();
+      this.model.settings.get('next_sync')
+          .save({value: Math.round(new Date().getTime() / 1000)}, {
+      }).always(function() {
+        _this.model.settings.fetch();
+        _this.afterSave();
+      });
+      return this;
+    },
+    setOverrideSearch: function(e) {
+      var _this = this;
+      this.beforeSave();
+      this.model.settings.get('override_search')
+          .save({value: e.target.checked}, {
+      }).always(function() {
+        _this.afterSave();
+      });
+      return this;
+    },
+    updateKeys: function() {
+      var modal = new liftAdmin.ModalSetCredentialsView({model: {settings: this.model.settings}});
+      adminApp.openModal(modal);
+      return this;
+    },
+    beforeSave: function() {
+      $(this.el).find('input').attr('disabled', true);
+      return this;
+    },
+    afterSave: function() {
+      $(this.el).find('input').attr('disabled', false);
+      return this;
+    },
+    resetLift: function() {
+      adminApp.resetLift();
+      return this;
+    },
+  });
+
 
   liftAdmin.DomainModel = Backbone.Model.extend({
     url: function() {
@@ -276,7 +515,7 @@
     if (this.onClose) {
       this.onClose();
     }
-  }
+  };
 
   liftAdmin.SetCredentialsView = Backbone.View.extend({
     _template: 'set-credentials',
@@ -291,7 +530,7 @@
       'click #save_credentials': 'updateCredentials'
     },
     render: function() {
-      this.el.innerHTML = this.template(this.model.settings.toJSONObject());
+      $(this.el).html(_.template(this.model.settings.toJSONObject()));
       return this;
     },
     beforeSave: function() {
@@ -388,60 +627,9 @@
     }
   });
 
-  liftAdmin.DashboardView = Backbone.View.extend({
-    initialize: function() {
-      this.template = _.template(liftAdmin.templateLoader.getTemplate('dashboard'));
-      this.model.domains.on('reset', this.render, this);
-    },
-    onClose: function() {
-      this.model.domains.off('reset', this.render, this);
-    },
-    events: {
-      'click #batch_interval_update': 'updateBatchInterval',
-      'click #lift_reset': 'resetLift'
-    },
-    render: function() {
-      this.el.innerHTML = this.template({settings: this.model.settings.toJSONObject(), domain: this.model.domains.toJSON()});
-      $('#batch_interval_unit').val(this.model.settings.getValue('batch_interval').unit);
-      return this;
-    },
-    updateBatchInterval: function() {
-      var _this = this,
-          batchInterval = {
-        value: $('#batch_interval').val(),
-        unit: $('#batch_interval_unit').val()
-      };
-      this.beforeSave();
-      this.model.settings.get('batch_interval')
-          .save({value: batchInterval}, {
-      }).always(function() {
-        _this.afterSave();
-      });
-      return this;
-    },
-    beforeSave: function() {
-      $(this.el).find('input').attr('disabled', true);
-      return this;
-    },
-    afterSave: function() {
-      $(this.el).find('input').attr('disabled', false);
-      return this;
-    },
-    resetLift: function() {
-      adminApp.resetLift();
-      return this;
-    },
-  });
-
   liftAdmin.SetDomainView = Backbone.View.extend({
     initialize: function() {
       this.template = _.template(liftAdmin.templateLoader.getTemplate('set-domain'));
-      this.model.settings.get('domainname').on('sync', this.onCreateDomainSuccess, this);
-      this.model.settings.get('domainname').on('error', this.onCreateDomainError, this);
-    },
-    onClose: function() {
-      this.model.settings.get('domainname').on('sync', this.onCreateDomainSuccess, this);
-      this.model.settings.get('domainname').off('error', this.onCreateDomainError, this);
     },
     events: {
       'click #save_domainname': 'setDomainname',
@@ -474,8 +662,8 @@
       } else {
         //have user confirm to override the existing domain
         modalView = new liftAdmin.ModalConfirmDomainView({model: this.model.domains.get(domainname)});
-        modalView.bind('cancelled', this.modalCancelled, this);
-        modalView.bind('confirmed', this.modalConfirmed, this);
+        modalView.on('cancelled', this.modalCancelled, this);
+        modalView.on('confirmed', this.modalConfirmed, this);
         adminApp.openModal(modalView);
       }
       return this;
@@ -494,19 +682,24 @@
       var domain, _this = this;
       domain = new liftAdmin.DomainModel({DomainName: domainname});
       domain.nonce = this.model.domains.nonce;
-      domain.save().always(function() {
-        _this.afterSave();
-      });
+      domain.on('sync', this.onCreateDomainSuccess, this);
+      domain.on('error', this.onCreateDomainError, this);
+      domain.save();
       return this;
     },
     onCreateDomainSuccess: function(model, resp, options) {
       var domain = new liftAdmin.DomainModel(resp.data);
+      model.off('sync', this.onCreateDomainSuccess, this);
+      model.off('error', this.onCreateDomainError, this);
       this.model.domains.add(domain);
       this.useDomain(domain);
     },
     onCreateDomainError: function(model, resp, options) {
       var errors = $.parseJSON(resp.responseText).errors;
-      this.renderErrors(errors);
+      model.off('sync', this.onCreateDomainSuccess, this);
+      model.off('error', this.onCreateDomainError, this);
+      this.renderErrors(errors).afterSave();
+
     },
     renderErrors: function(errors) {
       var template = liftAdmin.templateLoader.getTemplate('errors');
@@ -519,6 +712,7 @@
     },
     useDomain: function(domain) {
       adminApp.settings.get('domainname').save({value: domain.get('DomainName')});
+      this.afterSave();
       return this;
     }
   });
@@ -551,21 +745,19 @@
       this.template = _.template(liftAdmin.templateLoader.getTemplate('setup-processing'));
       this.model.domains.on('reset', this.render, this);
     },
-    events: {
-      'click #skip_status': 'fakeStatusComplete'
-    },
     render: function() {
-      var domain = this.model.domains.get(this.model.settings.getValue('domainname'));
+      var domain = this.model.domains.get(this.model.settings.getValue('domainname')),
+          errorModal;
+      if (domain.get('Deleted')) {
+        errorModal = new liftAdmin.ModalMissingDomain({model: this.model});
+        adminApp.openModal(errorModal);
+      }
       if (!domain || domain.get('DocService').EndPoint) {
         adminApp.render();
         return this;
       }
 
       this.el.innerHTML = this.template(domain.toJSON());
-      return this;
-    },
-    fakeStatusComplete: function() {
-      adminApp.renderState('dashboard');
       return this;
     },
     onClose: function() {
@@ -578,3 +770,72 @@
   var adminApp = new liftAdmin.App();
 
 })(jQuery, window);
+
+(function($) {
+  $.fn.liftPaginator = function(options) {
+    var defaults, settings;
+
+    var getPaginationLink = function(pageNum, currentPage) {
+      if (pageNum == currentPage) {
+        return '<span class="page-numbers current">' + pageNum + '</span>';
+      }
+      return '<a class="page-numbers" href="#' + pageNum + '">' + pageNum + '</a>';
+    }
+
+    defaults = {
+      totalPages: 1,
+      currentPage: 1,
+      midSize: 1,
+      endSize: 2,
+    }
+
+    settings = $.extend(defaults, options);
+
+    return this.each(function() {
+      var $this = $(this),
+          links = [],
+          i,
+          loopTil;
+
+      if (settings.totalPages > 1) {
+
+        if (settings.currentPage > 1) {
+          links.push('<a class="next page-numbers" href="' + (settings.currentPage - 1) + '">&laquo; Previous</a></span>')
+        }
+
+        for (i = 1, loopTil = 1 + settings.endSize; i < loopTil; i++) {
+          links.push(getPaginationLink(i, settings.currentPage));
+        }
+
+        if (i < settings.currentPage - settings.midSize) {
+          links.push('<span class="page-numbers dots">…</span>');
+        }
+
+        i = Math.max(i, settings.currentPage - settings.midSize);
+        loopTil = Math.min(settings.currentPage + settings.midSize + 1, settings.totalPages - settings.endSize + 1);
+
+        if (i < loopTil) {
+          for (; i < loopTil; i++) {
+            links.push(getPaginationLink(i, settings.currentPage));
+          }
+        }
+
+        if (i < settings.totalPages - settings.endSize + 1) {
+          links.push('<span class="page-numbers dots">…</span>');
+        }
+
+
+        i = Math.max(i, settings.totalPages - settings.endSize + 1);
+        for (; i <= settings.totalPages; i++) {
+          links.push(getPaginationLink(i, settings.currentPage));
+        }
+
+        if (settings.currentPage < settings.totalPages) {
+          links.push('<a class="next page-numbers" href="' + (settings.currentPage + 1) + '">Next &raquo;</a></span>')
+        }
+        $this.append('<span class="pagination-links">' + links.join('') + '</span>');
+
+      }
+    });
+  };
+})(jQuery);

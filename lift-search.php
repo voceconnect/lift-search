@@ -40,12 +40,12 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		const DOMAIN_EVENT_WATCH_INTERVAL = 60;
 
 		public static function error_logging_enabled() {
-			return !( defined( 'DISABLE_LIFT_ERROR_LOGGING' ) && DISABLE_LIFT_ERROR_LOGGING ) && ( class_exists( 'Voce_Error_Logging' ) || file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) );
+			return (!( defined( 'DISABLE_LIFT_ERROR_LOGGING' ) && DISABLE_LIFT_ERROR_LOGGING )) && ( class_exists( 'Voce_Error_Logging' ) || file_exists( __DIR__ . '/lib/voce-error-logging/voce-error-logging.php' ) );
 		}
 
 		public static function init() {
-			if ( self::error_logging_enabled() && !class_exists( 'Voce_Error_Logging' ) && file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) ) {
-				require_once (__DIR__ . '/lib/voce-error-loggin/voce-error-logging');
+			if ( self::error_logging_enabled() && !class_exists( 'Voce_Error_Logging' ) && file_exists( __DIR__ . '/lib/voce-error-logging/voce-error-logging.php' ) ) {
+				require_once (__DIR__ . '/lib/voce-error-logging/voce-error-logging.php');
 			}
 
 			if ( self::get_search_endpoint() ) {
@@ -260,7 +260,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		}
 		
 		public static function get_override_search() {
-			self::__get_setting('override-search');
+			return self::__get_setting('override-search');
 		}
 
 		/**
