@@ -108,8 +108,10 @@
       return this;
     },
     openModal: function(view) {
-      this.currentModal && this.close(this.currentModal);
-      view.setElement($('#modal_content'));
+      var $el = $('<div></div>');
+      this.currentModal && this.closeModal(this.currentModal);
+      $('#modal_content').append($el);
+      view.setElement($el);
       view.render();
       $('#lift_modal').show();
       this.currentModal = view;
@@ -495,7 +497,6 @@
         if (_this.error && _this.pollingEnabled) {
           _this.trigger('sync_error', this, _this.error);
         }
-
       });
     },
     url: function() {
@@ -530,7 +531,7 @@
       'click #save_credentials': 'updateCredentials'
     },
     render: function() {
-      $(this.el).html(_.template(this.model.settings.toJSONObject()));
+      this.el.innerHTML = this.template(this.model.settings.toJSONObject());
       return this;
     },
     beforeSave: function() {
@@ -569,7 +570,11 @@
   liftAdmin.ModalSetCredentialsView = liftAdmin.SetCredentialsView.extend({
     _template: 'modal-set-credentials',
     initialize: function() {
+      this.template = _.template(liftAdmin.templateLoader.getTemplate(this._template));
       this.model.settings.get('credentials').on('sync', this.closeModal, this);
+    },
+    events: {
+      'click #cancel':'closeModal'
     },
     onClose: function() {
       this.model.settings.get('credentials').off('sync', this.closeModal, this);

@@ -171,7 +171,7 @@ class Lift_Admin {
 						Lift_Batch_Handler::enable_cron( time() );
 						break;
 					case 'override_search':
-						Lift_Search::set_override_search((bool) $setting_value);
+						Lift_Search::set_override_search( ( bool ) $setting_value );
 						$resonse['model']['value'] = Lift_Search::get_override_search();
 						break;
 					default:
@@ -230,13 +230,11 @@ class Lift_Admin {
 			'nonce' => wp_create_nonce( 'lift_domain' )
 		);
 		if ( !Lift_Search::get_access_key_id() && !Lift_Search::get_secret_access_key() ) {
-			status_header( 400 );
 			$response['error'] = array( 'code' => 'emptyCredentials', 'message' => 'The Access Credential are not yet set.' );
 		} else {
 			$dm = Lift_Search::get_domain_manager();
 			$domains = $dm->get_domains();
 			if ( $domains === false ) {
-				status_header( 400 );
 				$response['error'] = $dm->get_last_error();
 			} else {
 				$response['domains'] = $domains;
@@ -409,7 +407,7 @@ class Lift_Admin {
 		<div id="lift_modal"  class="lift_modal">
 			<div class="modal_overlay">&nbsp;</div>
 			<div class="modal_wrapper">
-				<div id="modal_content" class="modal_content">
+				<div class="modal_content" id="modal_content">
 				</div>
 			</div>
 		</div>
