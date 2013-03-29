@@ -174,7 +174,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 							if ( $meta_value['action'] == 'add' ) {
 								$html .= '<tr>';
 								$html .= '<td class="column-date">' . $post_id . '</td>';
-								$html .= '<td class="column-title"><a href="' . get_edit_post_link( $post_id ) . '">' . esc_html( get_the_title( $post_id ) ) . '</a></td>';
+								$html .= '<td class="column-title"><a href="' . esc_url( get_edit_post_link( $post_id ) ) . '">' . esc_html( get_the_title( $post_id ) ) . '</a></td>';
 								$html .= '<td class="column-author">' . (isset( $last_user->display_name ) ? $last_user->display_name : '') . '</td>';
 								$html .= '<td class="column-categories">' . mysql2date( 'D. M d Y g:ia', $meta_value['update_date'] ) . '</td>';
 								$html .= '</tr>';
@@ -242,25 +242,43 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 
 			$post_types = Lift_Search::get_indexed_post_types();
 
-			$post_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM $wpdb->posts 
-				WHERE post_type in ('" . implode( "','", $post_types ) . "') AND ID > %d
-				AND post_status <> 'auto-draft'
-				ORDER BY ID ASC
-				LIMIT %d", $id_from, self::get_queue_all_set_size() ) );
-
-			if ( empty( $post_ids ) ) {
+			$query = new WP_Query();
+			
+			$alter_query = function($where, $wp_query) use ($query, $id_from) {
+				global $wpdb;
+				if($wp_query === $query) { //make sure we're not messing with any other queries
+					//making sure all post_statii are used since wp_query overrides the requested statii
+					$where = $wpdb->prepare(" AND post_type in ('" . implode( "','", $wp_query->get('post_type') ) . "') ".
+						"AND ID > %d ".
+						"AND post_status <> 'auto-draft'", $id_from);
+				}
+				return $where;
+			};
+			
+			add_filter('posts_where', $alter_query, 10, 2);
+			
+			$posts = $query->query(array(
+				'suppress_filters' => false,
+				'post_type' => $post_types,
+				'orderby' => 'ID',
+				'order' => 'ASC',
+				'post_status' => array_diff(get_post_stati(), 'auto-draft'),
+				'posts_per_page' => self::get_queue_all_set_size()
+			));
+			
+			remove_filter('posts_where', $alter_query);
+			
+			if ( empty( $posts ) ) {
 				wp_clear_scheduled_hook( self::QUEUE_ALL_CRON_HOOK );
 				delete_option( self::QUEUE_ALL_MARKER_OPTION );
 				return;
 			}
 
-			_prime_post_caches( $post_ids );
-
-			foreach ( $post_ids as $post_id ) {
-				Lift_Post_Update_Watcher::queue_entire_post( $post_id );
+			foreach ( $posts as $post ) {
+				Lift_Post_Update_Watcher::queue_entire_post( $post->ID );
 			}
 
-			$new_id_from = get_post( end($post_ids) )->ID;
+			$new_id_from = end( $post_ids )->ID;
 
 			update_option( self::QUEUE_ALL_MARKER_OPTION, $new_id_from );
 		}
@@ -284,7 +302,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 		 */
 		public static function ready_for_batch( $domain_name ) {
 			$domain_manager = Lift_Search::get_domain_manager();
-			return $domain_manager->can_accept_uploads($domain_name);
+			return $domain_manager->can_accept_uploads( $domain_name );
 		}
 
 		/**
@@ -330,7 +348,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 
 			$batch = new Lift_Batch();
 			$batched_meta_keys = array( );
-			
+
 			$blog_id = get_current_blog_id();
 			$site_id = lift_get_current_site_id();
 			foreach ( $update_query->meta_rows as $meta_row ) {
@@ -341,7 +359,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 					$action = $update_data['action'];
 					if ( $action == 'add' ) {
 						$post = get_post( $update_data['document_id'], ARRAY_A );
-						
+
 						$post_data = array( 'ID' => $update_data['document_id'], 'blog_id' => $blog_id, 'site_id' => $site_id );
 
 						foreach ( Lift_Search::get_indexed_post_fields( $post['post_type'] ) as $field ) {

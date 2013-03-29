@@ -1,103 +1,42 @@
 <?php
 
 class Lift_Admin {
-	/**
-	 * Page name used for admin setup 
-	 */
 
-	const LANDING_PAGE = 'lift-search/admin/setup.php';
+	const OPTIONS_SLUG = 'lift-search';
 
-	/**
-	 * Page name used for admin status 
-	 */
-	const STATUS_PAGE = 'lift-search/admin/status.php';
-
-	public static function init() {
-		add_action( 'admin_menu', array( __CLASS__, '_setup_management_pages' ) );
-		add_action( 'admin_init', array( __CLASS__, '_admin_init' ) );
-	}
-
-	public function _admin_init() {
-
-
-		add_filter( 'plugin_row_meta', array( __CLASS__, 'settings_link' ), 10, 2 );
-		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( __CLASS__, 'settings_link' ), 10, 2 );
+	public function init() {
+		add_action( 'admin_menu', array( $this, 'action__admin_menu' ) );
+		add_action( 'admin_init', array( $this, 'action__admin_init' ) );
 
 		//setup AJAX handlers
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-			add_action( 'wp_ajax_lift_test_access', array( __CLASS__, '_ajax_test_and_save_credentials' ) );
-			add_action( 'wp_ajax_lift_test_domain', array( __CLASS__, '_ajax_test_and_save_domain' ) );
-			add_action( 'wp_ajax_lift_delete_error_logs', array( __CLASS__, '_ajax_delete_error_logs' ) );
-			add_action( 'wp_ajax_lift_update_cron_interval', array( __CLASS__, '_ajax_update_cron_interval' ) );
-			add_action( 'wp_ajax_lift_create_domain', array( __CLASS__, '_ajax_create_domain' ) );
-			add_action( 'wp_ajax_lift_set_cron_status', array( __CLASS__, '_ajax_set_cron_status' ) );
+		if ( defined( 'DOING_AJAX' ) && DOING_AJAX && current_user_can( $this->get_manage_capability() ) ) {
+			add_action( 'wp_ajax_lift_domains', array( $this, 'action__wp_ajax_lift_domains' ) );
+			add_action( 'wp_ajax_lift_domain', array( $this, 'action__wp_ajax_lift_domain' ) );
+			add_action( 'wp_ajax_lift_settings', array( $this, 'action__wp_ajax_lift_settings' ) );
+			add_action( 'wp_ajax_lift_setting', array( $this, 'action__wp_ajax_lift_setting' ) );
+			add_action( 'wp_ajax_lift_update_queue', array( $this, 'action__wp_ajax_lift_update_queue' ) );
+			add_action( 'wp_ajax_lift_error_log', array( $this, 'action__wp_ajax_lift_error_log' ) );
 		}
 
-		if ( isset( $_GET['page'] ) && self::STATUS_PAGE == $_GET['page'] ) {
-
-			// require landing page to be filled out
-			if ( !isset( $_GET['lift-setup-complete'] ) && !Lift_Search::is_setup_complete() ) {
-				wp_redirect( admin_url( 'options-general.php?page=' . self::LANDING_PAGE ) );
-			}
-
-			// send IndexDocuments request
-			if ( current_user_can( 'manage_options' ) && isset( $_GET['lift-indexdocuments'] ) ) {
-				Lift_Search::get_domain_manager()->index_documents( Lift_Search::get_search_domain_name() );
-				wp_redirect( admin_url( 'options-general.php?page=' . self::STATUS_PAGE ) );
-			}
-
-			// send next batch
-			if ( current_user_can( 'manage_options' ) && isset( $_GET['sync-queue'] ) ) {
-				Lift_Batch_Handler::send_next_batch();
-				wp_redirect( admin_url( 'options-general.php?page=' . self::STATUS_PAGE ) );
-			}
-		}
-
-		if ( !Lift_Search::is_setup_complete() ) {
-			if ( !isset( $_GET['page'] ) || (isset( $_GET['page'] ) && self::LANDING_PAGE != $_GET['page']) ) {
-				add_action( 'admin_enqueue_scripts', array( __CLASS__, '_enqueue_style' ) );
-				add_action( 'user_admin_notices', array( __CLASS__, '_print_configuration_nag' ) );
-				add_action( 'admin_notices', array( __CLASS__, '_print_configuration_nag' ) );
+		if ( !Lift_Search::get_search_domain_name() ) {
+			if ( !isset( $_GET['page'] ) || (isset( $_GET['page'] ) && $_GET['page'] !== self::OPTIONS_SLUG ) ) {
+				add_action( 'admin_enqueue_scripts', array( $this, '__admin_enqueue_style' ) );
+				add_action( 'user_admin_notices', array( $this, '_print_configuration_nag' ) );
+				add_action( 'admin_notices', array( $this, '_print_configuration_nag' ) );
 			}
 		}
 	}
 
 	/**
-	 * Add link to access settings page on Plugin mainpage
-	 * @param array $links
-	 * @param string $page
-	 * @return array 
+	 * Returns the capability for managing the admin
+	 * @return strings
 	 */
-	public static function settings_link( $links, $page ) {
-		if ( $page == plugin_basename( __FILE__ ) ) {
-			$links[] = '<a href="' . admin_url( 'options-general.php?page=' . Lift_Admin::LANDING_PAGE ) . '">Settings</a>';
-		}
-		return $links;
-	}
+	private function get_manage_capability() {
+		static $cap = null;
 
-	public static function _enqueue_style() {
-		wp_enqueue_style( 'lift-search-admin', plugins_url( 'sass/admin.css', __DIR__ ) );
-	}
-
-	public static function _print_configuration_nag() {
-		?>
-		<div id="banneralert" class="lift-colorized">
-			<div class="lift-balloon">
-				<img src="<?php echo plugin_dir_url( __DIR__ ) ?>img/logo.png" alt="Lift Logo">
-			</div>
-			<div class="lift-message"><p><strong>Welcome to Lift</strong>: 	Now that you've activated the Lift plugin it's time to set it up. Click below to get started. </p></div>
-			<div><a class="lift-btn" href="<?php echo admin_url( 'options-general.php?page=' . self::LANDING_PAGE ) ?>">Configure Lift</a></div>
-			<div class="clr"></div>
-		</div>
-		<script>
-			jQuery(document).ready(function($) {
-				var $bannerAlert = $('#banneralert');
-				if ($bannerAlert.length) {
-					$('.wrap h2').first().after($bannerAlert);
-				}
-			});
-		</script>
-		<?php
+		if ( is_null( $cap ) )
+			$cap = apply_filters( 'lift_settings_capability', 'manage_options' );
+		return $cap;
 	}
 
 	/**
@@ -110,7 +49,7 @@ class Lift_Admin {
 	 * @param string $secret
 	 * @return array 
 	 */
-	private static function test_credentials( $id = '', $secret = '' ) {
+	private function test_credentials( $id = '', $secret = '' ) {
 		$domain_manager = Lift_Search::get_domain_manager( $id, $secret );
 		$error = false;
 
@@ -124,163 +63,376 @@ class Lift_Admin {
 		return array( 'error' => $error, 'message' => $status_message );
 	}
 
+	/*	 * ************************   */
+	/*             Callbacks          */
+	/*	 * ************************   */
+
 	/**
-	 * Called after setup is complete to enable the batch cron and 
-	 * queue all current content 
+	 * Sets up menu pages
 	 */
-	private static function _complete_setup() {
-		Lift_Batch_Handler::init();
-		// mark setup complete, enable cron and queue all posts
-		update_option( Lift_Search::INITIAL_SETUP_COMPLETE_OPTION, 1 );
-		Lift_Batch_Handler::enable_cron();
-		Lift_Batch_Handler::queue_all();
+	public function action__admin_menu() {
+		$hook = add_options_page( 'Lift: Search for WordPress', 'Lift Search', $this->get_manage_capability(), self::OPTIONS_SLUG, array( $this, 'callback__render_options_page' ) );
+		add_action( $hook, array( $this, 'action__options_page_enqueue' ) );
+	}
+
+	public function action__options_page_enqueue() {
+		wp_enqueue_script( 'lift-admin', plugins_url( 'js/admin.js', __DIR__ ), array( 'backbone' ), '0.1', true );
+		wp_localize_script( 'lift-admin', 'liftData', array(
+			'templateDir' => plugins_url( '/templates/', __FILE__ )
+		) );
+		wp_enqueue_script( 'modernizr', plugins_url( 'js/modernizr.min.js', __DIR__ ), array( ), '2.6.2', true );
+		$this->__admin_enqueue_style();
+	}
+
+	public function __admin_enqueue_style() {
+		wp_enqueue_style( 'lift-admin', plugins_url( 'css/admin.css', __DIR__ ) );
 	}
 
 	/**
-	 * Setup settings in admin
-	 * @method add_settings
+	 * Sets up all admin hooks
 	 */
-	public static function _setup_management_pages() {
-		$capability = apply_filters( 'lift_settings_capability', 'manage_options' );
+	public function action__admin_init() {
 
-		add_options_page( 'Lift: Search for WordPress', 'Lift Search', $capability, Lift_Admin::STATUS_PAGE );
-		add_submenu_page( '', 'Lift: Search for Wordpress', 'Lift Search', $capability, Lift_Admin::LANDING_PAGE );
-
-		// since add_options/submenu_page doesn't give us the correct hook...
-		$func_enqueue_admin_script = function() {
-				wp_enqueue_script( 'lift-admin-settings', plugins_url( 'js/admin-settings.js', __DIR__ ), array( 'jquery' ) );
-				Lift_Admin::_enqueue_style();
-			};
-
-		foreach ( array( 'lift-search/admin/setup.php', 'lift-search/admin/status.php' ) as $hook ) {
-			add_action( "load-{$hook}", $func_enqueue_admin_script );
-		}
+		//add option links
+		add_filter( 'plugin_row_meta', array( __CLASS__, 'filter__plugin_row_meta' ), 10, 2 );
+		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( __CLASS__, 'filter__plugin_row_meta' ), 10, 2 );
 	}
 
-	/**
-	 * Response handler for testing and saving new Access Key ID and Secret Keys
-	 * 
-	 * @todo separate out the actual test portion of the code into a separate class
-	 * used for configuration testing 
-	 */
-	public static function _ajax_test_and_save_credentials() {
-		$id = preg_replace( '/[^a-zA-Z0-9_\-\/\\\\+]/', '', $_POST['id'] );
-		$secret = preg_replace( '/[^a-zA-Z0-9_\-\/\\\\+]/', '', $_POST['secret'] );
+	public function action__wp_ajax_lift_setting() {
+		if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['model'] ) ) {
+			$settings_data = json_decode( stripslashes( $_POST['model'] ) );
 
-		$result = self::test_credentials( $id, $secret );
+			$response = array(
+				'status' => 'SUCCESS',
+				'data' => array( ),
+				'errors' => array( )
+			);
 
-		if ( !$result['error'] ) {
-			Lift_Search::set_access_key_id( $id );
-			Lift_Search::set_secret_access_key( $secret );
-		}
+			$setting_value = $settings_data->value;
+			$response['model']['id'] = $setting_key = $settings_data->id;
 
-		die( json_encode( $result ) );
-	}
+			$error = new WP_Error();
+			if ( isset( $_GET['nonce'] ) && wp_verify_nonce( $_GET['nonce'], 'lift_setting' ) ) {
 
-	public static function _ajax_test_and_save_domain() {
-
-		$domain_manager = Lift_Search::get_domain_manager();
-
-		$test_access = self::test_credentials( Lift_Search::get_access_key_id(), Lift_Search::get_secret_access_key() );
-		if ( $test_access['error'] ) {
-			echo json_encode( $test_access );
-			die;
-		}
-
-		$domain_name = strtolower( trim( $_POST['domain'] ) );
-
-		$replacing_domain = ( Lift_Search::get_search_domain_name() != $domain_name );
-		$error = false;
-		if ( $domain = $domain_manager->domain_exists( $domain_name ) ) {
-			$changed_fields = array( );
-			if ( !is_wp_error( $result = $domain_manager->apply_schema( $domain_name, null, $changed_fields ) ) ) {
-				if ( count( $changed_fields ) ) {
-					$status_message = 'The default schema has been applied to the domain.  It may take from 20 - 30 minutes while to domain applies the new index.';
-				} else {
-					$status_message = 'Success';
-					if ( $replacing_domain ) {
-						Lift_Batch_Handler::queue_all();
-					}
+				switch ( $setting_key ) {
+					case 'credentials':
+						if ( '' === $setting_value->accessKey && '' === $setting_value->secretKey ) {
+							//empty values are used to reset
+							Lift_Search::set_access_key_id( '' );
+							Lift_Search::set_secret_access_key( '' );
+						} else {
+							$result = $this->test_credentials( $setting_value->accessKey, $setting_value->secretKey );
+							if ( $result['error'] ) {
+								$error->add( 'invalid_credentials', $result['message'] );
+							} else {
+								Lift_Search::set_access_key_id( $setting_value->accessKey );
+								Lift_Search::set_secret_access_key( $setting_value->secretKey );
+							}
+						}
+						$response['model']['value'] = array(
+							'accessKey' => Lift_Search::get_access_key_id(),
+							'secretKey' => Lift_Search::get_secret_access_key()
+						);
+						break;
+					case 'batch_interval':
+						$value = max( array( 1, intval( $setting_value->value ) ) );
+						$unit = $setting_value->unit;
+						Lift_Search::set_batch_interval_display( $value, $unit );
+						$response['model']['value'] = Lift_Search::get_batch_interval_display();
+						break;
+					case 'domainname':
+						$domain_manager = Lift_Search::get_domain_manager();
+						$replacing_domain = ( Lift_Search::get_search_domain_name() != $setting_value );
+						if ( $setting_value === '' ) {
+							//assume that empty domain name means that we're clearing the set domain
+							Lift_Search::set_search_domain_name( '' );
+							Lift_Batch_Handler::_deactivation_cleanup();
+							$response['model']['value'] = '';
+						} elseif ( $domain = $domain_manager->domain_exists( $setting_value ) ) {
+							$changed_fields = array( );
+							if ( !is_wp_error( $result = $domain_manager->apply_schema( $setting_value, null, $changed_fields ) ) ) {
+								if ( $replacing_domain ) {
+									Lift_Batch_Handler::queue_all();
+									Lift_Batch_Handler::enable_cron();
+								}
+								Lift_Search::set_search_domain_name( $setting_value );
+							} else {
+								$error->add( 'schema_error', 'There was an error while applying the schema to the domain.' );
+							}
+						} else {
+							$error->add( 'invalid_domain', 'The given domain does not exist.' );
+						}
+						$response['model']['value'] = Lift_Search::get_search_domain_name();
+						break;
+					case 'next_sync':
+						//for now just assume that anh post for next_sync is to fire sync immediately
+						Lift_Batch_Handler::disable_cron();
+						Lift_Batch_Handler::enable_cron( time() );
+						break;
+					case 'override_search':
+						Lift_Search::set_override_search( ( bool ) $setting_value );
+						$resonse['model']['value'] = Lift_Search::get_override_search();
+						break;
+					default:
+						$error->add( 'invalid_setting', 'The name of the setting you are trying to set is invalid.' );
+						break;
 				}
-				Lift_Search::set_search_domain_name( $domain_name );
 			} else {
-				$error = true;
-				$status_message = 'There was an error while applying the schema to the domain.';
+				$error->add( 'invalid_nonce', 'The request was missing required authentication data.' );
+			}
+
+			if ( count( $error->get_error_codes() ) ) {
+
+				foreach ( $error->get_error_codes() as $code ) {
+					$response['errors'][] = array( 'code' => $code, 'message' => $error->get_error_message( $code ) );
+				}
+				status_header( 400 );
+				header( 'Content-Type: application/json' );
+				$response['status'] = 'FAILURE';
+			}
+			die( json_encode( $response ) );
+		}
+	}
+
+	public function action__wp_ajax_lift_settings() {
+
+		$current_state = array(
+			'credentials' => array(
+				'accessKey' => Lift_Search::get_access_key_id(),
+				'secretKey' => Lift_Search::get_secret_access_key(),
+			),
+			'domainname' => Lift_Search::get_search_domain_name(),
+			'last_sync' => Lift_Batch_Handler::get_last_cron_time(),
+			'next_sync' => Lift_Batch_Handler::get_next_cron_time(),
+			'batch_interval' => Lift_Search::get_batch_interval_display(),
+			'override_search' => Lift_Search::get_override_search(),
+			'nonce' => wp_create_nonce( 'lift_setting' ),
+		);
+
+		$c_state = array( );
+		foreach ( $current_state as $id => $value ) {
+			$c_state[] = array( 'id' => $id, 'value' => $value );
+		}
+		$current_state = $c_state;
+
+		$response = json_encode( $current_state );
+
+		header( 'Content-Type: application/json' );
+		die( $response );
+	}
+
+	public function action__wp_ajax_lift_domains() {
+
+		$response = array(
+			'domains' => array( ),
+			'error' => false,
+			'nonce' => wp_create_nonce( 'lift_domain' )
+		);
+		if ( !Lift_Search::get_access_key_id() && !Lift_Search::get_secret_access_key() ) {
+			$response['error'] = array( 'code' => 'emptyCredentials', 'message' => 'The Access Credential are not yet set.' );
+		} else {
+			$dm = Lift_Search::get_domain_manager();
+			$domains = $dm->get_domains();
+			if ( $domains === false ) {
+				$response['error'] = $dm->get_last_error();
+			} else {
+				$response['domains'] = $domains;
+			}
+		}
+		header( 'Content-Type: application/json' );
+		die( json_encode( $response ) );
+	}
+
+	public function action__wp_ajax_lift_domain() {
+		if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['model'] ) ) {
+			$model = json_decode( stripslashes( $_POST['model'] ) );
+
+			$response = array(
+				'status' => 'SUCCESS',
+				'data' => array( ),
+				'errors' => array( ),
+			);
+
+			$error = new WP_Error();
+
+			if ( isset( $_GET['nonce'] ) && wp_verify_nonce( $_GET['nonce'], 'lift_domain' ) ) {
+				$dm = Lift_Search::get_domain_manager();
+				$result = $dm->initialize_new_domain( $model->DomainName );
+				if ( is_wp_error( $result ) ) {
+					$error = $result;
+				} else {
+					$response['data'] = $dm->get_domain( $model->DomainName );
+				}
+			} else {
+				$error->add( 'invalid_nonce', 'The request was missing required authentication data.' );
+			}
+
+			if ( count( $error->get_error_codes() ) ) {
+
+				foreach ( $error->get_error_codes() as $code ) {
+					$response['errors'][] = array( 'code' => $code, 'message' => $error->get_error_message( $code ) );
+				}
+				status_header( 400 );
+				header( 'Content-Type: application/json' );
+				$response['status'] = 'FAILURE';
+			}
+			die( json_encode( $response ) );
+		}
+	}
+
+	public function action__wp_ajax_lift_update_queue() {
+
+		$response = ( object ) array(
+				'error' => false,
+		);
+
+		$page = max( abs( $_GET['paged'] ), 1 );
+		$update_query = Lift_Document_Update_Queue::query_updates( array(
+				'page' => $page,
+				'per_page' => 10,
+				'queue_ids' => array( Lift_Document_Update_Queue::get_active_queue_id(), Lift_Document_Update_Queue::get_closed_queue_id() )
+			) );
+
+		$response->current_page = $page;
+		$response->per_page = 10;
+		$response->found_rows = $update_query->found_rows;
+		$response->updates = array( );
+
+		foreach ( $update_query->meta_rows as $meta_row ) {
+			$meta_value = get_post_meta( $meta_row->post_id, $meta_row->meta_key, true );
+			switch ( $meta_value['document_type'] ) {
+				case 'post';
+					$post_id = $meta_value['document_id'];
+					if ( $meta_value['action'] == 'add' ) {
+						$last_user = '';
+						if ( $last_id = get_post_meta( $post_id, '_edit_last', true ) ) {
+							$last_user = get_userdata( $last_id );
+						}
+						$response->updates[] = array(
+							'id' => $post_id,
+							'action' => 'add',
+							'title' => get_the_title( $post_id ),
+							'edit_url' => esc_url( get_edit_post_link( $post_id ) ),
+							'author_name' => (isset( $last_user->display_name ) ? $last_user->display_name : ''),
+							'queue_date' => mysql2date( 'D. M d Y g:ia', $meta_value['update_date'] )
+						);
+					} else {
+						$response->updates[] = array(
+							'id' => $post_id,
+							'action' => 'delete',
+							'title' => sprintf( 'Post Deletion (%d)', $post_id ),
+							'edit_url' => '#',
+							'author_name' => '',
+							'queue_date' => mysql2date( 'D. M d Y g:ia', $meta_value['update_date'] )
+						);
+					}
+					break;
+				default:
+					continue;
+			}
+		}
+
+		header( 'Content-Type: application/json' );
+		die( json_encode( $response ) );
+	}
+
+	public function action__wp_ajax_lift_error_log() {
+
+		$response = ( object ) array(
+				'error' => false,
+				'nonce' => wp_create_nonce( 'lift_error_log' ),
+				'view_all_url' => esc_url( admin_url( sprintf( 'edit.php?post_type=%s', Voce_Error_Logging::POST_TYPE ) ) )
+		);
+
+		if ( Lift_Search::error_logging_enabled() ) {
+			if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
+				$response = Voce_Error_Logging::delete_logs( array( 'lift-search' ) );
+			} else {
+				$args = array(
+					'post_type' => Voce_Error_Logging::POST_TYPE,
+					'posts_per_page' => 5,
+					'post_status' => 'any',
+					'orderby' => 'date',
+					'order' => 'DESC',
+					'tax_query' => array( array(
+							'taxonomy' => Voce_Error_Logging::TAXONOMY,
+							'field' => 'slug',
+							'terms' => array( 'error', 'lift-search' ),
+							'operator' => 'AND'
+						) ),
+				);
+				$query = new WP_Query( $args );
+
+				$response->current_page = $query->get( 'paged' );
+				$response->per_page = $query->get( 'posts_per_page' );
+				$response->found_rows = $query->found_posts;
+				$response->errors = array( );
+
+				foreach ( $query->posts as $post ) {
+					$response->errors[] = array(
+						'error_html' => sprintf( '<strong>%s</strong><pre>%s</pre>', esc_html( $post->post_title ), wpautop( $post->post_content ) ),
+						'date' => mysql2date( 'D. M d Y g:ia', $post->post_date )
+					);
+				}
 			}
 		} else {
-			$status_message = 'Domain could not be found. <span class="">Would you like to <a id="lift-create-domain" data-domain="' . esc_attr( $domain_name ) . '" href="#">create this domain with Lift\'s default indexes</a>?</span>';
-			$error = true;
+			status_header( 400 );
+			$response->error = array( 'code' => 'logging_disabled', 'Error Logging is Disabled' );
 		}
 
-		if ( !$error && !Lift_Search::is_setup_complete() ) {
-			self::_complete_setup();
-		}
 
-		die( json_encode( array( 'error' => $error, 'message' => $status_message ) ) );
+
+		header( 'Content-Type: application/json' );
+		die( json_encode( $response ) );
 	}
 
-	public static function _ajax_delete_error_logs() {
-		if ( !Lift_Search::error_logging_enabled() ) {
-			die( json_encode( array( 'error' => true ) ) );
+	/**
+	 * Add link to access settings page on Plugin mainpage
+	 * @param array $links
+	 * @param string $page
+	 * @return array 
+	 */
+	public function filter__plugin_row_meta( $links, $page ) {
+		if ( $page == self::OPTIONS_SLUG ) {
+			$links[] = '<a href="' . admin_url( 'options-general.php?page=' . self::OPTIONS_SLUG ) . '">Settings</a>';
 		}
-		$response = Voce_Error_Logging::delete_logs( array( 'lift-search' ) );
-		echo json_encode( $response );
-		die();
+		return $links;
 	}
 
-	public static function _ajax_update_cron_interval() {
-		$units = ( string ) $_POST['cron_interval_units'];
-		$units = in_array( $units, array( 'm', 'h', 'd' ) ) ? $units : 'm';
+	public function callback__render_options_page() {
+		?>
+		<div class="wrap lift-admin" id="lift-status-page">
+		</div>
+		<div id="lift_modal"  class="lift_modal">
+			<div class="modal_overlay">&nbsp;</div>
+			<div class="modal_wrapper">
+				<div class="modal_content" id="modal_content">
+				</div>
+			</div>
+		</div>
 
-		$interval = ( int ) $_POST['cron_interval'];
-		$interval = ($units == 'm' && $interval < 1 ? 1 : $interval);
-
-		Lift_Search::set_batch_interval_display( $interval, $units );
-
-		echo json_encode( array(
-			'last_cron' => Lift_Batch_Handler::get_last_cron_time(),
-			'next_cron' => Lift_Batch_Handler::get_next_cron_time()
-		) );
-		die;
+		<?php
 	}
 
-	public static function _ajax_create_domain() {
-
-		$domain_name = strtolower( trim( $_POST['domain'] ) );
-
-		$error = false;
-		$status_messages = array( );
-
-		$domain_manager = Lift_Search::get_domain_manager();
-		$result = $domain_manager->initialize_new_domain( $domain_name );
-
-		$ajx_response = ( object ) array( 'error' => false );
-		if ( !is_wp_error( $result ) ) {
-			$ajx_response->message = 'Domain created successfully.  It may take up to 45 minutes for a new domain to completely initialize.';
-			self::_complete_setup();
-		} else {
-			$ajx_response->error = true;
-			$ajx_response->message = $result->get_error_message();
-		}
-
-		die( json_encode( $ajx_response ) );
-	}
-
-	public static function _ajax_set_cron_status() {
-		$set_cron = ( bool ) intval( $_POST['cron'] );
-
-		if ( $set_cron ) {
-			Lift_Batch_Handler::enable_cron();
-		} else {
-			Lift_Batch_Handler::disable_cron();
-		}
-
-		echo json_encode( array(
-			'set_cron' => $set_cron,
-			'last_cron' => Lift_Batch_Handler::get_last_cron_time(),
-			'next_cron' => Lift_Batch_Handler::get_next_cron_time()
-		) );
-		die;
+	public static function _print_configuration_nag() {
+		?>
+		<div id="banneralert" class="lift-colorized">
+			<div class="lift-balloon">
+				<img src="<?php echo plugin_dir_url( __DIR__ ) ?>img/logo.png" alt="Lift Logo">
+			</div>
+			<div class="lift-message"><p><strong>Welcome to Lift</strong>: 	Now that you've activated the Lift plugin it's time to set it up. Click below to get started. </p></div>
+			<div><a class="lift-btn" href="<?php echo admin_url( 'options-general.php?page=' . self::OPTIONS_SLUG ) ?>">Configure Lift</a></div>
+			<div class="clr"></div>
+		</div>
+		<script>
+			jQuery(document).ready(function($) {
+				var $bannerAlert = $('#banneralert');
+				if ($bannerAlert.length) {
+					$('.wrap h2').first().after($bannerAlert);
+				}
+			});
+		</script>
+		<?php
 	}
 
 }

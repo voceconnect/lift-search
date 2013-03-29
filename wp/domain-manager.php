@@ -71,8 +71,13 @@ class Lift_Domain_Manager {
 	public function __construct( $access_key, $secret_key, $http_api ) {
 		$this->config_api = new Lift_Cloud_Config_API( $access_key, $secret_key, $http_api );
 	}
+	
+	public function get_last_error() {
+		return $this->config_api->get_last_error();
+	}
 
 	public function credentials_are_valid() {
+		delete_transient('lift_request_DescribeDomains'); //make sure we're not getting a cached copy
 		return ( bool ) $this->config_api->DescribeDomains();
 	}
 
@@ -234,6 +239,19 @@ class Lift_Domain_Manager {
 			} else {
 				return false;
 			}
+		}
+		return false;
+	}
+	
+	/**
+	 * Returns the List of DomainStatus objects
+	 * @param string|stdClass $domain_name
+	 * @return DomainStatus|boolean
+	 */
+	public function get_domains(  ) {
+		$response = $this->config_api->DescribeDomains( );
+		if ( $response ) {
+			return $response->DomainStatusList;
 		}
 		return false;
 	}
