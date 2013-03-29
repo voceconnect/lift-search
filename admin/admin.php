@@ -112,7 +112,6 @@ class Lift_Admin {
 			$response['model']['id'] = $setting_key = $settings_data->id;
 
 			$error = new WP_Error();
-
 			if ( isset( $_GET['nonce'] ) && wp_verify_nonce( $_GET['nonce'], 'lift_setting' ) ) {
 
 				switch ( $setting_key ) {

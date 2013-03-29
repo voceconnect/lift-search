@@ -470,8 +470,8 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 			if ( $current_db_version < 2 ) {
 				//queue storage changes
-				$post_ids = $wpdb->get_col( "SELECT ID FROM $wpdb->posts " .
-					"WHERE post_type = '" . Lift_Document_Update_Queue::STORAGE_POST_TYPE . "'" );
+				$post_ids = $wpdb->get_col( $wpdb->prepare("SELECT ID FROM $wpdb->posts " .
+					"WHERE post_type = %s", Lift_Document_Update_Queue::STORAGE_POST_TYPE ) );
 
 				$queue_id = Lift_Document_Update_Queue::get_active_queue_id();
 
