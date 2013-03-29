@@ -238,9 +238,9 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 * @return string search form
 		 */
 		public function form() {
-			$search_term = (is_search()) ? get_search_query() : "";
+			$search_term = (is_search()) ? get_search_query( false ) : "";
 			$html = '<form role="search" class="lift-search" id="searchform" ' . (!is_search() ? 'action="' . esc_url( site_url() ) . '/"' : '') . '><div>';
-			$html .= "<input type='text' name='s' id='s' value='$search_term' />";
+			$html .= sprintf( "<input type='text' name='s' id='s' value='%s' />", esc_attr( $search_term ) );
 			$html .= ' <input type="submit" id="searchsubmit" value="' . esc_attr__( 'Search' ) . '" />';
 			$html .= $this->form_filters();
 			$html .= "</div></form>";
@@ -532,7 +532,7 @@ class Lift_Form_Widget extends WP_Widget {
 
 		echo $before_widget;
 		if ( $title )
-			echo $before_title . esc_html($title) . $after_title;
+			echo $before_title . esc_html( $title ) . $after_title;
 
 		if ( class_exists( 'Lift_Search_Form' ) ) {
 			echo Lift_Search_Form::GetInstance()->form();
