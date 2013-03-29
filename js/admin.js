@@ -574,7 +574,8 @@
       this.model.settings.get('credentials').on('sync', this.closeModal, this);
     },
     events: {
-      'click #cancel':'closeModal'
+      'click #cancel':'closeModal',
+      'click #save_credentials': 'updateCredentials'
     },
     onClose: function() {
       this.model.settings.get('credentials').off('sync', this.closeModal, this);
