@@ -8,7 +8,6 @@
   Author: Voce Platforms
   Author URI: http://voceconnect.com/
  */
-require_once('lib/voce-error-logging/voce-error-logging.php');
 require_once('api/lift-batch.php');
 require_once('api/lift-http.php');
 require_once('api/cloud-search-api.php');
@@ -40,27 +39,16 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		const SETTINGS_OPTION = 'lift-settings';
 		const DOMAIN_EVENT_WATCH_INTERVAL = 60;
 
-		/**
-		 * Returns whether setup has been complete by testing whether all
-		 * required data is set
-		 * @return bool 
-		 */
-		public static function is_setup_complete() {
-
-			//clean up these options and make this check if the saved domain name exists
-			return self::get_access_key_id() && self::get_secret_access_key() && self::get_search_domain_name() && get_option( self::INITIAL_SETUP_COMPLETE_OPTION, 0 );
-		}
-
 		public static function error_logging_enabled() {
-			return !( defined( 'DISABLE_LIFT_ERROR_LOGGING' ) && DISABLE_LIFT_ERROR_LOGGING ) && ( class_exists( 'Voce_Error_Logging' ) || file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) );
+			return (!( defined( 'DISABLE_LIFT_ERROR_LOGGING' ) && DISABLE_LIFT_ERROR_LOGGING )) && ( class_exists( 'Voce_Error_Logging' ) || file_exists( __DIR__ . '/lib/voce-error-logging/voce-error-logging.php' ) );
 		}
 
 		public static function init() {
-			if ( self::error_logging_enabled() && !class_exists( 'Voce_Error_Logging' ) && file_exists( __DIR__ . '/lib/voce-error-loggin/voce-error-logging' ) ) {
-				require_once (__DIR__ . '/lib/voce-error-loggin/voce-error-logging');
+			if ( self::error_logging_enabled() && !class_exists( 'Voce_Error_Logging' ) && file_exists( __DIR__ . '/lib/voce-error-logging/voce-error-logging.php' ) ) {
+				require_once (__DIR__ . '/lib/voce-error-logging/voce-error-logging.php');
 			}
 
-			if ( self::get_search_endpoint() ) {
+			if ( self::get_search_endpoint() && self::get_override_search() ) {
 				add_action( 'init', array( 'Lift_WP_Search', 'init' ) );
 			}
 
@@ -71,7 +59,8 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 			if ( is_admin() ) {
 				require_once(__DIR__ . '/admin/admin.php');
-				Lift_Admin::init();
+				$admin = new Lift_Admin();
+				$admin->init();
 			}
 
 			add_action( 'init', array( __CLASS__, '_upgrade_check' ) );
@@ -84,7 +73,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			// @TODO only enqueue on search template or if someone calls the form
 			add_action( 'wp_enqueue_scripts', function() {
 					wp_enqueue_script( 'lift-search-form', plugins_url( 'js/lift-search-form.js', __FILE__ ), array( 'jquery' ) );
-					wp_enqueue_style( 'lift-search', plugins_url( 'sass/style.css', __FILE__ ) );
+					wp_enqueue_style( 'lift-search', plugins_url( 'css/style.css', __FILE__ ) );
 				} );
 
 			//default sdf filters
@@ -118,7 +107,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 					if ( Lift_Search::get_batch_interval() > 0 ) {
 						$interval = Lift_Search::get_batch_interval();
 					} else {
-						$interval = 86400;
+						$interval = DAY_IN_SECONDS;
 					}
 
 					$schedules[Lift_Batch_Handler::CRON_INTERVAL] = array(
@@ -178,7 +167,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 */
 		private static function __get_setting( $setting ) {
 			// Note: batch-interval should be in seconds, regardless of what batch-interval-units is set to
-			$default_settings = array( 'batch-interval' => 300, 'batch-interval-units' => 'm' );
+			$default_settings = array( 'batch-interval' => 300, 'batch-interval-units' => 'm', 'override-search' => true);
 
 			$settings = get_option( self::SETTINGS_OPTION, array( ) );
 
@@ -202,7 +191,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return string
 		 */
 		public static function get_access_key_id() {
-			return apply_filters( 'lift_access_key_id', self::__get_setting( 'access-key-id' ) );
+			return (string) apply_filters( 'lift_access_key_id', self::__get_setting( 'access-key-id' ) );
 		}
 
 		/**
@@ -218,7 +207,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return string
 		 */
 		public static function get_secret_access_key() {
-			return apply_filters( 'lift_secret_access_key', self::__get_setting( 'secret-access-key' ) );
+			return (string) apply_filters( 'lift_secret_access_key', self::__get_setting( 'secret-access-key' ) );
 		}
 
 		/**
@@ -234,7 +223,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return string
 		 */
 		public static function get_search_domain_name() {
-			return apply_filters( 'lift_search_domain', self::__get_setting( 'search-domain' ) );
+			return (string) apply_filters( 'lift_search_domain', self::__get_setting( 'search-domain' ) );
 		}
 
 		public static function set_search_domain_name( $domain_name ) {
@@ -262,6 +251,14 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		public static function get_document_endpoint() {
 			return self::get_domain_manager()->get_document_endpoint( self::get_search_domain_name() );
 		}
+		
+		public static function set_override_search($value) {
+			self::__set_setting( 'override-search', (bool) $value );
+		}
+		
+		public static function get_override_search() {
+			return self::__get_setting('override-search');
+		}
 
 		/**
 		 * Get batch interval setting
@@ -280,9 +277,12 @@ if ( !class_exists( 'Lift_Search' ) ) {
 				case 'h':
 					$value /= 60;
 				case 'm':
+					$value /= 60;
+					break;
 				default:
 					$unit = 'm';
 					$value /= 60;
+					break;
 			}
 
 			return apply_filters( 'lift_batch_interval_display', compact( 'value', 'unit' ) );
@@ -312,9 +312,12 @@ if ( !class_exists( 'Lift_Search' ) ) {
 					case 'h':
 						$interval *= 60;
 					case 'm':
+						$interval *= 60;
+						break;
 					default:
 						$unit = 'm';
 						$interval *= 60;
+						break;
 				}
 
 				self::__set_setting( 'batch-interval-unit', $unit );
@@ -369,7 +372,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		}
 
 		public static function update_schema() {
-			if ( self::is_setup_complete() && ($domain = self::get_search_domain_name()) ) {
+			if ( $domain = self::get_search_domain_name() ) {
 				self::get_domain_manager()->apply_schema( $domain );
 			}
 			return true;
@@ -467,8 +470,8 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 			if ( $current_db_version < 2 ) {
 				//queue storage changes
-				$post_ids = $wpdb->get_col( "SELECT ID FROM $wpdb->posts " .
-					"WHERE post_type = '" . Lift_Document_Update_Queue::STORAGE_POST_TYPE . "'" );
+				$post_ids = $wpdb->get_col( $wpdb->prepare("SELECT ID FROM $wpdb->posts " .
+					"WHERE post_type = %s", Lift_Document_Update_Queue::STORAGE_POST_TYPE ) );
 
 				$queue_id = Lift_Document_Update_Queue::get_active_queue_id();
 

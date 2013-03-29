@@ -20,11 +20,15 @@ class Cloud_Config_API {
 		return $this->last_error;
 	}
 
+	/**
+	 * 
+	 * @param Array $error with keys 'code' and 'message' set
+	 */
 	protected function set_last_error( $error ) {
 		$this->last_error = $error;
 	}
-	
-	protected function set_last_status_code( $status_code) {
+
+	protected function set_last_status_code( $status_code ) {
 		$this->last_status_code = $status_code;
 	}
 
@@ -72,21 +76,23 @@ class Cloud_Config_API {
 		$config = new Cloud_Config_Request( $credentials, $this->http_api );
 
 		$r = $config->send_request( $method, $payload );
-		
+
 		$this->set_last_status_code( $config->status_code );
-		
-		if ( $r ) {
+
+		if ( $r && false !== ($r_json = json_decode( $r ) ) ) {
 
 			$r_json = json_decode( $r );
 
 			if ( isset( $r_json->Error ) || $this->last_status_code != '200' ) {
 
-				$this->set_last_error( $r_json );
+				$this->set_last_error( array('code' => $r_json->Error->Code, 'message' => $r_json->Error->Message ) );
 				return false;
 			}
-			$response_name = $method.'Response';
-			$result_name = $method.'Result';
+			$response_name = $method . 'Response';
+			$result_name = $method . 'Result';
 			return $r_json->$response_name->$result_name;
+		} else {
+			$this->set_last_error( array('code' => 'invalid_response', 'message' => $config->error ) );
 		}
 
 		return $r;
@@ -168,15 +174,14 @@ class Cloud_Config_API {
 	public function IndexDocuments( $domain_name ) {
 		return $this->_make_request( 'IndexDocuments', array( 'DomainName' => $domain_name ) );
 	}
-	
-	public function UpdateServiceAccessPolicies($domain_name, $policies) {
+
+	public function UpdateServiceAccessPolicies( $domain_name, $policies ) {
 		$payload = array(
 			'AccessPolicies' => $policies,
 			'DomainName' => $domain_name,
 		);
 
 		return $this->_make_request( 'UpdateServiceAccessPolicies', $payload, false );
-
 	}
 
 	public function __parse_index_options( $field_type, $passed_options = array( ) ) {
@@ -299,6 +304,7 @@ class Cloud_Config_Request {
 	private $key;
 	private $secret_key;
 	public $status_code;
+	public $error;
 
 	/**
 	 *
@@ -364,6 +370,7 @@ class Cloud_Config_Request {
 		$this->headers['Authorization'] = $this->authorization( $timestamp );
 
 		$post = $this->http_interface->post( $request_url, $this->canonical_querystring(), $this->headers );
+		$this->error = ($post === false) ? $this->http_interface->getLastError() : false;
 		$this->status_code = $this->http_interface->getStatusCode();
 		return $post;
 	}
