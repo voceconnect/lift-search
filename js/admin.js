@@ -136,7 +136,6 @@
         var _this = object,
             success;
         options = options ? _.clone(options) : {};
-        success = options.success;
         options.success = function() {
           if (success)
             success(_this, options);
