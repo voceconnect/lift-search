@@ -242,25 +242,43 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 
 			$post_types = Lift_Search::get_indexed_post_types();
 
-			$post_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM $wpdb->posts 
-				WHERE post_type in ('" . implode( "','", $post_types ) . "') AND ID > %d
-				AND post_status <> 'auto-draft'
-				ORDER BY ID ASC
-				LIMIT %d", $id_from, self::get_queue_all_set_size() ) );
-
-			if ( empty( $post_ids ) ) {
+			$query = new WP_Query();
+			
+			$alter_query = function($where, $wp_query) use ($query, $id_from) {
+				global $wpdb;
+				if($wp_query === $query) { //make sure we're not messing with any other queries
+					//making sure all post_statii are used since wp_query overrides the requested statii
+					$where = $wpdb->prepare(" AND post_type in ('" . implode( "','", $wp_query->get('post_type') ) . "') ".
+						"AND ID > %d ".
+						"AND post_status <> 'auto-draft'", $id_from);
+				}
+				return $where;
+			};
+			
+			add_filter('posts_where', $alter_query, 10, 2);
+			
+			$posts = $query->query(array(
+				'suppress_filters' => false,
+				'post_type' => $post_types,
+				'orderby' => 'ID',
+				'order' => 'ASC',
+				'post_status' => array_diff(get_post_stati(), 'auto-draft'),
+				'posts_per_page' => self::get_queue_all_set_size()
+			));
+			
+			remove_filter('posts_where', $alter_query);
+			
+			if ( empty( $posts ) ) {
 				wp_clear_scheduled_hook( self::QUEUE_ALL_CRON_HOOK );
 				delete_option( self::QUEUE_ALL_MARKER_OPTION );
 				return;
 			}
 
-			_prime_post_caches( $post_ids );
-
-			foreach ( $post_ids as $post_id ) {
-				Lift_Post_Update_Watcher::queue_entire_post( $post_id );
+			foreach ( $posts as $post ) {
+				Lift_Post_Update_Watcher::queue_entire_post( $post->ID );
 			}
 
-			$new_id_from = get_post( end( $post_ids ) )->ID;
+			$new_id_from = end( $post_ids )->ID;
 
 			update_option( self::QUEUE_ALL_MARKER_OPTION, $new_id_from );
 		}
