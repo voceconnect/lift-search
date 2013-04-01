@@ -262,7 +262,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 				'post_type' => $post_types,
 				'orderby' => 'ID',
 				'order' => 'ASC',
-				'post_status' => array_diff(get_post_stati(), 'auto-draft'),
+				'post_status' => array_diff(get_post_stati(), array('auto-draft')),
 				'posts_per_page' => self::get_queue_all_set_size()
 			));
 			
@@ -278,7 +278,7 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 				Lift_Post_Update_Watcher::queue_entire_post( $post->ID );
 			}
 
-			$new_id_from = end( $post_ids )->ID;
+			$new_id_from = end( $posts )->ID;
 
 			update_option( self::QUEUE_ALL_MARKER_OPTION, $new_id_from );
 		}
