@@ -78,7 +78,8 @@ class Lift_Admin {
 	public function action__options_page_enqueue() {
 		wp_enqueue_script( 'lift-admin', plugins_url( 'js/admin.js', __DIR__ ), array( 'backbone' ), '0.1', true );
 		wp_localize_script( 'lift-admin', 'liftData', array(
-			'templateDir' => plugins_url( '/templates/', __FILE__ )
+			'templateDir' => plugins_url( '/templates/', __FILE__ ),
+			'errorLoggingEnabled' => Lift_Search::error_logging_enabled()
 		) );
 		wp_enqueue_script( 'modernizr', plugins_url( 'js/modernizr.min.js', __DIR__ ), array( ), '2.6.2', true );
 		$this->__admin_enqueue_style();
@@ -341,10 +342,10 @@ class Lift_Admin {
 		$response = ( object ) array(
 				'error' => false,
 				'nonce' => wp_create_nonce( 'lift_error_log' ),
-				'view_all_url' => esc_url( admin_url( sprintf( 'edit.php?post_type=%s', Voce_Error_Logging::POST_TYPE ) ) )
 		);
 
 		if ( Lift_Search::error_logging_enabled() ) {
+			$response->view_all_url = esc_url( admin_url( sprintf( 'edit.php?post_type=%s', Voce_Error_Logging::POST_TYPE ) ) );
 			if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 				$response = Voce_Error_Logging::delete_logs( array( 'lift-search' ) );
 			} else {
@@ -377,6 +378,7 @@ class Lift_Admin {
 			}
 		} else {
 			status_header( 400 );
+			$response->view_all_url = '';
 			$response->error = array( 'code' => 'logging_disabled', 'Error Logging is Disabled' );
 		}
 
