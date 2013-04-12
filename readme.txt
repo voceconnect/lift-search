@@ -112,6 +112,9 @@ By default, posts and pages are indexed. To modify this, use the `lift_indexed_p
 4. Lift Search Form
 
 == Changelog ==
+= 1.5.2 =
+* Bug Fix: Fixed unneeded ajax calls when logging is disabled. 
+
 = 1.5.1 =
 * Bug Fix: Fixed bug with setting endpoint for queue all functionality.
 * Bug Fix: Fixed bug with filtering out auto-draft post_status

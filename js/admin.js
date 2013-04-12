@@ -380,7 +380,9 @@
   liftAdmin.DashboardView = Backbone.View.extend({
     initialize: function() {
       this.updateView = new liftAdmin.UpdateQueueView({el: $('#document_queue')});
-      this.errorView = new liftAdmin.ErrorLogView({el: $('#error_log')});
+      if( window.liftData.errorLoggingEnabled ) {
+        this.errorView = new liftAdmin.ErrorLogView({el: $('#error_log')});
+      }
       this.template = _.template(liftAdmin.templateLoader.getTemplate('dashboard'));
       this.model.domains.on('reset', this.render, this);
       this.model.settings.on('reset', this.render, this);
@@ -399,7 +401,7 @@
       this.el.innerHTML = this.template({settings: this.model.settings.toJSONObject(), domain: this.model.domains.toJSON()});
       $('#batch_interval_unit').val(this.model.settings.getValue('batch_interval').unit);
       this.updateView.setElement($('#document_queue')).render();
-      this.errorView.setElement($('#error_log')).render();
+      this.errorView && this.errorView.setElement($('#error_log')).render();
       return this;
     },
     updateBatchInterval: function() {
