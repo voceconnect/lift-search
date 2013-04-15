@@ -1,12 +1,10 @@
-(function($, window) {
+(function($, Backbone, _, window) {
   "use strict";
   var liftAdmin = liftAdmin || {};
 
   liftAdmin.App = Backbone.Router.extend({
     el: '#lift-status-page',
     initialize: function() {
-      var _this = this;
-
       Backbone.emulateHTTP = true;
       Backbone.emulateJSON = true;
 
@@ -17,7 +15,7 @@
           .on('unsetDomainName', this.render, this);
       this.settings.on('sync reset', function() {
         var credentials = this.settings.getValue('credentials');
-        if ('' == credentials.accessKey && '' == credentials.secretKey) {
+        if ('' === credentials.accessKey && '' === credentials.secretKey) {
           this.domains.disablePolling();
         } else {
           this.domains.enablePolling();
@@ -31,7 +29,9 @@
     },
     render: function() {
       var state = this.getState();
-      state && this.renderState(state);
+      if (state) {
+        this.renderState(state);
+      }
       return this;
     },
     getState: function() {
@@ -88,7 +88,9 @@
         return;
       }
       // clean up the old view
-      this.currentView && this.currentView.close();
+      if (this.currentView) {
+        this.currentView.close();
+      }
 
       this.currentView = new new_view.view(new_view.args);
 
@@ -96,20 +98,24 @@
       this.currentView.render();
       return this;
     },
-    handleDomainSyncError: function(unused, error, options) {
+    handleDomainSyncError: function(unused, error) {
       var modal;
-      if (error.code == 'invalidCredentials') {
+      if (error.code === 'invalidCredentials') {
         modal = new liftAdmin.ModalErrorSetCredentialsView({model: {settings: this.settings}});
       } else {
         modal = new liftAdmin.ModalError({model: {settings: this.settings, domains: this.domains, error: error}});
       }
 
-      modal && this.openModal(modal);
+      if (modal) {
+        this.openModal(modal);
+      }
       return this;
     },
     openModal: function(view) {
       var $el = $('<div></div>');
-      this.currentModal && this.closeModal(this.currentModal);
+      if (this.currentModal) {
+        this.closeModal(this.currentModal);
+      }
       $('#modal_content').append($el);
       view.setElement($el);
       view.render();
@@ -137,8 +143,9 @@
             success;
         options = options ? _.clone(options) : {};
         options.success = function() {
-          if (success)
+          if (success) {
             success(_this, options);
+          }
           if (!silent) {
             _this.trigger('resetLift', _this, options);
           }
@@ -155,12 +162,13 @@
       options = options ? _.clone(options) : {};
       success = options.success;
       options.success = function() {
-        if (success)
+        if (success) {
           success(_this, options);
+        }
         if (!options.silent) {
           _this.trigger('unsetDomainName', _this, options);
         }
-      }
+      };
       this.settings.get('domainname').save({value: ''}, options);
       return this;
     }
@@ -223,12 +231,16 @@
       this.disablePolling();
     },
     enablePolling: function() {
-      this.pollingEnabled || this.fetchWithDeferred();
+      if (!this.pollingEnabled) {
+        this.fetchWithDeferred();
+      }
       this.pollingEnabled = true;
       return this;
     },
     disablePolling: function() {
-      this.pollingEnabled && clearTimeout(this.pollingTimeout);
+      if (this.pollingEnabled) {
+        clearTimeout(this.pollingTimeout);
+      }
       this.pollingEnabled = false;
       return this;
     },
@@ -238,7 +250,7 @@
         _this.fetchWithDeferred();
       };
 
-      return this.deferred = this.fetch()
+      this.deferred = this.fetch()
           .always(function() {
         delete _this.deferred;
         if (_this.pollingEnabled) {
@@ -249,6 +261,7 @@
         }
 
       });
+      return this.deferred;
     },
     url: function() {
       return window.ajaxurl + '?action=lift_update_queue&paged=' + this.meta.page;
@@ -311,12 +324,16 @@
       this.disablePolling();
     },
     enablePolling: function() {
-      this.pollingEnabled || this.fetchWithDeferred();
+      if (!this.pollingEnabled) {
+        this.fetchWithDeferred();
+      }
       this.pollingEnabled = true;
       return this;
     },
     disablePolling: function() {
-      this.pollingEnabled && clearTimeout(this.pollingTimeout);
+      if(this.pollingEnabled) {
+        clearTimeout(this.pollingTimeout);
+      }
       this.pollingEnabled = false;
       return this;
     },
@@ -326,7 +343,7 @@
         _this.fetchWithDeferred();
       };
 
-      return this.deferred = this.fetch()
+      this.deferred = this.fetch()
           .always(function() {
         delete _this.deferred;
         if (_this.pollingEnabled) {
@@ -337,6 +354,7 @@
         }
 
       });
+      return this.deferred;
     },
     url: function() {
       return window.ajaxurl + '?action=lift_error_log&nonce=' + this.meta.nonce;
@@ -380,7 +398,7 @@
   liftAdmin.DashboardView = Backbone.View.extend({
     initialize: function() {
       this.updateView = new liftAdmin.UpdateQueueView({el: $('#document_queue')});
-      if( window.liftData.errorLoggingEnabled ) {
+      if (window.liftData.errorLoggingEnabled) {
         this.errorView = new liftAdmin.ErrorLogView({el: $('#error_log')});
       }
       this.template = _.template(liftAdmin.templateLoader.getTemplate('dashboard'));
@@ -401,7 +419,9 @@
       this.el.innerHTML = this.template({settings: this.model.settings.toJSONObject(), domain: this.model.domains.toJSON()});
       $('#batch_interval_unit').val(this.model.settings.getValue('batch_interval').unit);
       this.updateView.setElement($('#document_queue')).render();
-      this.errorView && this.errorView.setElement($('#error_log')).render();
+      if(this.errorView) {
+        this.errorView.setElement($('#error_log')).render();
+      }
       return this;
     },
     updateBatchInterval: function() {
@@ -455,7 +475,7 @@
     resetLift: function() {
       adminApp.resetLift();
       return this;
-    },
+    }
   });
 
 
@@ -475,12 +495,16 @@
       this.disablePolling();
     },
     enablePolling: function() {
-      this.pollingEnabled || this.fetchWithDeferred();
+      if(!this.pollingEnabled) {
+        this.fetchWithDeferred();
+      }
       this.pollingEnabled = true;
       return this;
     },
     disablePolling: function() {
-      this.pollingEnabled && clearTimeout(this.pollingTimeout);
+      if(this.pollingEnabled) {
+        clearTimeout(this.pollingTimeout);
+      }
       this.pollingEnabled = false;
       return this;
     },
@@ -490,7 +514,7 @@
         _this.fetchWithDeferred();
       };
 
-      return this.deferred = this.fetch()
+      this.deferred = this.fetch()
           .always(function() {
         delete _this.deferred;
         if (_this.pollingEnabled) {
@@ -500,6 +524,7 @@
           _this.trigger('sync_error', this, _this.error);
         }
       });
+      return this.deferred;
     },
     url: function() {
       return window.ajaxurl + '?action=lift_domains';
@@ -508,7 +533,7 @@
       this.nonce = resp.nonce;
       this.error = resp.error;
       return resp.domains;
-    },
+    }
   });
 
   Backbone.View.prototype.close = function() {
@@ -556,7 +581,7 @@
         _this.afterSave();
       });
     },
-    onSaveError: function(model, resp, options) {
+    onSaveError: function(model, resp) {
       var errors = $.parseJSON(resp.responseText).errors;
       this.renderErrors(errors);
       return this;
@@ -576,7 +601,7 @@
       this.model.settings.get('credentials').on('sync', this.closeModal, this);
     },
     events: {
-      'click #cancel':'closeModal',
+      'click #cancel': 'closeModal',
       'click #save_credentials': 'updateCredentials'
     },
     onClose: function() {
@@ -588,7 +613,7 @@
   });
 
   liftAdmin.ModalErrorSetCredentialsView = liftAdmin.SetCredentialsView.extend({
-    _template: 'modal-error-set-credentials',
+    _template: 'modal-error-set-credentials'
   });
 
   liftAdmin.ModalError = Backbone.View.extend({
@@ -602,7 +627,9 @@
       return this;
     },
     closeIfFixed: function() {
-      !this.model.domains.error && adminApp.closeModal(this);
+      if(!this.model.domains.error) {
+        adminApp.closeModal(this);
+      }
       return this;
     }
   });
@@ -676,7 +703,7 @@
       }
       return this;
     },
-    modalCancelled: function(view, model) {
+    modalCancelled: function(view) {
       $('#save_domainname').removeAttr('disabled');
       adminApp.closeModal(view);
       return this;
@@ -687,7 +714,7 @@
       return this;
     },
     createDomain: function(domainname) {
-      var domain, _this = this;
+      var domain;
       domain = new liftAdmin.DomainModel({DomainName: domainname});
       domain.nonce = this.model.domains.nonce;
       domain.on('sync', this.onCreateDomainSuccess, this);
@@ -695,14 +722,14 @@
       domain.save();
       return this;
     },
-    onCreateDomainSuccess: function(model, resp, options) {
+    onCreateDomainSuccess: function(model, resp) {
       var domain = new liftAdmin.DomainModel(resp.data);
       model.off('sync', this.onCreateDomainSuccess, this);
       model.off('error', this.onCreateDomainError, this);
       this.model.domains.add(domain);
       this.useDomain(domain);
     },
-    onCreateDomainError: function(model, resp, options) {
+    onCreateDomainError: function(model, resp) {
       var errors = $.parseJSON(resp.responseText).errors;
       model.off('sync', this.onCreateDomainSuccess, this);
       model.off('error', this.onCreateDomainError, this);
@@ -784,18 +811,18 @@
     var defaults, settings;
 
     var getPaginationLink = function(pageNum, currentPage) {
-      if (pageNum == currentPage) {
+      if (pageNum === currentPage) {
         return '<span class="page-numbers current">' + pageNum + '</span>';
       }
       return '<a class="page-numbers" href="#' + pageNum + '">' + pageNum + '</a>';
-    }
+    };
 
     defaults = {
       totalPages: 1,
       currentPage: 1,
       midSize: 1,
-      endSize: 2,
-    }
+      endSize: 2
+    };
 
     settings = $.extend(defaults, options);
 
@@ -808,10 +835,10 @@
       if (settings.totalPages > 1) {
 
         if (settings.currentPage > 1) {
-          links.push('<a class="next page-numbers" href="' + (settings.currentPage - 1) + '">&laquo; Previous</a></span>')
+          links.push('<a class="next page-numbers" href="' + (settings.currentPage - 1) + '">&laquo; Previous</a></span>');
         }
 
-        for (i = 1, loopTil = 1 + settings.endSize; i < loopTil; i++) {
+        for (i = 1, loopTil = 1 + settings.endSize; i < loopTil; i+=1) {
           links.push(getPaginationLink(i, settings.currentPage));
         }
 
@@ -823,7 +850,7 @@
         loopTil = Math.min(settings.currentPage + settings.midSize + 1, settings.totalPages - settings.endSize + 1);
 
         if (i < loopTil) {
-          for (; i < loopTil; i++) {
+          for (; i < loopTil; i+=1) {
             links.push(getPaginationLink(i, settings.currentPage));
           }
         }
@@ -834,16 +861,16 @@
 
 
         i = Math.max(i, settings.totalPages - settings.endSize + 1);
-        for (; i <= settings.totalPages; i++) {
+        for (; i <= settings.totalPages; i+=1) {
           links.push(getPaginationLink(i, settings.currentPage));
         }
 
         if (settings.currentPage < settings.totalPages) {
-          links.push('<a class="next page-numbers" href="' + (settings.currentPage + 1) + '">Next &raquo;</a></span>')
+          links.push('<a class="next page-numbers" href="' + (settings.currentPage + 1) + '">Next &raquo;</a></span>');
         }
         $this.append('<span class="pagination-links">' + links.join('') + '</span>');
 
       }
     });
   };
-})(jQuery);
+})(jQuery, Backbone, _, this);
