@@ -1,4 +1,4 @@
-(function($, Backbone, _, window) {
+(function($) {
   "use strict";
   var liftAdmin = liftAdmin || {};
 
@@ -386,7 +386,7 @@
           return;
         });
       }
-      $(this.el).html(this.template({errors: this.collection.toJSON()}));
+      $(this.el).html(this.template({errors: this.collection.toJSON(), meta: JSON.stringify(this.collection.meta)}));
       return this;
     },
     onClickClearLogs: function(e) {
@@ -873,4 +873,4 @@
       }
     });
   };
-})(jQuery, Backbone, _, this);
+})(jQuery);

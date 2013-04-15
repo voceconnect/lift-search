@@ -17,13 +17,6 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 	class Lift_Search_Form {
 
 		private static $instances;
-		public $fields = array( );
-
-		/**
-		 * WP_Query instance reference for search
-		 * @var Lift_WP_Query 
-		 */
-		public $lift_query;
 
 		/**
 		 * Returns an instance of the search form based on the given WP_Query instance
@@ -48,19 +41,27 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			return self::$instances[$query_id];
 		}
 
+		public $fields = array( );
+
+		/**
+		 * WP_Query instance reference for search
+		 * @var Lift_WP_Query 
+		 */
+		public $lift_query;
+
 		/**
 		 * Lift_Search_Form constructor.
 		 */
 		private function __construct( $wp_query ) {
 			$this->lift_query = Lift_WP_Query::GetInstance( $wp_query );
-			$this->additional_fields();
+			$this->add_fields();
 		}
 
 		/**
 		 * Calls all of the default search field build methods, Not including the main search term field.
 		 * Fields can be modified using the 'lift_filters_default_fields' filter.
 		 */
-		public function additional_fields() {
+		public function add_fields() {
 			if ( $this->lift_query->wp_query->is_search() ) {
 				$fields = array( 'date', 'post_type', 'post_categories', 'post_tags', 'orderby' );
 			} else {
