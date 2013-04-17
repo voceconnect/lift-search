@@ -228,11 +228,13 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			$html = '<form role="search" class="lift-search" id="searchform" ' . (!is_search() ? 'action="' . esc_url( site_url() ) . '/"' : '') . '><div>';
 			$html .= sprintf( "<input type='text' name='s' id='s' value='%s' />", esc_attr( $search_term ) );
 			$html .= ' <input type="submit" id="searchsubmit" value="' . esc_attr__( 'Search' ) . '" />';
-			$html .= '<fieldset class="lift-search-form-filters">';
+			$html .= '<fieldset class="lift-search-form-filters"><ul>';
 			foreach($this->fields as $field) {
-				$html .= apply_filters('lift_form_field_'. $field, '', $this);
+				$filter_html = apply_filters('lift_form_field_'. $field, '', $this);
+				if($filter_html)
+					$html .= '<li>'.$filter_html.'</li>';
 			}
-			$html .= "</fieldset>";
+			$html .= "</ul></fieldset>";
 			$html .= "</div></form>";
 			apply_filters( 'lift_search_form', $html );
 			return $html;

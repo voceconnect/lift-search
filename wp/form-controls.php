@@ -18,7 +18,7 @@ class Quick_Filter_Maker {
 	 * @return string
 	 */
 	public function date($field_html, $lift_search_form) {
-		return "HELLO WORLD";
+		return "Date filter called";
 	}
 }
 add_action('wp_loaded', array(new Quick_Filter_Maker(), 'init'));
