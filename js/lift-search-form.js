@@ -125,7 +125,7 @@ var hideDefaultForm;
  **/
 hideDefaultForm = function hideDefaultForm(){
 	"use strict";
-	var css = '.lift-search-form-filters, .lift-submit, .lift-hidden { display: none; }',
+	var css = '',//.lift-search-form-filters, .lift-submit, .lift-hidden { display: none; }',
 	head = document.getElementsByTagName('head')[0],
 	style = document.createElement('style');
 

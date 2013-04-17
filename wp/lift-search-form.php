@@ -1,4 +1,7 @@
 <?php
+
+require_once __DIR__ . '/form-controls.php';
+
 // Make sure class name doesn't exist
 if ( !class_exists( 'Lift_Search_Form' ) ) {
 
@@ -41,7 +44,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			return self::$instances[$query_id];
 		}
 
-		public $fields = array( );
+		private $fields = array( );
 
 		/**
 		 * WP_Query instance reference for search
@@ -54,44 +57,40 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 */
 		private function __construct( $wp_query ) {
 			$this->lift_query = Lift_WP_Query::GetInstance( $wp_query );
-			$this->add_fields();
-		}
-
-		/**
-		 * Calls all of the default search field build methods, Not including the main search term field.
-		 * Fields can be modified using the 'lift_filters_default_fields' filter.
-		 */
-		public function add_fields() {
 			if ( $this->lift_query->wp_query->is_search() ) {
 				$fields = array( 'date', 'post_type', 'post_categories', 'post_tags', 'orderby' );
 			} else {
 				$fields = array( );
 			}
-
-			$fields = apply_filters( 'lift_form_filters', $fields, $this );
-			foreach ( $fields as $field ) {
-				switch ( $field ) {
-					case 'date':
-						$this->add_date_fields();
-						break;
-					case 'post_type':
-						$this->add_posttype_field();
-						break;
-					case 'post_categories':
-						$this->add_taxonomy_checkbox_fields( 'categories' );
-						break;
-					case 'post_tags':
-						$this->add_taxonomy_checkbox_fields( 'post_tags' );
-						break;
-					case 'orderby':
-						$this->add_sort_field();
-						break;
-					default:
-						do_action( 'lift_custom_form_filter_' . $field, $this );
-						break;
-				}
-			}
+			$this->fields = apply_filters( 'lift_form_filters', $fields, $this );
 		}
+
+		/**
+		 * Calls all of the default search field build methods, Not including the main search term field.
+		public function add_fields() {
+			foreach ( $fields as $field ) {
+			  if ( has_action( 'lift_custom_form_filter_' . $field ) ) {
+			  do_action( 'lift_custom_form_filter_' . $field, $this );
+			  } else {
+			  switch ( $field ) {
+			  case 'date':
+			  $this->add_date_fields();
+			  break;
+			  case 'post_type':
+			  $this->add_posttype_field();
+			  break;
+			  case 'post_categories':
+			  $this->add_taxonomy_checkbox_fields( 'categories' );
+			  break;
+			  case 'post_tags':
+			  $this->add_taxonomy_checkbox_fields( 'post_tags' );
+			  break;
+			  case 'orderby':
+			  $this->add_sort_field();
+			  break;
+			  }
+			  }
+		}*/
 
 		/**
 		 * Builds the sort by dropdown/select field.
@@ -212,20 +211,6 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		}
 
 		/**
-		 * Method used to create new Lift_Search_Field instances. Fields are stored in $this->fields.
-		 * @param string $id Amazon index field
-		 * @param string $type type of HTML element
-		 * @param array $options 
-		 *  value = current value
-		 * 	css => CSS classes
-		 *  html_cb => callable function to generate html
-		 */
-		public function add_field( $id, $type = 'text', $options = array( ) ) {
-			$field = new Lift_Search_Field( $id, $type, $options );
-			$this->fields[] = $field;
-		}
-
-		/**
 		 * Get custom query var from the wp_query
 		 * @param string $var query variable
 		 * @return array|boolean query variable if it exists, else false
@@ -243,7 +228,11 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			$html = '<form role="search" class="lift-search" id="searchform" ' . (!is_search() ? 'action="' . esc_url( site_url() ) . '/"' : '') . '><div>';
 			$html .= sprintf( "<input type='text' name='s' id='s' value='%s' />", esc_attr( $search_term ) );
 			$html .= ' <input type="submit" id="searchsubmit" value="' . esc_attr__( 'Search' ) . '" />';
-			$html .= $this->form_filters();
+			$html .= '<fieldset class="lift-search-form-filters">';
+			foreach($this->fields as $field) {
+				$html .= apply_filters('lift_form_field_'. $field, '', $this);
+			}
+			$html .= "</fieldset>";
 			$html .= "</div></form>";
 			apply_filters( 'lift_search_form', $html );
 			return $html;
@@ -254,12 +243,15 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			include_once $path;
 		}
 
+		/**
+		 * Renders the 
+		 * @return string, The HTML output for the rendered filters
+		 */
 		public function form_filters() {
 			if ( !is_search() ) {
 				return;
 			}
 
-			$fields = apply_filters( 'lift_filters_form_field_objects', $this->fields );
 			$html = '<fieldset class="lift-search-form-filters">';
 			foreach ( $fields as $field ) {
 				if ( is_a( $field, 'Lift_Search_Field' ) ) {
