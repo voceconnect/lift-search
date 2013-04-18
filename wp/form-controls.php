@@ -4,21 +4,30 @@ class Quick_Filter_Maker {
 	
 	public function init() {
 		foreach ( array( 'date', 'post_type', 'post_categories', 'post_tags', 'orderby' ) as $field) {
-			add_filter('lift_form_field_'.$field, array($this, $field), 10, 2);
+			add_filter('lift_form_field_'.$field, array($this, $field), 10, 3);
 		}
 	}
 	public function __call( $field, $arguments ) {
-		return "<label>NOT YET IMPLEMENTED {$field}</label><br />";
+		return $arguments[2]["before_field"] . "<label>NOT YET IMPLEMENTED {$field}</label><br />" . $arguments[2]["after_field"];
 	}
 	
 	/**
-	 * 
+   * 
 	 * @param string $field_html
 	 * @param Lift_Search_Form $lift_search_form
 	 * @return string
 	 */
-	public function date($field_html, $lift_search_form) {
-		return "Date filter called";
+	public function date($field_html, $lift_search_form, $args = array()) {
+		$base_url = $lift_search_form->getSearchBaseURL() . '?' . http_build_query($lift_search_form->getStateVars());
+		$field = '<ul>
+				<li class="selected"></li>
+				<li><a href="'.add_query_arg('foo', 'bar', esc_url($base_url)).'">Foobar</a></li>
+				<li></li>
+				<li></li>
+				<li></li>
+				<li></li>
+			<ul>';
+		return $args['before_field']. $field . $args['after_field'];
 	}
 }
 add_action('wp_loaded', array(new Quick_Filter_Maker(), 'init'));

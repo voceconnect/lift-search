@@ -1,5 +1,4 @@
 <?php
-
 require_once __DIR__ . '/form-controls.php';
 
 // Make sure class name doesn't exist
@@ -66,31 +65,51 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		}
 
 		/**
+		 * Returns the base url for the search.
+		 * 
+		 * @todo allow the instance to be detached from the global site search
+		 * @return string
+		 */
+		public function getSearchBaseURL() {
+			return user_trailingslashit( site_url() );
+		}
+
+		/**
+		 * Returns the current state of the search form.
+		 * 
+		 * @todo allow instances to be detached from the global request vars
+		 * @return array
+		 */
+		public function getStateVars() {
+			return array_merge( $_GET, $_POST );
+		}
+
+		/**
 		 * Calls all of the default search field build methods, Not including the main search term field.
-		public function add_fields() {
-			foreach ( $fields as $field ) {
-			  if ( has_action( 'lift_custom_form_filter_' . $field ) ) {
-			  do_action( 'lift_custom_form_filter_' . $field, $this );
-			  } else {
-			  switch ( $field ) {
-			  case 'date':
-			  $this->add_date_fields();
-			  break;
-			  case 'post_type':
-			  $this->add_posttype_field();
-			  break;
-			  case 'post_categories':
-			  $this->add_taxonomy_checkbox_fields( 'categories' );
-			  break;
-			  case 'post_tags':
-			  $this->add_taxonomy_checkbox_fields( 'post_tags' );
-			  break;
-			  case 'orderby':
-			  $this->add_sort_field();
-			  break;
-			  }
-			  }
-		}*/
+		  public function add_fields() {
+		  foreach ( $fields as $field ) {
+		  if ( has_action( 'lift_custom_form_filter_' . $field ) ) {
+		  do_action( 'lift_custom_form_filter_' . $field, $this );
+		  } else {
+		  switch ( $field ) {
+		  case 'date':
+		  $this->add_date_fields();
+		  break;
+		  case 'post_type':
+		  $this->add_posttype_field();
+		  break;
+		  case 'post_categories':
+		  $this->add_taxonomy_checkbox_fields( 'categories' );
+		  break;
+		  case 'post_tags':
+		  $this->add_taxonomy_checkbox_fields( 'post_tags' );
+		  break;
+		  case 'orderby':
+		  $this->add_sort_field();
+		  break;
+		  }
+		  }
+		  } */
 
 		/**
 		 * Builds the sort by dropdown/select field.
@@ -225,14 +244,12 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 */
 		public function form() {
 			$search_term = (is_search()) ? get_search_query( false ) : "";
-			$html = '<form role="search" class="lift-search" id="searchform" ' . (!is_search() ? 'action="' . esc_url( site_url() ) . '/"' : '') . '><div>';
+			$html = '<form role="search" class="lift-search" id="searchform" action="' . esc_url( $this->getSearchBaseURL() ) . '"><div>';
 			$html .= sprintf( "<input type='text' name='s' id='s' value='%s' />", esc_attr( $search_term ) );
 			$html .= ' <input type="submit" id="searchsubmit" value="' . esc_attr__( 'Search' ) . '" />';
 			$html .= '<fieldset class="lift-search-form-filters"><ul>';
-			foreach($this->fields as $field) {
-				$filter_html = apply_filters('lift_form_field_'. $field, '', $this);
-				if($filter_html)
-					$html .= '<li>'.$filter_html.'</li>';
+			foreach ( $this->fields as $field ) {
+				$html .= apply_filters( 'lift_form_field_' . $field, '', $this, array( 'before_field' => '<li>', 'after_field' => '</li>' ) );
 			}
 			$html .= "</ul></fieldset>";
 			$html .= "</div></form>";
