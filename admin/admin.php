@@ -20,9 +20,11 @@ class Lift_Admin {
 
 		if ( !Lift_Search::get_search_domain_name() ) {
 			if ( !isset( $_GET['page'] ) || (isset( $_GET['page'] ) && $_GET['page'] !== self::OPTIONS_SLUG ) ) {
-				add_action( 'admin_enqueue_scripts', array( $this, '__admin_enqueue_style' ) );
-				add_action( 'user_admin_notices', array( $this, '_print_configuration_nag' ) );
-				add_action( 'admin_notices', array( $this, '_print_configuration_nag' ) );
+				if ( current_user_can('manage_options') ) {
+					add_action( 'admin_enqueue_scripts', array( $this, '__admin_enqueue_style' ) );
+					add_action( 'user_admin_notices', array( $this, '_print_configuration_nag' ) );
+					add_action( 'admin_notices', array( $this, '_print_configuration_nag' ) );
+				}
 			}
 		}
 	}
@@ -41,13 +43,13 @@ class Lift_Admin {
 
 	/**
 	 * Tests authentication using the access key id and secret key
-	 * 
+	 *
 	 * @todo move to a separate class specifically responsible for safely using the API
 	 * and formatting friendly results
-	 * 
+	 *
 	 * @param string $id
 	 * @param string $secret
-	 * @return array 
+	 * @return array
 	 */
 	private function test_credentials( $id = '', $secret = '' ) {
 		$domain_manager = Lift_Search::get_domain_manager( $id, $secret );
@@ -392,7 +394,7 @@ class Lift_Admin {
 	 * Add link to access settings page on Plugin mainpage
 	 * @param array $links
 	 * @param string $page
-	 * @return array 
+	 * @return array
 	 */
 	public function filter__plugin_row_meta( $links, $page ) {
 		if ( $page == self::OPTIONS_SLUG ) {
