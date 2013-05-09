@@ -368,7 +368,7 @@
           return;
         });
       }
-      $(this.el).html(this.template({errors: this.collection.toJSON()}));
+      $(this.el).html(this.template({meta: this.collection.meta, errors: this.collection.toJSON()}));
       return this;
     },
     onClickClearLogs: function(e) {
