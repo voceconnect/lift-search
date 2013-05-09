@@ -32,11 +32,10 @@ class CloudSearch_API {
 		$method = strtoupper( $method );
 
 		// only use JSON for now
-		$headers = array(
+		$headers = apply_filters('lift_search_headers', array(
 			'Content-Type' => 'application/json',
 			'Accept' => 'application/json'
-		);
-
+		), $method, $data, $this);
 		switch ( $method ) {
 
 			case 'POST':

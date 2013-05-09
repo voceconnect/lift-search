@@ -167,7 +167,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 */
 		private static function __get_setting( $setting ) {
 			// Note: batch-interval should be in seconds, regardless of what batch-interval-units is set to
-			$default_settings = array( 'batch-interval' => 300, 'batch-interval-units' => 'm', 'override-search' => true);
+			$default_settings = array( 'batch-interval' => 300, 'batch-interval-units' => 'm', 'override-search' => true );
 
 			$settings = get_option( self::SETTINGS_OPTION, array( ) );
 
@@ -191,7 +191,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return string
 		 */
 		public static function get_access_key_id() {
-			return (string) apply_filters( 'lift_access_key_id', self::__get_setting( 'access-key-id' ) );
+			return ( string ) apply_filters( 'lift_access_key_id', self::__get_setting( 'access-key-id' ) );
 		}
 
 		/**
@@ -207,7 +207,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return string
 		 */
 		public static function get_secret_access_key() {
-			return (string) apply_filters( 'lift_secret_access_key', self::__get_setting( 'secret-access-key' ) );
+			return ( string ) apply_filters( 'lift_secret_access_key', self::__get_setting( 'secret-access-key' ) );
 		}
 
 		/**
@@ -223,7 +223,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return string
 		 */
 		public static function get_search_domain_name() {
-			return (string) apply_filters( 'lift_search_domain', self::__get_setting( 'search-domain' ) );
+			return ( string ) apply_filters( 'lift_search_domain', self::__get_setting( 'search-domain' ) );
 		}
 
 		public static function set_search_domain_name( $domain_name ) {
@@ -241,7 +241,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return string
 		 */
 		public static function get_search_endpoint() {
-			return self::get_domain_manager()->get_search_endpoint( self::get_search_domain_name() );
+			return apply_filters( 'lift_search_endpoint', self::get_domain_manager()->get_search_endpoint( self::get_search_domain_name() ) );
 		}
 
 		/**
@@ -249,15 +249,15 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @return string
 		 */
 		public static function get_document_endpoint() {
-			return self::get_domain_manager()->get_document_endpoint( self::get_search_domain_name() );
+			return apply_filters( 'lift_document_endpoint', self::get_domain_manager()->get_document_endpoint( self::get_search_domain_name() ) );
 		}
-		
-		public static function set_override_search($value) {
-			self::__set_setting( 'override-search', (bool) $value );
+
+		public static function set_override_search( $value ) {
+			self::__set_setting( 'override-search', ( bool ) $value );
 		}
-		
+
 		public static function get_override_search() {
-			return self::__get_setting('override-search');
+			return self::__get_setting( 'override-search' );
 		}
 
 		/**
@@ -470,8 +470,8 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 			if ( $current_db_version < 2 ) {
 				//queue storage changes
-				$post_ids = $wpdb->get_col( $wpdb->prepare("SELECT ID FROM $wpdb->posts " .
-					"WHERE post_type = %s", Lift_Document_Update_Queue::STORAGE_POST_TYPE ) );
+				$post_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM $wpdb->posts " .
+						"WHERE post_type = %s", Lift_Document_Update_Queue::STORAGE_POST_TYPE ) );
 
 				$queue_id = Lift_Document_Update_Queue::get_active_queue_id();
 
