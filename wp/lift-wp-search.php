@@ -199,7 +199,7 @@ class Lift_WP_Search {
 
 		add_filter( 'posts_results', array( __CLASS__, '_filter_posts_results' ), 10, 2 );
 		add_filter( 'query_vars', function($query_vars) {
-				return array_merge( $query_vars, array( 'facet', 'date_start', 'date_end', 'lift_post_type' ) );
+				return array_merge( $query_vars, array( 'facet', 'lift_post_type' ) );
 			} );
 
 		add_action( 'request', function($query_vars) {
