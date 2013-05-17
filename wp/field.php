@@ -335,10 +335,12 @@ class LiftTaxonomyField extends aLiftField {
 				$request_vars['tax_query'] = array( );
 			}
 			$request_vars['tax_query'][] = array(
+				'operator' => 'AND',
 				'taxonomy' => $this->taxonomy,
 				'field' => 'id',
 				'terms' => $request_vars[$this->name]
 			);
+			unset($request_vars[$this->name]); //cleanup
 		}
 		return $request_vars;
 	}
@@ -367,7 +369,7 @@ class LiftTaxonomyField extends aLiftField {
 				$term_expressions = array( );
 				foreach ( $term_ids as $term_id ) {
 					//note that taxonomies are stored as literal fields and literal fields are strings
-					$term_expressions[] = new Lift_Expression_Field( $this->name, $term_id, false );
+					$term_expressions[] = new Lift_Expression_Field( $this->name, $term_id );
 				}
 				switch ( $tax_query['operator'] ) {
 					case 'IN':
@@ -397,20 +399,28 @@ class LiftTaxonomyField extends aLiftField {
 	 */
 	public function wpToLabel( $query_vars ) {
 		$wp_tax_query = $this->parseTaxQuery( $query_vars );
-		$terms = get_terms( $this->taxonomy );
 
 		foreach ( $wp_tax_query->queries as $tax_query ) {
 			if ( $tax_query['taxonomy'] == $this->taxonomy && !empty( $tax_query['terms'] ) ) {
 				$field = $tax_query['field'];
+				if ( $field != 'id' ) {
+					$terms = get_terms( $this->taxonomy );
+				}
+
 				if ( $field === 'name' ) {
 					$term_names = $tax_query['terms'];
 				} else {
 					$term_names = array( );
 					foreach ( $tax_query['terms'] as $term_val ) {
-						foreach ( $terms as $term ) {
-							if ( $term->$field == $term_val ) {
-								$term_names[] = $term->name;
-								break;
+						if ( $field === 'id' ) {
+							$term = get_term( $term_val, $this->taxonomy );
+							$term_names[] = $term->name;
+						} else {
+							foreach ( $terms as $term ) {
+								if ( $term->$field == $term_val ) {
+									$term_names[] = $term->name;
+									break;
+								}
 							}
 						}
 					}
@@ -418,7 +428,7 @@ class LiftTaxonomyField extends aLiftField {
 				return implode( ', ', $term_names );
 			}
 		}
-		return '';
+		return 'Any';
 	}
 
 	public function bqToRequest( $bq ) {
@@ -684,9 +694,10 @@ add_action( 'init', function() {
 
 
 		$post_categories_field = new LiftTaxonomyField( 'category' );
-		new LiftSingleSelectFilter( $post_categories_field, 'Category', array( ) );
+		new LiftIntersectFilter( $post_categories_field, 'In Categories', array( ) );
 
-		$post_tags_field;
+		$post_tags_field = new LiftTaxonomyField( 'post_tag' );
+		new LiftIntersectFilter( $post_tags_field, 'Tags', array( ) );
 
 		$orderby_field;
 	} );

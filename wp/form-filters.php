@@ -75,7 +75,6 @@ class LiftSingleSelectFilter extends aLiftFormFilter {
 	 * @var array 
 	 */
 	protected $item_values;
-	
 	private $_filtered_item_values;
 
 	/**
@@ -86,7 +85,7 @@ class LiftSingleSelectFilter extends aLiftFormFilter {
 	 * array of WP_Query formatted query_vars.
 	 * @param array $args
 	 */
-	public function __construct( $field, $label, $item_values, $args = array( ) ) {
+	public function __construct( $field, $label, $item_values = array( ), $args = array( ) ) {
 		parent::__construct( $field, $label, $args );
 		$this->item_values = $item_values;
 	}
@@ -161,10 +160,10 @@ class LiftUnionSelectFilter extends LiftSingleSelectFilter {
 	 * array of WP_Query formatted query_vars.
 	 * @param array $args
 	 */
-	public function __construct( $field, $label, $item_values, $args = array( ) ) {
-		//$args = wp_parse_args($args, array(
-		//	'control' => 'LiftCheckboxControl'
-		//));
+	public function __construct( $field, $label, $item_values = array( ), $args = array( ) ) {
+		$args = wp_parse_args( $args, array(
+			'control' => 'LiftMultiSelectControl'
+		) );
 		parent::__construct( $field, $label, $item_values, $args );
 	}
 
@@ -187,7 +186,8 @@ class LiftIntersectFilter extends LiftUnionSelectFilter {
 	 * array of WP_Query formatted query_vars.
 	 * @param array $args
 	 */
-	public function __construct( $field, $label, $item_values, $args = array( ) ) {
+	public function __construct( $field, $label, $item_values = array( ), $args = array( ) ) {
+		parent::__construct( $field, $label, $item_values, $args );
 		add_action( 'get_cs_query', array( $this, 'setFacetOptions' ) );
 	}
 
@@ -214,21 +214,18 @@ class LiftIntersectFilter extends LiftUnionSelectFilter {
 
 		$items = array( );
 
-		$items[] = $allItem = ( object ) array(
-				'selected' => false,
-				'value' => array( ),
-				'label' => $this->field->wpToLabel( array( ) )
-		);
-
-
 		$selectedFound = false;
 
+		$current_request = $this->field->bqToRequest( $this->field->wpToBooleanQuery( $lift_query->wp_query->query_vars ) );
+		
+		//$current_request = array_map( 'arrayify', $current_request );
 		foreach ( $my_facets as $bq_value => $count ) {
 			$facet_request_vars = $this->field->bqToRequest( $this->field->getName() . ':' . $bq_value );
 			$facet_wp_vars = $this->field->requestToWP( $facet_request_vars );
 
-			//determine if this item is selected by comparing the relative wp vars to this query
-			$selected = 0 === count( array_diff_assoc_recursive( $facet_wp_vars, $lift_query->wp_query->query_vars ) );
+			//determine if this item is selected by comparing the relative request vars to this query
+			//we're assuming that these don't go further than 1 level deep
+			$selected = 0 === count( array_diff_assoc_recursive( $facet_request_vars, $current_request ) );
 			if ( $selected ) {
 				$selectedFound = true;
 			}
@@ -253,9 +250,6 @@ class LiftIntersectFilter extends LiftUnionSelectFilter {
 						'value' => $this->field->bqToRequest( $selectedBq ),
 						'label' => sprintf( '%1$s (%2$d)', $this->field->wpToLabel( $lift_query->wp_query->query_vars ), $lift_query->wp_query->found_posts )
 				);
-			} else {
-				//since there was no bq, we know the all/any item is selected
-				$allItem->selected = true;
 			}
 		}
 		return $items;

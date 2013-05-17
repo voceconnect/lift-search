@@ -80,7 +80,7 @@ class Lift_WP_Query {
 	public function get_cs_query() {
 		$cs_query = new Cloud_Search_Query();
 
-		$cs_query->add_facet( apply_filters( 'lift_search_facets', array( 'post_type', 'post_status', 'taxonomy_category_id', 'taxonomy_post_tag_id' ) ) );
+		$cs_query->add_facet( apply_filters( 'lift_search_facets', array( ) ) );
 
 		$parameters = apply_filters( 'list_search_bq_parameters', array( sprintf( "(label '%s')", $this->wp_query->get( 's' ) ) ), $this );
 
