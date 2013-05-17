@@ -56,12 +56,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 */
 		private function __construct( $wp_query ) {
 			$this->lift_query = Lift_WP_Query::GetInstance( $wp_query );
-			if ( $this->lift_query->wp_query->is_search() ) {
-				$fields = array( 'date', 'post_type', 'post_categories', 'post_tags', 'orderby' );
-			} else {
-				$fields = array( );
-			}
-			$this->fields = apply_filters( 'lift_form_filters', $fields, $this );
+			$this->fields = apply_filters( 'lift_form_filters', array(), $this );
 		}
 
 		/**

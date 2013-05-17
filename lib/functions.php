@@ -16,7 +16,7 @@ if ( !function_exists( 'array_diff_assoc_recursive' ) ) {
 					if ( !empty( $new_diff ) )
 						$difference[$key] = $new_diff;
 				}
-			} else if ( !array_key_exists( $key, $array2 ) || $array2[$key] !== $value ) {
+			} else if ( !array_key_exists( $key, $array2 ) || $array2[$key] != $value ) {
 				$difference[$key] = $value;
 			}
 		}

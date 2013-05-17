@@ -18,6 +18,7 @@ require_once('lib/posts-to-sdf.php');
 require_once('wp/domain-manager.php');
 require_once('wp/field.php');
 require_once('wp/form-controls.php');
+require_once('wp/form-filters.php');
 require_once('wp/lift-batch-handler.php');
 require_once('wp/lift-health.php');
 require_once('wp/lift-wp-search.php');

@@ -103,7 +103,6 @@ class Cloud_Search_Query {
 				$params['facet-' . $field . '-top-n'] = $limit;
 			}
 		}
-		var_dump( $params );
 		return http_build_query( $params );
 	}
 

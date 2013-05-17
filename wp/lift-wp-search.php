@@ -96,7 +96,7 @@ class Lift_WP_Query {
 
 		// size
 		$posts_per_page = $this->wp_query->get( 'posts_per_page' );
-		if($posts_per_page < 0) {
+		if ( $posts_per_page < 0 ) {
 			$posts_per_page = 9999999;
 		}
 		$cs_query->set_size( $posts_per_page );
@@ -219,7 +219,7 @@ class Lift_WP_Search {
 				return $query_vars;
 			} );
 
-		$bq_callbacks = array( '_bq_filter_post_type', '_bq_filter_post_date', '_bq_filter_post_status', '_bq_filter_taxonomies' );
+		$bq_callbacks = array( '_bq_filter_post_type', '_bq_filter_post_date', '_bq_filter_post_status' );
 		foreach ( $bq_callbacks as $callback_name ) {
 			add_filter( 'list_search_bq_parameters', array( __CLASS__, $callback_name ), 10, 2 );
 		}
@@ -574,6 +574,8 @@ abstract class aLift_Expression {
 	}
 
 	abstract public function __toString();
+	
+	abstract public function getValue();
 }
 
 class Lift_Expression_Set extends aLift_Expression implements Countable {
@@ -596,11 +598,28 @@ class Lift_Expression_Set extends aLift_Expression implements Countable {
 	}
 
 	public function __toString() {
+		if ( !count( $this->sub_expressions ) )
+			return '';
+		if ( count( $this->sub_expressions ) === 1 && in_array( $this->operator, array( 'or', 'and' ) ) ) {
+			return ( string ) $this->sub_expressions[0];
+		}
 		return sprintf( '(%s %s)', $this->operator, implode( ' ', $this->sub_expressions ) );
 	}
 
 	public function count() {
 		return count( $this->sub_expressions );
+	}
+	
+	public function getValue() {
+		if($this->count() === 1) {
+			return $this->sub_expressions[0]->getValue();
+		} else {
+			$value = array();
+			foreach($this->sub_expressions as $sub_expression) {
+				$value[] = $sub_expression->getValue();
+			}
+			return $value;
+		}
 	}
 
 }
@@ -625,5 +644,121 @@ class Lift_Expression_Field extends aLift_Expression {
 			return "{$this->field_name}:{$this->field_value}";
 		}
 	}
+	
+	public function getValue() {
+		return $this->field_value;
+	}
 
+}
+
+/**
+ * A simple class to convert BQ into Lift_Expresssions
+ */
+class BQParser {
+
+	// something to keep track of parens nesting
+	protected $stack = null;
+
+	/**
+	 *
+	 * @var Lift_Expression_Set 
+	 */
+	protected $currentSet;
+	// input string to parse
+	protected $string = null;
+	// current character offset in string
+	protected $position = null;
+	// start of text-buffer
+	protected $buffer_start = null;
+
+	public function parse( $string ) {
+		if ( !$string ) {
+			// no string, no data
+			return array( );
+		}
+
+		if ( $string[0] === '(' ) {
+			// remove outer parens, as they're unnecessary
+			$string = substr( $string, 1, -1 );
+		}
+
+		$this->currentSet = null;
+		$this->stack = array( );
+
+		$this->string = $string;
+		$this->length = strlen( $this->string );
+		// look at each character
+		for ( $this->position = 0; $this->position < $this->length; $this->position++ ) {
+			switch ( $this->string[$this->position] ) {
+				case '(':
+					$this->push();
+					// push current scope to the stack an begin a new scope
+					array_push( $this->stack, $this->currentSet );
+					$this->currentSet = null;
+					break;
+
+				case ')':
+					$this->push();
+					// save current scope
+					$exp = $this->currentSet;
+					// get the last scope from stack
+					$this->currentSet = array_pop( $this->stack );
+					// add just saved scope to current scope
+					$this->currentSet->addExpression( $exp );
+					break;
+				case ' ':
+					// make each word its own token
+					$this->push();
+					break;
+				default:
+					// remember the offset to do a string capture later
+					// could've also done $buffer .= $string[$position]
+					// but that would just be wasting resources…
+					if ( $this->buffer_start === null ) {
+						$this->buffer_start = $this->position;
+					}
+			}
+		}
+		$this->push();
+
+		return $this->currentSet;
+	}
+
+	protected function push() {
+		if ( $this->buffer_start !== null ) {
+			// extract string from buffer start to current position
+			$buffer = substr( $this->string, $this->buffer_start, $this->position - $this->buffer_start );
+			// clean buffer
+			$this->buffer_start = null;
+			// throw token into current scope
+			if ( is_null( $this->currentSet ) ) {
+				if ( in_array( $buffer, array( 'and', 'or', 'not' ) ) ) {
+					$this->currentSet = new Lift_Expression_Set( $buffer );
+				} else {
+					list($name, $value) = explode( ':', $buffer );
+					$is_str = false;
+					if ( $value[0] === "'" ) {
+						$is_str = true;
+						$value = substr( $value, 1, -1 );
+					}
+					$this->currentSet = new Lift_Expression_Field( $name, $value, $is_str );
+				}
+			} else {
+				list($name, $value) = explode( ':', $buffer );
+				$is_str = false;
+				if ( $value[0] === "'" ) {
+					$is_str = true;
+					$value = substr( $value, 1, -1 );
+				}
+				$exp = new Lift_Expression_Field( $name, $value, $is_str );
+				$this->currentSet->addExpression( $exp );
+			}
+		}
+	}
+
+}
+
+function liftBqToExpression( $bq ) {
+	$parser = new BQParser();
+	return $parser->parse( $bq );
 }
