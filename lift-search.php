@@ -76,7 +76,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 			// @TODO only enqueue on search template or if someone calls the form
 			add_action( 'wp_enqueue_scripts', function() {
-					wp_enqueue_script( 'lift-search-form', plugins_url( 'js/lift-search-form.js', __FILE__ ), array( 'jquery' ) );
+					wp_enqueue_script( 'lift-search-form', plugins_url( 'js/lift-search-form.js', __FILE__ ), array( 'jquery' ), '0.2', true );
 					wp_enqueue_style( 'lift-search', plugins_url( 'css/style.css', __FILE__ ) );
 				} );
 
