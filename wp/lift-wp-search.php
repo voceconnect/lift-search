@@ -198,11 +198,8 @@ class Lift_WP_Search {
 		add_filter( 'posts_request', array( __CLASS__, '_filter_posts_request' ), 10, 2 );
 
 		add_filter( 'posts_results', array( __CLASS__, '_filter_posts_results' ), 10, 2 );
-		
-		$bq_callbacks = array( '_bq_filter_post_date', '_bq_filter_post_status' );
-		foreach ( $bq_callbacks as $callback_name ) {
-			add_filter( 'list_search_bq_parameters', array( __CLASS__, $callback_name ), 10, 2 );
-		}
+
+		add_filter( 'list_search_bq_parameters', array( __CLASS__, '_bq_filter_post_status' ), 10, 2 );
 	}
 
 	/**
@@ -395,92 +392,6 @@ class Lift_WP_Search {
 		return $params;
 	}
 
-	/**
-	 * Builds the query param for the taxonomies
-	 * @param array $params
-	 * @param Lift_WP_Query $lift_query
-	 * @return array
-	 */
-	public static function _bq_filter_taxonomies( $params, $lift_query ) {
-		$indexed_taxonomies = Lift_Search::get_indexed_taxonomies();
-
-		foreach ( $lift_query->wp_query->tax_query->queries as $tax_query ) {
-			if ( in_array( $tax_query['taxonomy'], $indexed_taxonomies ) ) {
-				if ( empty( $tax_query['terms'] ) )
-					continue;
-
-				if ( $tax_query['field'] != 'term_id' ) {
-					$tax_query = clone $tax_query;
-					$lift_query->wp_query->tax_query->transform_query( $tax_query, 'term_id' );
-				}
-
-				$term_expressions = array( );
-				foreach ( $tax_query['terms'] as $term_id ) {
-					//note that taxonomies are stored as literal fields and literal fields are strings
-					$term_expressions[] = new Lift_Expression_Field( 'taxonomy_' . $tax_query['taxonomy'] . '_id', $term_id );
-				}
-				switch ( $tax_query['operator'] ) {
-					case 'IN':
-						$exp_set = new Lift_Expression_Set( 'or', $term_expressions );
-						$params[] = ( string ) $exp_set;
-						break;
-					case 'NOT IN':
-						$exp_set = new Lift_Expression_Set( 'or', $term_expressions );
-						$params[] = ( string ) $exp_set;
-						$not_set = new Lift_Expression_Set( 'not', array( $exp_set ) );
-						$params[] = ( string ) $not_set;
-						break;
-					case 'AND':
-						$exp_set = new Lift_Expression_Set( 'and', $term_expressions );
-						$params[] = ( string ) $exp_set;
-						break;
-					default:
-						continue 2;
-				}
-			}
-		}
-
-		return $params;
-	}
-
-	public static function _bq_filter_post_date( $params, $lift_query ) {
-		$wp_query = $lift_query->wp_query;
-		$date_start = $wp_query->get( 'date_start' );
-		$date_end = $wp_query->get( 'date_end' );
-
-		if ( !( $date_start || $date_end ) && $wp_query->get( 'year' ) ) {
-			$year = $wp_query->get( 'year' );
-
-			if ( $wp_query->get( 'monthnum' ) ) {
-				$monthnum = sprintf( '%02d', $wp_query->get( 'monthnum' ) );
-
-				if ( $wp_query->get( 'day' ) ) {
-					// Padding
-					$str_date_start = sprintf( '%02d', $query->get( 'day' ) );
-
-					$str_date_start = $wp_query->get( 'year' ) . '-' . $date_monthnum . '-' . $date_day . ' 00:00:00';
-					$str_date_end = $wp_query->get( 'year' ) . '-' . $date_monthnum . '-' . $date_day . ' 23:59:59';
-				} else {
-					$days_in_month = date( 't', mktime( 0, 0, 0, $monthnum, 14, $year ) ); // 14 = middle of the month so no chance of DST issues
-
-					$str_date_start = $year . '-' . $monthnum . '-01 00:00:00';
-					$str_date_end = $year . '-' . $monthnum . '-' . $days_in_month . ' 23:59:59';
-				}
-			} else {
-				$str_date_start = $year . '-01-01 00:00:00';
-				$str_date_end = $year . '-12-31 23:59:59';
-			}
-
-			$date_start = get_gmt_from_date( $str_date_start );
-			$date_end = get_gmt_from_date( $str_date_end );
-		}
-
-		if ( $date_start || $date_end )
-			$params[] = "post_date_gmt:{$date_start}..{$date_end}";
-
-		return $params;
-	}
-
 }
 
 abstract class aLift_Expression {
@@ -490,7 +401,7 @@ abstract class aLift_Expression {
 	}
 
 	abstract public function __toString();
-	
+
 	abstract public function getValue();
 }
 
@@ -525,13 +436,13 @@ class Lift_Expression_Set extends aLift_Expression implements Countable {
 	public function count() {
 		return count( $this->sub_expressions );
 	}
-	
+
 	public function getValue() {
-		if($this->count() === 1) {
+		if ( $this->count() === 1 ) {
 			return $this->sub_expressions[0]->getValue();
 		} else {
-			$value = array();
-			foreach($this->sub_expressions as $sub_expression) {
+			$value = array( );
+			foreach ( $this->sub_expressions as $sub_expression ) {
 				$value[] = $sub_expression->getValue();
 			}
 			return $value;
@@ -560,7 +471,7 @@ class Lift_Expression_Field extends aLift_Expression {
 			return "{$this->field_name}:{$this->field_value}";
 		}
 	}
-	
+
 	public function getValue() {
 		return $this->field_value;
 	}
