@@ -708,10 +708,10 @@ add_action( 'init', function() {
 		new LiftSingleSelectFilter( $post_type_field, 'Type', $items );
 
 
-		$post_categories_field = new LiftTaxonomyField( 'category' );
+		$post_categories_field = new LiftTaxonomyField( 'category', array( '_built_in' => true ) );
 		new LiftIntersectFilter( $post_categories_field, 'In Categories', array( ) );
 
-		$post_tags_field = new LiftTaxonomyField( 'post_tag' );
+		$post_tags_field = new LiftTaxonomyField( 'post_tag', array( '_built_in' => true ) );
 		new LiftIntersectFilter( $post_tags_field, 'Tags', array( ) );
 	} );
 
