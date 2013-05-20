@@ -340,7 +340,7 @@ class LiftTaxonomyField extends aLiftField {
 				'field' => 'id',
 				'terms' => $request_vars[$this->name]
 			);
-			unset($request_vars[$this->name]); //cleanup
+			unset( $request_vars[$this->name] ); //cleanup
 		}
 		return $request_vars;
 	}
@@ -638,17 +638,25 @@ add_action( 'init', function() {
 
 		$post_type_field = liftDelegatedField( 'post_type', 'literal', array( '_built_in' => true ) )
 			->delegate( 'wpToBooleanQuery', function($query_vars) {
-					$bq = new Lift_Expression_Set();
-					if ( isset( $query_vars['post_type'] ) ) {
-						if ( is_array( $query_vars['post_type'] ) ) {
-							foreach ( $query_vars['post_type'] as $post_type ) {
-								$bq->addExpression( new Lift_Expression_Field( 'post_type', $post_type ) );
+					$post_type = isset( $query_vars['post_type'] ) ? $query_vars['post_type'] : '';
+					$post_type_expression = '';
+					if ( 'any' == $post_type ) {
+						$in_search_post_types = get_post_types( array( 'exclude_from_search' => false ) );
+						if ( !empty( $in_search_post_types ) ) {
+							$post_type_expression = new Lift_Expression_Set();
+							foreach ( $in_search_post_types as $_post_type ) {
+								$post_type_expression->addExpression( new Lift_Expression_Field( 'post_type', $_post_type ) );
 							}
-						} elseif ( $query_vars['post_type'] !== 'any' ) {
-							$bq->addExpression( new Lift_Expression_Field( 'post_type', $query_vars['post_type'] ) );
 						}
+					} elseif ( !empty( $post_type ) && is_array( $post_type ) ) {
+						$post_type_expression = new Lift_Expression_Set();
+						foreach ( $post_type as $_post_type ) {
+							$post_type_expression->addExpression( new Lift_Expression_Field( 'post_type', $_post_type ) );
+						}
+					} elseif ( !empty( $post_type ) ) {
+						$post_type_expression = new Lift_Expression_Field( 'post_type', $post_type );
 					}
-					return ( string ) $bq;
+					return ( string ) $post_type_expression;
 				} )
 			->delegate( 'wpToLabel', function($query_vars) {
 					$label = 'Any';
@@ -681,8 +689,15 @@ add_action( 'init', function() {
 				$request = array( 'post_type' => false );
 				$expression = liftBqToExpression( $bq );
 				if ( $expression ) {
-					$request['post_type'] = $expression->getValue();
+					$post_type = $expression->getValue();
+					//only set if this isn't the 'any' value.
+					$foo = get_post_types( array( 'exclude_from_search' => false ) );
+					$bar = array_diff( $foo, ( array ) $post_type );
+					if ( count( array_diff( get_post_types( array( 'exclude_from_search' => false ) ), ( array ) $post_type ) ) ) {
+						$request['post_type'] = $post_type;
+					}
 				}
+
 				return $request;
 			} );
 
@@ -698,7 +713,5 @@ add_action( 'init', function() {
 
 		$post_tags_field = new LiftTaxonomyField( 'post_tag' );
 		new LiftIntersectFilter( $post_tags_field, 'Tags', array( ) );
-
-		$orderby_field;
 	} );
 

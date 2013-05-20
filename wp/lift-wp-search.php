@@ -198,28 +198,8 @@ class Lift_WP_Search {
 		add_filter( 'posts_request', array( __CLASS__, '_filter_posts_request' ), 10, 2 );
 
 		add_filter( 'posts_results', array( __CLASS__, '_filter_posts_results' ), 10, 2 );
-		add_filter( 'query_vars', function($query_vars) {
-				return array_merge( $query_vars, array( 'facet', 'lift_post_type' ) );
-			} );
-
-		add_action( 'request', function($query_vars) {
-				if ( isset( $query_vars['s'] ) && !isset( $query_vars['post_type'] ) && isset( $query_vars['lift_post_type'] ) ) {
-					$lift_post_type = is_array( $query_vars['lift_post_type'] ) ? $query_vars['lift_post_type'] : array( $query_vars['lift_post_type'] );
-					$in_search_post_types = get_post_types( array( 'exclude_from_search' => false ) );
-					$post_types = array( );
-					foreach ( $lift_post_type as $_post_type ) {
-						if ( in_array( $_post_type, $in_search_post_types ) ) {
-							$post_types[] = $_post_type;
-						}
-					}
-					if ( !empty( $post_types ) ) {
-						$query_vars['post_type'] = $post_types;
-					}
-				}
-				return $query_vars;
-			} );
-
-		$bq_callbacks = array( '_bq_filter_post_type', '_bq_filter_post_date', '_bq_filter_post_status' );
+		
+		$bq_callbacks = array( '_bq_filter_post_date', '_bq_filter_post_status' );
 		foreach ( $bq_callbacks as $callback_name ) {
 			add_filter( 'list_search_bq_parameters', array( __CLASS__, $callback_name ), 10, 2 );
 		}
@@ -263,70 +243,6 @@ class Lift_WP_Search {
 			return $lift_query->get_posts();
 
 		return $posts;
-	}
-
-	/**
-	 * Builds the query param for the post type filter
-	 * @param array $params
-	 * @param Lift_WP_Query $lift_query
-	 * @return array
-	 */
-	public static function _bq_filter_post_type( $params, $lift_query ) {
-		$wp_query = $lift_query->wp_query;
-		$post_type = $wp_query->get( 'post_type' );
-		$actual_post_types = array( );
-		$post_type_expression = null;
-
-		if ( $wp_query->is_tax ) {
-			if ( empty( $post_type ) ) {
-				// Do a fully inclusive search for currently registered post types of queried taxonomies
-				$post_type = array( );
-				$taxonomies = wp_list_pluck( $wp_query->tax_query->queries, 'taxonomy' );
-				foreach ( get_post_types( array( 'exclude_from_search' => false ) ) as $pt ) {
-					$object_taxonomies = $pt === 'attachment' ? get_taxonomies_for_attachments() : get_object_taxonomies( $pt );
-					if ( array_intersect( $taxonomies, $object_taxonomies ) )
-						$post_type[] = $pt;
-				}
-				if ( !$post_type )
-					$post_type = 'any';
-			}
-		}
-
-		if ( 'any' == $post_type ) {
-			$in_search_post_types = get_post_types( array( 'exclude_from_search' => false ) );
-			if ( !empty( $in_search_post_types ) ) {
-				$post_type_expression = new Lift_Expression_Set();
-				foreach ( $in_search_post_types as $_post_type ) {
-					$post_type_expression->addExpression( new Lift_Expression_Field( 'post_type', $_post_type ) );
-				}
-			}
-		} elseif ( !empty( $post_type ) && is_array( $post_type ) ) {
-			$post_type_expression = new Lift_Expression_Set();
-			foreach ( $post_type as $_post_type ) {
-				$post_type_expression->addExpression( new Lift_Expression_Field( 'post_type', $_post_type ) );
-				$actual_post_types[] = $_post_type;
-			}
-		} elseif ( !empty( $post_type ) ) {
-			$post_type_expression = new Lift_Expression_Field( 'post_type', $post_type );
-			$actual_post_types[] = $post_type;
-		} elseif ( $wp_query->is_attachment ) {
-			$post_type_expression = new Lift_Expression_Field( 'post_type', 'attachment' );
-			$actual_post_types[] = 'attachment';
-		} elseif ( $wp_query->is_page ) {
-			$post_type_expression = new Lift_Expression_Field( 'post_type', 'page' );
-			$actual_post_types[] = 'page';
-		} else {
-			$post_type_expression = new Lift_Expression_Field( 'post_type', 'post' );
-			$actual_post_types[] = 'post';
-		}
-
-		//setting the actual post types queried since wp_query doesn't update the query_var after making changes
-		$wp_query->query_vars['lift_post_type'] = $actual_post_types;
-
-		if ( !is_null( $post_type_expression ) ) {
-			$params[] = ( string ) $post_type_expression;
-		}
-		return $params;
 	}
 
 	/**

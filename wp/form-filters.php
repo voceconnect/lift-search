@@ -134,7 +134,8 @@ class LiftSingleSelectFilter extends aLiftFormFilter {
 		}
 		if ( !$selectedFound ) {
 			$selectedBq = $this->field->wpToBooleanQuery( $lift_query->wp_query->query_vars );
-			if ( $selectedBq ) {
+			$selectedRequest = $this->field->bqToRequest( $selectedBq );
+			if ( $selectedRequest !== $allItem->value ) {
 				$items[] = ( object ) array(
 						'selected' => true,
 						'value' => $this->field->bqToRequest( $selectedBq ),
@@ -163,7 +164,7 @@ class LiftUnionSelectFilter extends LiftSingleSelectFilter {
 	public function __construct( $field, $label, $item_values = array( ), $args = array( ) ) {
 		$args = wp_parse_args( $args, array(
 			'control' => 'LiftMultiSelectControl'
-		) );
+			) );
 		parent::__construct( $field, $label, $item_values, $args );
 	}
 
@@ -217,7 +218,7 @@ class LiftIntersectFilter extends LiftUnionSelectFilter {
 		$selectedFound = false;
 
 		$current_request = $this->field->bqToRequest( $this->field->wpToBooleanQuery( $lift_query->wp_query->query_vars ) );
-		
+
 		//$current_request = array_map( 'arrayify', $current_request );
 		foreach ( $my_facets as $bq_value => $count ) {
 			$facet_request_vars = $this->field->bqToRequest( $this->field->getName() . ':' . $bq_value );
