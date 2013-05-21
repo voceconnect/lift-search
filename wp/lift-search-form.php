@@ -56,7 +56,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		 */
 		private function __construct( $wp_query ) {
 			$this->lift_query = Lift_WP_Query::GetInstance( $wp_query );
-			$this->fields = apply_filters( 'lift_form_filters', array(), $this );
+			$this->fields = apply_filters( 'lift_form_filters', array( ), $this );
 		}
 
 		/**
@@ -116,6 +116,9 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			$html .= sprintf( "<input type='text' name='s' id='s' value='%s' />", esc_attr( $search_term ) );
 			$html .= ' <input type="submit" id="searchsubmit" value="' . esc_attr__( 'Search' ) . '" />';
 			$html .= '<fieldset class="lift-search-form-filters"><ul>';
+			if ( count( $this->getStateVars() ) > 1 ) {
+				$html .= sprintf( '<li class="reset"><a href="%s">Reset</a></li>', esc_url( add_query_arg( array( 's' => $search_term ), $this->getSearchBaseURL() ) ) );
+			}
 			foreach ( $this->fields as $field ) {
 				$html .= apply_filters( 'lift_form_field_' . $field, '', $this, array( 'before_field' => '<li>', 'after_field' => '</li>' ) );
 			}
