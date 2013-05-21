@@ -11,5 +11,38 @@
 		.hide-collapsed {display: block;}
 		.hide-expanded { display: none; }
 	}
-
+	ul {
+		& > li {
+			border-bottom: 1px dotted #ededed;
+		}
+	}
+	li {
+		div {
+			font-weight: bold;
+		}
+		&.reset {
+			padding: .25em 0;
+			a {
+				font-size: 0.8275em;
+				color: $dark-text;
+				display: inline-block;
+				background: rgba(#000, .1);
+				border-radius: .25em;
+				padding: 0 4% 0 3%;
+				border: 1px solid #d2d2d2;
+				&:before {
+					content: 'x ';
+				}
+				&:hover {
+					background: #d2d2d2;
+				}
+				&:active {
+					@include box-shadow(rgba(#000, .3) 1px 1px 5px);
+				}
+			}
+		}
+	}
+	a {
+		text-decoration: none;
+	}
 }
