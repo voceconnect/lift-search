@@ -36,8 +36,6 @@ class LiftLinkControl {
 		$html = '';
 
 		if ( count( $this->items ) ) {
-			$url = $this->form->getSearchBaseURL() . '?' . http_build_query( $this->form->getStateVars() );
-
 			$html .= '<div>' . esc_html( $this->label ) . '</div>';
 			$html .= '<ul>';
 			for ( $i = 0; $i < count( $this->items ); $i++ ) {
@@ -51,7 +49,7 @@ class LiftLinkControl {
 				if ( $i > 0 && ($i > $this->options['show']) ) {
 					$classes[] = 'hide-collapsed';
 				}
-				$html .= $this->itemHTML($this->items[$i], $classes, $url);
+				$html .= $this->itemHTML($this->items[$i], $classes);
 			}
 			$html .= '<li class="lift-filter-collapse hide-collapsed">Less options</li>';
 			$html .= '</ul>';
@@ -60,7 +58,7 @@ class LiftLinkControl {
 		return $html;
 	}
 
-	public function itemHTML($item, $classes, $url) {
+	public function itemHTML($item, $classes) {
 		//set empty values to false so they will be removed from the built querystring
 		$item->value = array_map( function($value) {
 				if ( empty( $value ) ) {
@@ -68,7 +66,7 @@ class LiftLinkControl {
 				}
 				return $value;
 			}, $item->value );
-		$opt_url = add_query_arg( $item->value, $url );
+		$opt_url = add_query_arg( $item->value, $this->form->getSearchBaseURL() . '?' . http_build_query( $this->form->getStateVars() ) );
 
 		return sprintf( '<li class="%s"><a href="%s">%s</a></li>', implode(' ', $classes), esc_url( $opt_url ), esc_html( $item->label ) );
 	}
@@ -77,7 +75,7 @@ class LiftLinkControl {
 
 class LiftMultiSelectControl extends LiftLinkControl {
 
-	public function itemHTML($item, $classes, $url) {
+	public function itemHTML($item, $classes) {
 		//set empty values to false so they will be removed from the built querystring
 		$item->value = array_map( function($value) {
 				if ( empty( $value ) ) {
@@ -86,12 +84,11 @@ class LiftMultiSelectControl extends LiftLinkControl {
 				return $value;
 			}, $item->value );
 		if ( $item->selected ) {
-			$bar = array_diff_assoc_recursive( $this->form->getStateVars(), $item->value );
-			$qs = http_build_query( array_diff_assoc_recursive( $this->form->getStateVars(), $item->value ) );
-			$opt_url = $url . (strlen( $qs ) ? '?' . $qs : '');
+			$qs = http_build_query( array_diff_semi_assoc_recursive( $this->form->getStateVars(), $item->value ) );
+			$opt_url = $this->form->getSearchBaseURL() . (strlen( $qs ) ? '?' . $qs : '');
 		} else {
 			$qs = http_build_query( array_merge_recursive( $this->form->getStateVars(), $item->value ) );
-			$opt_url = $url . (strlen( $qs ) ? '?' . $qs : '');
+			$opt_url = $this->form->getSearchBaseURL()  . (strlen( $qs ) ? '?' . $qs : '');
 		}
 
 		return sprintf( '<li class="%s"><a href="%s">%s</a></li>', implode(' ', $classes), esc_url( $opt_url ), esc_html( $item->label ) );

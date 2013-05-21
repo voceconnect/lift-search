@@ -3,20 +3,29 @@
 /**
  * Helper functions that may be needed.
  */
-if ( !function_exists( 'array_diff_assoc_recursive' ) ) {
+if ( !function_exists( 'array_diff_semi_assoc_recursive' ) ) {
 
-	function array_diff_assoc_recursive( $array1, $array2 ) {
+	/**
+	 * Returns the items in the first array that aren't in the second array.  Arrays
+	 * are recursively compared.  If a value in the array is set by a String key, then
+	 * that same key is checked in array2, otherwise, the existance of the value
+	 * in array2 is checked.
+	 * @param array $array1
+	 * @param array $array2
+	 * @return array
+	 */
+	function array_diff_semi_assoc_recursive( $array1, $array2 ) {
 		$difference = array( );
 		foreach ( $array1 as $key => $value ) {
 			if ( is_array( $value ) ) {
 				if ( !isset( $array2[$key] ) ) {
 					$difference[$key] = $value;
 				} elseif ( !is_array( $array2[$key] ) ) {
-					$new_diff = array_diff_assoc_recursive( $value, ( array ) $array2[$key] );
+					$new_diff = array_diff_semi_assoc_recursive( $value, ( array ) $array2[$key] );
 					if ( !empty( $new_diff ) )
 						$difference[$key] = $new_diff;
 				} else {
-					$new_diff = array_diff_assoc_recursive( $value, $array2[$key] );
+					$new_diff = array_diff_semi_assoc_recursive( $value, $array2[$key] );
 					if ( !empty( $new_diff ) )
 						$difference[$key] = $new_diff;
 				}
@@ -29,14 +38,6 @@ if ( !function_exists( 'array_diff_assoc_recursive' ) ) {
 			}
 		}
 		return $difference;
-	}
-
-}
-
-if ( !function_exists( 'arrayify' ) ) {
-
-	function arraaayify( $value ) {
-		return ( array ) $value;
 	}
 
 }

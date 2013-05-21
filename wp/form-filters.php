@@ -119,7 +119,7 @@ class LiftSingleSelectFilter extends aLiftFormFilter {
 			$facet_request_vars = $this->field->bqToRequest( $bq );
 
 			//determine if this item is selected by comparing the relative wp vars to this query
-			$selected = 0 === count( array_diff_assoc_recursive( $wp_vars, $lift_query->wp_query->query_vars ) );
+			$selected = 0 === count( array_diff_semi_assoc_recursive( $wp_vars, $lift_query->wp_query->query_vars ) );
 			if ( $selected ) {
 				$selectedFound = true;
 			}
@@ -226,7 +226,7 @@ class LiftIntersectFilter extends LiftUnionSelectFilter {
 
 			//determine if this item is selected by comparing the relative request vars to this query
 			//we're assuming that these don't go further than 1 level deep
-			$selected = 0 === count( array_diff_assoc_recursive( $facet_request_vars, $current_request ) );
+			$selected = 0 === count( array_diff_semi_assoc_recursive( $facet_request_vars, $current_request ) );
 			if ( $selected ) {
 				$selectedFound = true;
 			}
