@@ -2,7 +2,7 @@
 
 /*
   Plugin Name: Lift Search
-  Version: 1.5.2
+  Version: 1.6
   Plugin URI: http://getliftsearch.com/
   Description: Improves WordPress search using Amazon CloudSearch
   Author: Voce Platforms
