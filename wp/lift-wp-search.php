@@ -80,7 +80,7 @@ class Lift_WP_Query {
 	public function get_cs_query() {
 		$cs_query = new Cloud_Search_Query();
 
-		$cs_query->add_facet( apply_filters( 'lift_search_facets', array( 'post_type', 'post_status', 'taxonomy_category_id', 'taxonomy_post_tag_id' ) ) );
+		$cs_query->add_facet( apply_filters( 'lift_search_facets', array( ) ) );
 
 		$parameters = apply_filters( 'list_search_bq_parameters', array( sprintf( "(label '%s')", $this->wp_query->get( 's' ) ) ), $this );
 
@@ -96,7 +96,7 @@ class Lift_WP_Query {
 
 		// size
 		$posts_per_page = $this->wp_query->get( 'posts_per_page' );
-		if($posts_per_page < 0) {
+		if ( $posts_per_page < 0 ) {
 			$posts_per_page = 9999999;
 		}
 		$cs_query->set_size( $posts_per_page );
@@ -198,31 +198,8 @@ class Lift_WP_Search {
 		add_filter( 'posts_request', array( __CLASS__, '_filter_posts_request' ), 10, 2 );
 
 		add_filter( 'posts_results', array( __CLASS__, '_filter_posts_results' ), 10, 2 );
-		add_filter( 'query_vars', function($query_vars) {
-				return array_merge( $query_vars, array( 'facet', 'date_start', 'date_end', 'lift_post_type' ) );
-			} );
 
-		add_action( 'request', function($query_vars) {
-				if ( isset( $query_vars['s'] ) && !isset( $query_vars['post_type'] ) && isset( $query_vars['lift_post_type'] ) ) {
-					$lift_post_type = is_array( $query_vars['lift_post_type'] ) ? $query_vars['lift_post_type'] : array( $query_vars['lift_post_type'] );
-					$in_search_post_types = get_post_types( array( 'exclude_from_search' => false ) );
-					$post_types = array( );
-					foreach ( $lift_post_type as $_post_type ) {
-						if ( in_array( $_post_type, $in_search_post_types ) ) {
-							$post_types[] = $_post_type;
-						}
-					}
-					if ( !empty( $post_types ) ) {
-						$query_vars['post_type'] = $post_types;
-					}
-				}
-				return $query_vars;
-			} );
-
-		$bq_callbacks = array( '_bq_filter_post_type', '_bq_filter_post_date', '_bq_filter_post_status', '_bq_filter_taxonomies' );
-		foreach ( $bq_callbacks as $callback_name ) {
-			add_filter( 'list_search_bq_parameters', array( __CLASS__, $callback_name ), 10, 2 );
-		}
+		add_filter( 'list_search_bq_parameters', array( __CLASS__, '_bq_filter_post_status' ), 10, 2 );
 	}
 
 	/**
@@ -263,70 +240,6 @@ class Lift_WP_Search {
 			return $lift_query->get_posts();
 
 		return $posts;
-	}
-
-	/**
-	 * Builds the query param for the post type filter
-	 * @param array $params
-	 * @param Lift_WP_Query $lift_query
-	 * @return array
-	 */
-	public static function _bq_filter_post_type( $params, $lift_query ) {
-		$wp_query = $lift_query->wp_query;
-		$post_type = $wp_query->get( 'post_type' );
-		$actual_post_types = array( );
-		$post_type_expression = null;
-
-		if ( $wp_query->is_tax ) {
-			if ( empty( $post_type ) ) {
-				// Do a fully inclusive search for currently registered post types of queried taxonomies
-				$post_type = array( );
-				$taxonomies = wp_list_pluck( $wp_query->tax_query->queries, 'taxonomy' );
-				foreach ( get_post_types( array( 'exclude_from_search' => false ) ) as $pt ) {
-					$object_taxonomies = $pt === 'attachment' ? get_taxonomies_for_attachments() : get_object_taxonomies( $pt );
-					if ( array_intersect( $taxonomies, $object_taxonomies ) )
-						$post_type[] = $pt;
-				}
-				if ( !$post_type )
-					$post_type = 'any';
-			}
-		}
-
-		if ( 'any' == $post_type ) {
-			$in_search_post_types = get_post_types( array( 'exclude_from_search' => false ) );
-			if ( !empty( $in_search_post_types ) ) {
-				$post_type_expression = new Lift_Expression_Set();
-				foreach ( $in_search_post_types as $_post_type ) {
-					$post_type_expression->addExpression( new Lift_Expression_Field( 'post_type', $_post_type ) );
-				}
-			}
-		} elseif ( !empty( $post_type ) && is_array( $post_type ) ) {
-			$post_type_expression = new Lift_Expression_Set();
-			foreach ( $post_type as $_post_type ) {
-				$post_type_expression->addExpression( new Lift_Expression_Field( 'post_type', $_post_type ) );
-				$actual_post_types[] = $_post_type;
-			}
-		} elseif ( !empty( $post_type ) ) {
-			$post_type_expression = new Lift_Expression_Field( 'post_type', $post_type );
-			$actual_post_types[] = $post_type;
-		} elseif ( $wp_query->is_attachment ) {
-			$post_type_expression = new Lift_Expression_Field( 'post_type', 'attachment' );
-			$actual_post_types[] = 'attachment';
-		} elseif ( $wp_query->is_page ) {
-			$post_type_expression = new Lift_Expression_Field( 'post_type', 'page' );
-			$actual_post_types[] = 'page';
-		} else {
-			$post_type_expression = new Lift_Expression_Field( 'post_type', 'post' );
-			$actual_post_types[] = 'post';
-		}
-
-		//setting the actual post types queried since wp_query doesn't update the query_var after making changes
-		$wp_query->query_vars['lift_post_type'] = $actual_post_types;
-
-		if ( !is_null( $post_type_expression ) ) {
-			$params[] = ( string ) $post_type_expression;
-		}
-		return $params;
 	}
 
 	/**
@@ -479,92 +392,6 @@ class Lift_WP_Search {
 		return $params;
 	}
 
-	/**
-	 * Builds the query param for the taxonomies
-	 * @param array $params
-	 * @param Lift_WP_Query $lift_query
-	 * @return array
-	 */
-	public static function _bq_filter_taxonomies( $params, $lift_query ) {
-		$indexed_taxonomies = Lift_Search::get_indexed_taxonomies();
-
-		foreach ( $lift_query->wp_query->tax_query->queries as $tax_query ) {
-			if ( in_array( $tax_query['taxonomy'], $indexed_taxonomies ) ) {
-				if ( empty( $tax_query['terms'] ) )
-					continue;
-
-				if ( $tax_query['field'] != 'term_id' ) {
-					$tax_query = clone $tax_query;
-					$lift_query->wp_query->tax_query->transform_query( $tax_query, 'term_id' );
-				}
-
-				$term_expressions = array( );
-				foreach ( $tax_query['terms'] as $term_id ) {
-					//note that taxonomies are stored as literal fields and literal fields are strings
-					$term_expressions[] = new Lift_Expression_Field( 'taxonomy_' . $tax_query['taxonomy'] . '_id', $term_id );
-				}
-				switch ( $tax_query['operator'] ) {
-					case 'IN':
-						$exp_set = new Lift_Expression_Set( 'or', $term_expressions );
-						$params[] = ( string ) $exp_set;
-						break;
-					case 'NOT IN':
-						$exp_set = new Lift_Expression_Set( 'or', $term_expressions );
-						$params[] = ( string ) $exp_set;
-						$not_set = new Lift_Expression_Set( 'not', array( $exp_set ) );
-						$params[] = ( string ) $not_set;
-						break;
-					case 'AND':
-						$exp_set = new Lift_Expression_Set( 'and', $term_expressions );
-						$params[] = ( string ) $exp_set;
-						break;
-					default:
-						continue 2;
-				}
-			}
-		}
-
-		return $params;
-	}
-
-	public static function _bq_filter_post_date( $params, $lift_query ) {
-		$wp_query = $lift_query->wp_query;
-		$date_start = $wp_query->get( 'date_start' );
-		$date_end = $wp_query->get( 'date_end' );
-
-		if ( !( $date_start || $date_end ) && $wp_query->get( 'year' ) ) {
-			$year = $wp_query->get( 'year' );
-
-			if ( $wp_query->get( 'monthnum' ) ) {
-				$monthnum = sprintf( '%02d', $wp_query->get( 'monthnum' ) );
-
-				if ( $wp_query->get( 'day' ) ) {
-					// Padding
-					$str_date_start = sprintf( '%02d', $query->get( 'day' ) );
-
-					$str_date_start = $wp_query->get( 'year' ) . '-' . $date_monthnum . '-' . $date_day . ' 00:00:00';
-					$str_date_end = $wp_query->get( 'year' ) . '-' . $date_monthnum . '-' . $date_day . ' 23:59:59';
-				} else {
-					$days_in_month = date( 't', mktime( 0, 0, 0, $monthnum, 14, $year ) ); // 14 = middle of the month so no chance of DST issues
-
-					$str_date_start = $year . '-' . $monthnum . '-01 00:00:00';
-					$str_date_end = $year . '-' . $monthnum . '-' . $days_in_month . ' 23:59:59';
-				}
-			} else {
-				$str_date_start = $year . '-01-01 00:00:00';
-				$str_date_end = $year . '-12-31 23:59:59';
-			}
-
-			$date_start = get_gmt_from_date( $str_date_start );
-			$date_end = get_gmt_from_date( $str_date_end );
-		}
-
-		if ( $date_start || $date_end )
-			$params[] = "post_date_gmt:{$date_start}..{$date_end}";
-
-		return $params;
-	}
-
 }
 
 abstract class aLift_Expression {
@@ -574,6 +401,8 @@ abstract class aLift_Expression {
 	}
 
 	abstract public function __toString();
+
+	abstract public function getValue();
 }
 
 class Lift_Expression_Set extends aLift_Expression implements Countable {
@@ -596,11 +425,28 @@ class Lift_Expression_Set extends aLift_Expression implements Countable {
 	}
 
 	public function __toString() {
+		if ( !count( $this->sub_expressions ) )
+			return '';
+		if ( count( $this->sub_expressions ) === 1 && in_array( $this->operator, array( 'or', 'and' ) ) ) {
+			return ( string ) $this->sub_expressions[0];
+		}
 		return sprintf( '(%s %s)', $this->operator, implode( ' ', $this->sub_expressions ) );
 	}
 
 	public function count() {
 		return count( $this->sub_expressions );
+	}
+
+	public function getValue() {
+		if ( $this->count() === 1 ) {
+			return $this->sub_expressions[0]->getValue();
+		} else {
+			$value = array( );
+			foreach ( $this->sub_expressions as $sub_expression ) {
+				$value[] = $sub_expression->getValue();
+			}
+			return $value;
+		}
 	}
 
 }
@@ -626,4 +472,120 @@ class Lift_Expression_Field extends aLift_Expression {
 		}
 	}
 
+	public function getValue() {
+		return $this->field_value;
+	}
+
+}
+
+/**
+ * A simple class to convert BQ into Lift_Expresssions
+ */
+class BQParser {
+
+	// something to keep track of parens nesting
+	protected $stack = null;
+
+	/**
+	 *
+	 * @var Lift_Expression_Set 
+	 */
+	protected $currentSet;
+	// input string to parse
+	protected $string = null;
+	// current character offset in string
+	protected $position = null;
+	// start of text-buffer
+	protected $buffer_start = null;
+
+	public function parse( $string ) {
+		if ( !$string ) {
+			// no string, no data
+			return array( );
+		}
+
+		if ( $string[0] === '(' ) {
+			// remove outer parens, as they're unnecessary
+			$string = substr( $string, 1, -1 );
+		}
+
+		$this->currentSet = null;
+		$this->stack = array( );
+
+		$this->string = $string;
+		$this->length = strlen( $this->string );
+		// look at each character
+		for ( $this->position = 0; $this->position < $this->length; $this->position++ ) {
+			switch ( $this->string[$this->position] ) {
+				case '(':
+					$this->push();
+					// push current scope to the stack an begin a new scope
+					array_push( $this->stack, $this->currentSet );
+					$this->currentSet = null;
+					break;
+
+				case ')':
+					$this->push();
+					// save current scope
+					$exp = $this->currentSet;
+					// get the last scope from stack
+					$this->currentSet = array_pop( $this->stack );
+					// add just saved scope to current scope
+					$this->currentSet->addExpression( $exp );
+					break;
+				case ' ':
+					// make each word its own token
+					$this->push();
+					break;
+				default:
+					// remember the offset to do a string capture later
+					// could've also done $buffer .= $string[$position]
+					// but that would just be wasting resources…
+					if ( $this->buffer_start === null ) {
+						$this->buffer_start = $this->position;
+					}
+			}
+		}
+		$this->push();
+
+		return $this->currentSet;
+	}
+
+	protected function push() {
+		if ( $this->buffer_start !== null ) {
+			// extract string from buffer start to current position
+			$buffer = substr( $this->string, $this->buffer_start, $this->position - $this->buffer_start );
+			// clean buffer
+			$this->buffer_start = null;
+			// throw token into current scope
+			if ( is_null( $this->currentSet ) ) {
+				if ( in_array( $buffer, array( 'and', 'or', 'not' ) ) ) {
+					$this->currentSet = new Lift_Expression_Set( $buffer );
+				} else {
+					list($name, $value) = explode( ':', $buffer );
+					$is_str = false;
+					if ( $value[0] === "'" ) {
+						$is_str = true;
+						$value = substr( $value, 1, -1 );
+					}
+					$this->currentSet = new Lift_Expression_Field( $name, $value, $is_str );
+				}
+			} else {
+				list($name, $value) = explode( ':', $buffer );
+				$is_str = false;
+				if ( $value[0] === "'" ) {
+					$is_str = true;
+					$value = substr( $value, 1, -1 );
+				}
+				$exp = new Lift_Expression_Field( $name, $value, $is_str );
+				$this->currentSet->addExpression( $exp );
+			}
+		}
+	}
+
+}
+
+function liftBqToExpression( $bq ) {
+	$parser = new BQParser();
+	return $parser->parse( $bq );
 }

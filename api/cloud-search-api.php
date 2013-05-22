@@ -51,7 +51,6 @@ class CloudSearch_API {
 		}
 
 		$json = json_decode( $response );
-
 		if ( !$json ) {
 			$this->error_messages = $response;
 		}
