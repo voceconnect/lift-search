@@ -154,16 +154,16 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
  */
 if ( !function_exists( 'lift_search_form' ) ) {
 
-	function lift_search_form() {
-		echo Lift_Search_Form::GetInstance()->form();
+	function lift_search_form( $a_wp_query = null ) {
+		echo Lift_Search_Form::GetInstance( $a_wp_query )->form();
 	}
 
 }
 
 if ( !function_exists( 'lift_search_filters' ) ) {
 
-	function lift_search_filters() {
-		echo Lift_Search_Form::GetInstance()->form_filters();
+	function lift_search_filters( $a_wp_query = null ) {
+		echo Lift_Search_Form::GetInstance( $a_wp_query )->form_filters();
 	}
 
 }
