@@ -119,9 +119,9 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 			if ( count( $this->getStateVars() ) > 1 ) {
 				$html .= sprintf( '<li class="reset"><a href="%s">Reset</a></li>', esc_url( add_query_arg( array( 's' => $search_term ), $this->getSearchBaseURL() ) ) );
 			}
-			foreach ( $this->fields as $field ) {
-				$html .= apply_filters( 'lift_form_field_' . $field, '', $this, array( 'before_field' => '<li>', 'after_field' => '</li>' ) );
-			}
+
+			$html .= $this->form_filters();
+
 			$html .= "</ul></fieldset>";
 			$html .= "</div></form>";
 			apply_filters( 'lift_search_form', $html );
@@ -134,44 +134,14 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		}
 
 		/**
-		 * Renders the 
+		 * Renders the filters
 		 * @return string, The HTML output for the rendered filters
 		 */
 		public function form_filters() {
-			if ( !is_search() ) {
-				return;
+			$html = '';
+			foreach ( $this->fields as $field ) {
+				$html .= apply_filters( 'lift_form_field_' . $field, '', $this, array( 'before_field' => '<li>', 'after_field' => '</li>' ) );
 			}
-
-			$html = '<fieldset class="lift-search-form-filters">';
-			foreach ( $fields as $field ) {
-				if ( is_a( $field, 'Lift_Search_Field' ) ) {
-					$html .= $field->element();
-				}
-			}
-			$html .= "</fieldset>";
-			// @TODO setting to add JS form controls
-			if ( 1 == 1 ) {
-				$html .= $this->js_form_controls();
-			}
-			return $html;
-		}
-
-		/**
-		 * Build additional elements to override standard form controls
-		 * @return string 
-		 */
-		public function js_form_controls() {
-			$fields = apply_filters( 'lift_filters_form_field_objects', $this->fields );
-			$counter = 1;
-			$html = "<div class='lift-js-filters lift-hidden' style='display: none'><ul id='lift-filters'>";
-			$html .= "<li class='first'>Filter by: </li>";
-			foreach ( $fields as $field ) {
-				if ( is_a( $field, 'Lift_Search_Field' ) ) {
-					$html .= $field->faux_element( $counter == count( $fields ) );
-				}
-				$counter++;
-			}
-			$html .= "</ul></div>";
 			return $html;
 		}
 
