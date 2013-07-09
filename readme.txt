@@ -69,7 +69,7 @@ may be added at a later date if there is interest.
 = How much does Lift cost? =
 There is no charge for the plugin. The only charges you incur are for usage of 
 Amazon CloudSearch. You can [learn more](http://aws.amazon.com/cloudsearch/pricing/) about expected costs at Amazon's
-Clousearch site.
+CloudSearch site.
 
 = Does Lift support languages other than English? =
 Currently, Amazon CloudSearch only supports indexing documents in English. Once
