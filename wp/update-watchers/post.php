@@ -79,11 +79,11 @@ class Lift_Post_Update_Watcher {
 
 class Lift_Post_Meta_Update_Watcher {
 
-	public function get_watched_meta_keys( $post_type ) {
+	public static function get_watched_meta_keys( $post_type ) {
 		return apply_filters( 'lift_watched_meta_keys', array( ), $post_type );
 	}
 
-	public function init() {
+	public static function init() {
 
 		//enqueue all watched meta fields if the entire post is enqueued
 		add_action( 'lift_queue_entire_post', function($post_id) {
@@ -122,7 +122,7 @@ class Lift_Post_Meta_Update_Watcher {
 
 class Lift_Taxonomy_Update_Watcher {
 
-	public function get_watched_taxonomies( $post_type ) {
+	public static function get_watched_taxonomies( $post_type ) {
 
 		$default_taxonomies = array(
 			'post' => array( 'category', 'post_tag' ),
@@ -130,7 +130,7 @@ class Lift_Taxonomy_Update_Watcher {
 		return apply_filters( 'lift_watched_taxonomies', isset( $default_taxonomies[$post_type] ) ? $default_taxonomies[$post_type] : array( ), $post_type );
 	}
 
-	public function init() {
+	public static function init() {
 		add_action( 'set_object_terms', function($post_id, $terms, $tt_ids, $taxonomy, $append, $old_tt_ids) {
 				$post_type = get_post_type( $post_id );
 				if ( in_array( $taxonomy, Lift_Taxonomy_Update_Watcher::get_watched_taxonomies( $post_type ) ) ) {
