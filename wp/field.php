@@ -612,11 +612,11 @@ add_action( 'init', function() {
 					$min = isset( $query_vars['date_start'] ) ? intval( $query_vars['date_start'] ) : '';
 					$max = isset( $query_vars['date_end'] ) ? intval( $query_vars['date_end'] ) : '';
 					if ( $min && $max ) {
-						return __( sprintf( 'Between %s and %s ago', human_time_diff( $min ), human_time_diff( $max ) ), "lift-search" );
+						return sprintf( __( 'Between %1$s and %2$s ago', 'lift-search' ), human_time_diff( $min ), human_time_diff( $max ) );
 					} elseif ( $min ) {
-						return __( sprintf( "Less than %s ago", human_time_diff( $min ) ), "lift-search" );
+						return sprintf( __( 'Less than %s ago', 'lift-search' ), human_time_diff( $min ) );
 					} elseif ( $max ) {
-						return __( sprintf( "More than %s ago", human_time_diff( $max ) ), "lift-search" );
+						return sprintf( __('More than %s ago', 'lift-search' ), human_time_diff( $max ) );
 					} else {
 						return "Any Time";
 					}
