@@ -668,7 +668,8 @@
     },
     events: {
       'click #save_domainname': 'setDomainname',
-      'click #cancel': 'goBack'
+      'click #cancel': 'goBack',
+      'keypress #save_domainname' : 'checkForEnter'
     },
     render: function() {
       this.el.innerHTML = this.template(this.model.settings.toJSONObject());
@@ -683,6 +684,9 @@
       $('#save_domainname').removeAttr('disabled');
       return this;
     },
+    checkForEnter: function(){
+      alert("OK");
+    }
     setDomainname: function() {
       var domainname,
           domain,
