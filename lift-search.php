@@ -8,11 +8,14 @@
   Author URI: http://voceconnect.com/
  */
 
+if ( version_compare( phpversion(), '5.3.0', '>=') ) {
+	require_once('lift-core.php');
+}
+
 function _lift_php_version_check() {
-    if ( version_compare( phpversion(), '5.3.0', '<') ) {
+    if ( !class_exists( 'Lift_Search' ) ) {
         die( 'This plugin requires PHP version 5.3 or higher. Installed version is: ' . phpversion() );
-    } else {
-    	require_once('lift-core.php');
+    } elseif ( function_exists('_lift_activation') ) {
     	_lift_activation();
     }
 }
