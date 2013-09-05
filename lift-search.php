@@ -14,7 +14,7 @@ if ( version_compare( phpversion(), '5.3.0', '>=') ) {
 
 function _lift_php_version_check() {
     if ( !class_exists( 'Lift_Search' ) ) {
-        die( 'This plugin requires PHP version 5.3 or higher. Installed version is: ' . phpversion() );
+        die( '<p style="font: 12px/1.4em sans-serif;"><strong>Lift Search requires PHP version 5.3 or higher. Installed version is: ' . phpversion() . '</strong></p>' );
     } elseif ( function_exists('_lift_activation') ) {
     	_lift_activation();
     }
