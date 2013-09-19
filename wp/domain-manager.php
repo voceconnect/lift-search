@@ -22,7 +22,7 @@ class Lift_Cloud_Config_API extends Cloud_Config_API {
 		);
 	}
 
-	public function _make_request( $method, $payload = array( ), $flatten_keys = true ) {
+	public function _make_request( $method, $payload = array( ), $flatten_keys = true, $region = false ) {
 
 		if ( in_array( $method, $this->cached_methods ) ) {
 			if ( is_array( $cache = get_transient( 'lift_request_' . $method ) ) ) {
@@ -35,7 +35,7 @@ class Lift_Cloud_Config_API extends Cloud_Config_API {
 			}
 		}
 
-		$result = parent::_make_request( $method, $payload, $flatten_keys );
+		$result = parent::_make_request( $method, $payload, $flatten_keys, $region );
 
 		if ( in_array( $method, $this->cached_methods ) ) {
 			$cache = get_transient( 'lift_request_' . $method );
@@ -64,14 +64,14 @@ class Lift_Domain_Manager {
 
 	/**
 	 *
-	 * @var Lift_Cloud_Config_API 
+	 * @var Lift_Cloud_Config_API
 	 */
 	private $config_api;
 
 	public function __construct( $access_key, $secret_key, $http_api ) {
 		$this->config_api = new Lift_Cloud_Config_API( $access_key, $secret_key, $http_api );
 	}
-	
+
 	public function get_last_error() {
 		return $this->config_api->get_last_error();
 	}
@@ -85,15 +85,16 @@ class Lift_Domain_Manager {
 		return ( bool ) $this->get_domain( $domain_name );
 	}
 
-	public function initialize_new_domain( $domain_name ) {
+	public function initialize_new_domain( $domain_name, $region = false ) {
 		if ( $this->domain_exists( $domain_name ) ) {
 			return new WP_Error( 'domain_exists', 'There was an error creating the domain.  The domain already exists.' );
 		}
 
-		if ( is_wp_error( $error = $this->config_api->CreateDomain( $domain_name ) ) )
+		if ( is_wp_error( $error = $this->config_api->CreateDomain( $domain_name, $region ) ) )
 			return $error;
 
 		Lift_Search::set_search_domain_name( $domain_name );
+		Lift_Search::set_domain_region( $region );
 		$access_policies = $this->get_default_access_policies( $domain_name );
 
 		TAE_Async_Event::WatchWhen( array( $this, 'domain_is_created' ), array( $domain_name ), 60, 'lift_domain_created_'. $domain_name )
@@ -242,14 +243,14 @@ class Lift_Domain_Manager {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * Returns the List of DomainStatus objects
 	 * @param string|stdClass $domain_name
 	 * @return DomainStatus|boolean
 	 */
-	public function get_domains(  ) {
-		$response = $this->config_api->DescribeDomains( );
+	public function get_domains( $region = false ) {
+		$response = $this->config_api->DescribeDomains( array(), $region );
 		if ( $response ) {
 			return $response->DomainStatusList;
 		}
@@ -296,23 +297,23 @@ class Lift_Domain_Manager {
 
 /*
  * @todo, convert Cloud_Config_API to object instance
- * 
+ *
  * Plugin ->
  *	Search
  *		Search Form
  *		WP_Query/Query_Vars/Etc
  *		WP_Query -> Boolean Converter
  *			Boolean -> CloudSearch Converter
- * 
+ *
  *	Document Submission
- *		Update Watcher 
- *		Update Queue 
+ *		Update Watcher
+ *		Update Queue
  *		Update Submission
  *			Update to CloudSearch Converter
- * 
+ *
  *	Configuration/Status
  *		Setup
  *		Search Status
  *		Document Update Status
- *		
+ *
  */

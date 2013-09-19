@@ -31,14 +31,14 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 	class Lift_Search {
 		/**
-		 * Option name for the marker of whether the user finisehd the setup process 
+		 * Option name for the marker of whether the user finisehd the setup process
 		 */
 
 		const INITIAL_SETUP_COMPLETE_OPTION = 'lift-initial-setup-complete';
 		const DB_VERSION = 5;
 
 		/**
-		 * Option name for storing all user based options 
+		 * Option name for storing all user based options
 		 */
 		const SETTINGS_OPTION = 'lift-settings';
 		const DOMAIN_EVENT_WATCH_INTERVAL = 60;
@@ -200,7 +200,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 		/**
 		 * Sets the access key id
-		 * @param type $value 
+		 * @param type $value
 		 */
 		public static function set_access_key_id( $value ) {
 			self::__set_setting( 'access-key-id', $value );
@@ -216,7 +216,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 
 		/**
 		 * Sets the secret key id
-		 * @param type $value 
+		 * @param type $value
 		 */
 		public static function set_secret_access_key( $value ) {
 			self::__set_setting( 'secret-access-key', $value );
@@ -254,6 +254,22 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 */
 		public static function get_document_endpoint() {
 			return apply_filters( 'lift_document_endpoint', self::get_domain_manager()->get_document_endpoint( self::get_search_domain_name() ) );
+		}
+
+		/**
+		 * Sets the domain region
+		 * @param type $value
+		 */
+		public static function set_domain_region( $value ) {
+			self::__set_setting( 'domain-region', $value );
+		}
+
+		/**
+		 * Get domain region
+		 * @return string
+		 */
+		public static function get_domain_region() {
+			return ( string ) apply_filters( 'lift_domain_region', self::__get_setting( 'domain-region' ) );
 		}
 
 		public static function set_override_search( $value ) {
@@ -455,7 +471,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * Log Events
 		 * @param type $message
 		 * @param type $tags
-		 * @return boolean 
+		 * @return boolean
 		 */
 		public static function event_log( $message, $error, $tags = array( ) ) {
 			if ( function_exists( 'voce_error_log' ) ) {

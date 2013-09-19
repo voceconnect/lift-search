@@ -693,14 +693,16 @@
     setDomainname: function() {
       var domainname,
           domain,
-          modalView;
+          modalView,
+          region;
       this.beforeSave();
       domainname = $('#domainname').val();
+      region = $('#region').val();
       domain = this.model.domains.get(domainname);
 
       if (!domain) {
         //if domain doesn't exist, create it
-        this.createDomain(domainname);
+        this.createDomain(domainname, region);
       } else {
         //have user confirm to override the existing domain
         modalView = new liftAdmin.ModalConfirmDomainView({model: this.model.domains.get(domainname)});
@@ -720,9 +722,9 @@
       this.useDomain(domain);
       return this;
     },
-    createDomain: function(domainname) {
+    createDomain: function(domainname, region) {
       var domain;
-      domain = new liftAdmin.DomainModel({DomainName: domainname});
+      domain = new liftAdmin.DomainModel({DomainName: domainname, Region: region});
       domain.nonce = this.model.domains.nonce;
       domain.on('sync', this.onCreateDomainSuccess, this);
       domain.on('error', this.onCreateDomainError, this);

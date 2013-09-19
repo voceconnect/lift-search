@@ -82,7 +82,7 @@ class Lift_Admin {
 			wp_enqueue_script( 'lift-admin', plugins_url( 'js/admin.js', __DIR__ ), array( 'backbone' ), '0.1', true );
 		else
 			wp_enqueue_script( 'lift-admin', plugins_url( 'js/admin.min.js', __DIR__ ), array( 'backbone' ), '0.1', true );
-		
+
 		wp_localize_script( 'lift-admin', 'liftData', array(
 			'templateDir' => plugins_url( '/templates/', __FILE__ ),
 			'errorLoggingEnabled' => Lift_Search::error_logging_enabled()
@@ -239,7 +239,8 @@ class Lift_Admin {
 			$response['error'] = array( 'code' => 'emptyCredentials', 'message' => 'The Access Credential are not yet set.' );
 		} else {
 			$dm = Lift_Search::get_domain_manager();
-			$domains = $dm->get_domains();
+			$region = Lift_Search::get_domain_region();
+			$domains = $dm->get_domains( $region );
 			if ( $domains === false ) {
 				$response['error'] = $dm->get_last_error();
 			} else {
@@ -264,7 +265,7 @@ class Lift_Admin {
 
 			if ( isset( $_GET['nonce'] ) && wp_verify_nonce( $_GET['nonce'], 'lift_domain' ) ) {
 				$dm = Lift_Search::get_domain_manager();
-				$result = $dm->initialize_new_domain( $model->DomainName );
+				$result = $dm->initialize_new_domain( $model->DomainName, $model->Region );
 				if ( is_wp_error( $result ) ) {
 					$error = $result;
 				} else {
