@@ -105,6 +105,9 @@ class Cloud_Config_API {
 	public function DescribeDomains( $domain_names = array( ), $region = false ) {
 		$payload = array( );
 
+		if ( !$region )
+			$region = Lift_Search::get_domain_region();
+
 		if ( !empty( $domain_names ) ) {
 
 			foreach ( array_values( $domain_names ) as $i => $domain_name ) {
@@ -285,12 +288,12 @@ class Cloud_Config_API {
 		return $this->_make_request( 'DefineIndexField', $payload, true );
 	}
 
-	public function DescribeIndexFields( $domain_name ) {
+	public function DescribeIndexFields( $domain_name, $region = false ) {
 		$payload = array(
 			'DomainName' => $domain_name,
 		);
 
-		return $this->_make_request( 'DescribeIndexFields', $payload, true );
+		return $this->_make_request( 'DescribeIndexFields', $payload, true, $region );
 	}
 
 }

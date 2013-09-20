@@ -5,6 +5,7 @@ class Lift_Admin {
 	const OPTIONS_SLUG = 'lift-search';
 
 	public function init() {
+
 		add_action( 'admin_menu', array( $this, 'action__admin_menu' ) );
 		add_action( 'admin_init', array( $this, 'action__admin_init' ) );
 
@@ -150,19 +151,21 @@ class Lift_Admin {
 					case 'domainname':
 						$domain_manager = Lift_Search::get_domain_manager();
 						$replacing_domain = ( Lift_Search::get_search_domain_name() != $setting_value );
+						$region = ( !empty($settings_data->region) ) ? $settings_data->region : false;
 						if ( $setting_value === '' ) {
 							//assume that empty domain name means that we're clearing the set domain
 							Lift_Search::set_search_domain_name( '' );
 							Lift_Batch_Handler::_deactivation_cleanup();
 							$response['model']['value'] = '';
-						} elseif ( $domain = $domain_manager->domain_exists( $setting_value ) ) {
+						} elseif ( $domain = $domain_manager->domain_exists( $setting_value, $region ) ) {
 							$changed_fields = array( );
-							if ( !is_wp_error( $result = $domain_manager->apply_schema( $setting_value, null, $changed_fields ) ) ) {
+							if ( !is_wp_error( $result = $domain_manager->apply_schema( $setting_value, null, $changed_fields, $region ) ) ) {
 								if ( $replacing_domain ) {
 									Lift_Batch_Handler::queue_all();
 									Lift_Batch_Handler::enable_cron();
 								}
 								Lift_Search::set_search_domain_name( $setting_value );
+								Lift_Search::set_domain_region( $region );
 							} else {
 								$error->add( 'schema_error', 'There was an error while applying the schema to the domain.' );
 							}
@@ -239,7 +242,7 @@ class Lift_Admin {
 			$response['error'] = array( 'code' => 'emptyCredentials', 'message' => 'The Access Credential are not yet set.' );
 		} else {
 			$dm = Lift_Search::get_domain_manager();
-			$region = Lift_Search::get_domain_region();
+			$region = ( !empty($_REQUEST['region']) ) ? $_REQUEST['region'] : Lift_Search::get_domain_region();
 			$domains = $dm->get_domains( $region );
 			if ( $domains === false ) {
 				$response['error'] = $dm->get_last_error();

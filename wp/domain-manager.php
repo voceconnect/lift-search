@@ -81,12 +81,12 @@ class Lift_Domain_Manager {
 		return ( bool ) $this->config_api->DescribeDomains();
 	}
 
-	public function domain_exists( $domain_name ) {
-		return ( bool ) $this->get_domain( $domain_name );
+	public function domain_exists( $domain_name, $region = false ) {
+		return ( bool ) $this->get_domain( $domain_name, $region );
 	}
 
 	public function initialize_new_domain( $domain_name, $region = false ) {
-		if ( $this->domain_exists( $domain_name ) ) {
+		if ( $this->domain_exists( $domain_name, $region ) ) {
 			return new WP_Error( 'domain_exists', 'There was an error creating the domain.  The domain already exists.' );
 		}
 
@@ -105,7 +105,7 @@ class Lift_Domain_Manager {
 		return true;
 	}
 
-	public function apply_schema( $domain_name, $schema = null, &$changed_fields = array( ) ) {
+	public function apply_schema( $domain_name, $schema = null, &$changed_fields = array( ), $region = false ) {
 		if ( is_null( $schema ) )
 			$schema = apply_filters( 'lift_domain_schema', Cloud_Schemas::GetSchema() );
 
@@ -113,7 +113,7 @@ class Lift_Domain_Manager {
 			return false;
 		}
 
-		$result = $this->config_api->DescribeIndexFields( $domain_name );
+		$result = $this->config_api->DescribeIndexFields( $domain_name, $region );
 		if ( false === $result ) {
 			return new WP_Error( 'bad-response', 'Received an invalid repsonse when trying to describe the current schema' );
 		}
@@ -226,13 +226,13 @@ class Lift_Domain_Manager {
 	 * @param string|stdClass $domain_name
 	 * @return DomainStatus|boolean
 	 */
-	public function get_domain( $domain_name ) {
+	public function get_domain( $domain_name, $region = false ) {
 		if ( is_object( $domain_name ) ) {
 			//allow a domain object to be passed around instead of re-fetching
 			return $domain_name;
 		}
 
-		$response = $this->config_api->DescribeDomains( array( $domain_name ) );
+		$response = $this->config_api->DescribeDomains( array( $domain_name ), $region );
 		if ( $response ) {
 			$domain_list = $response->DomainStatusList;
 			if ( is_array( $domain_list ) && count( $domain_list ) ) {

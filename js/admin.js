@@ -693,7 +693,6 @@
     setDomainname: function() {
       var domainname,
           domain,
-          modalView,
           region;
       this.beforeSave();
       domainname = $('#domainname').val();
@@ -705,12 +704,16 @@
         this.createDomain(domainname, region);
       } else {
         //have user confirm to override the existing domain
-        modalView = new liftAdmin.ModalConfirmDomainView({model: this.model.domains.get(domainname)});
+        var model = this.model.domains.get(domainname);
+        this.showConfirmModal(model);
+      }
+      return this;
+    },
+    showConfirmModal: function(model) {
+        var modalView = new liftAdmin.ModalConfirmDomainView({model: model});
         modalView.on('cancelled', this.modalCancelled, this);
         modalView.on('confirmed', this.modalConfirmed, this);
         adminApp.openModal(modalView);
-      }
-      return this;
     },
     modalCancelled: function(view) {
       $('#save_domainname').removeAttr('disabled');
@@ -742,7 +745,11 @@
       var errors = $.parseJSON(resp.responseText).errors;
       model.off('sync', this.onCreateDomainSuccess, this);
       model.off('error', this.onCreateDomainError, this);
-      this.renderErrors(errors).afterSave();
+      if ( errors[0].code === 'domain_exists' ) {
+        this.showConfirmModal(model);
+      } else {
+        this.renderErrors(errors).afterSave();
+      }
 
     },
     renderErrors: function(errors) {
@@ -755,7 +762,7 @@
       return this;
     },
     useDomain: function(domain) {
-      adminApp.settings.get('domainname').save({value: domain.get('DomainName')});
+      adminApp.settings.get('domainname').save({value: domain.get('DomainName'), region: $('#region').val()});
       this.afterSave();
       return this;
     }
