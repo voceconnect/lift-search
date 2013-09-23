@@ -261,7 +261,22 @@ if ( !class_exists( 'Lift_Search' ) ) {
 		 * @param type $value
 		 */
 		public static function set_domain_region( $value ) {
-			self::__set_setting( 'domain-region', $value );
+			if ( is_valid_region($value) ) {
+				self::__set_setting( 'domain-region', $value );
+			} else {
+				self::__set_setting( 'domain-region', '' );
+			}
+		}
+
+		public static function is_valid_region( $region ) {
+			$regions = array(
+				'us-east-1',
+				'us-west-1',
+				'us-west-2',
+				'eu-west-1',
+				'ap-southeast-1'
+			);
+			return (bool) in_array( $region, $regions );
 		}
 
 		/**

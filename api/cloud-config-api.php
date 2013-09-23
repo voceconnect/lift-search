@@ -73,7 +73,7 @@ class Cloud_Config_API {
 		$credentials['access-key-id'] = $this->access_key;
 		$credentials['secret-access-key'] = $this->secret_key;
 
-		if ( !$region ) {
+		if ( !( $region && Lift_Search::is_valid_region($region) ) ) {
 			$region = Lift_Search::get_domain_region();
 		}
 
