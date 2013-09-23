@@ -237,7 +237,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
          * @param type $value
          */
         public static function set_domain_region( $value ) {
-            if ( is_valid_region($value) ) {
+            if ( self::is_valid_region($value) ) {
                 self::__set_setting( 'domain-region', $value );
             } else {
                 self::__set_setting( 'domain-region', '' );

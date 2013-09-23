@@ -175,7 +175,6 @@ class Lift_Admin {
 						$response['model']['value'] = Lift_Search::get_search_domain_name();
 						break;
 					case 'region':
-						Lift_Search::set_domain_region( $setting_value );
 						$response['model']['value'] = Lift_Search::get_domain_region();
 						break;
 					case 'next_sync':
