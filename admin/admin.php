@@ -174,6 +174,10 @@ class Lift_Admin {
 						}
 						$response['model']['value'] = Lift_Search::get_search_domain_name();
 						break;
+					case 'region':
+						Lift_Search::set_domain_region( $setting_value );
+						$response['model']['value'] = Lift_Search::get_domain_region();
+						break;
 					case 'next_sync':
 						//for now just assume that anh post for next_sync is to fire sync immediately
 						Lift_Batch_Handler::disable_cron();
@@ -181,7 +185,7 @@ class Lift_Admin {
 						break;
 					case 'override_search':
 						Lift_Search::set_override_search( ( bool ) $setting_value );
-						$resonse['model']['value'] = Lift_Search::get_override_search();
+						$response['model']['value'] = Lift_Search::get_override_search();
 						break;
 					default:
 						$error->add( 'invalid_setting', 'The name of the setting you are trying to set is invalid.' );
@@ -212,6 +216,7 @@ class Lift_Admin {
 				'secretKey' => Lift_Search::get_secret_access_key(),
 			),
 			'domainname' => Lift_Search::get_search_domain_name(),
+			'region' => Lift_Search::get_domain_region(),
 			'last_sync' => Lift_Batch_Handler::get_last_cron_time(),
 			'next_sync' => Lift_Batch_Handler::get_next_cron_time(),
 			'batch_interval' => Lift_Search::get_batch_interval_display(),

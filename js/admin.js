@@ -15,6 +15,7 @@
           .on('unsetDomainName', this.render, this);
       this.settings.on('sync reset', function() {
         var credentials = this.settings.getValue('credentials');
+        this.domains.settings = this.settings;
         if ('' === credentials.accessKey && '' === credentials.secretKey) {
           this.domains.disablePolling();
         } else {
@@ -514,7 +515,8 @@
         _this.fetchWithDeferred();
       };
 
-      this.deferred = this.fetch()
+      var region = this.settings.get('region').get('value');
+      this.deferred = this.fetch({data: {region: region}})
           .always(function() {
         delete _this.deferred;
         if (_this.pollingEnabled) {
