@@ -97,9 +97,9 @@ class Lift_Domain_Manager {
 		Lift_Search::set_domain_region( $region );
 		$access_policies = $this->get_default_access_policies( $domain_name, $region );
 
-		TAE_Async_Event::WatchWhen( array( $this, 'domain_is_created' ), array( $domain_name ), 60, 'lift_domain_created_'. $domain_name )
-			->then( array( $this, 'apply_schema' ), array( $domain_name ), true )
-			->then( array( $this, 'apply_access_policy' ), array( $domain_name, $access_policies ), true )
+		TAE_Async_Event::WatchWhen( array( $this, 'domain_is_created' ), array( $domain_name, $region ), 60, 'lift_domain_created_'. $domain_name )
+			->then( array( $this, 'apply_schema' ), array( $domain_name, null, array(), $region ), true )
+			->then( array( $this, 'apply_access_policy' ), array( $domain_name, $access_policies, $region ), true )
 			->commit();
 
 		return true;
@@ -141,8 +141,8 @@ class Lift_Domain_Manager {
 		}
 
 		if ( count( $changed_fields ) ) {
-			TAE_Async_Event::WatchWhen( array( $this, 'needs_indexing' ), array( $domain_name ), 60, 'lift_needs_indexing_'. $domain_name )
-				->then( array( $this, 'index_documents' ), array( $domain_name ), true )
+			TAE_Async_Event::WatchWhen( array( $this, 'needs_indexing' ), array( $domain_name, $region ), 60, 'lift_needs_indexing_'. $domain_name )
+				->then( array( $this, 'index_documents' ), array( $domain_name, $region ), true )
 				->then( array( 'Lift_Batch_Handler', 'queue_all' ) )
 				->commit();
 		}
@@ -190,12 +190,12 @@ class Lift_Domain_Manager {
 		return $policies;
 	}
 
-	public function apply_access_policy( $domain_name, $policies ) {
+	public function apply_access_policy( $domain_name, $policies, $region = false ) {
 		if ( !$policies ) {
 			return false;
 		}
 
-		if ( !$this->config_api->UpdateServiceAccessPolicies( $domain_name, $policies ) ) {
+		if ( !$this->config_api->UpdateServiceAccessPolicies( $domain_name, $policies, $region ) ) {
 			Lift_Search::event_log( 'There was an error while applying the default access policy to the domain.', $this->config_api->get_last_error(), array( 'access policy', 'error' ) );
 			return new WP_Error('There was an error while applying the default access policy to the domain.');
 		}
@@ -203,22 +203,22 @@ class Lift_Domain_Manager {
 		return true;
 	}
 
-	public function domain_is_created( $domain_name ) {
-		if ( $domain = $this->get_domain( $domain_name ) ) {
+	public function domain_is_created( $domain_name, $region = false ) {
+		if ( $domain = $this->get_domain( $domain_name, $region ) ) {
 			return $domain->Created;
 		}
 		return false;
 	}
 
-	public function needs_indexing( $domain_name ) {
-		if ( $domain = $this->get_domain( $domain_name ) ) {
+	public function needs_indexing( $domain_name, $region = false ) {
+		if ( $domain = $this->get_domain( $domain_name, $region ) ) {
 			return $domain->RequiresIndexDocuments;
 		}
 		return false;
 	}
 
-	public function index_documents( $domain_name ) {
-		return ( bool ) $this->config_api->IndexDocuments( $domain_name );
+	public function index_documents( $domain_name, $region = false ) {
+		return ( bool ) $this->config_api->IndexDocuments( $domain_name, $region );
 	}
 
 	/**

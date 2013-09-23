@@ -175,17 +175,17 @@ class Cloud_Config_API {
 	 * indexed or false if request could not be completed or domain was in a
 	 * status that documents could not be indexed
 	 */
-	public function IndexDocuments( $domain_name ) {
-		return $this->_make_request( 'IndexDocuments', array( 'DomainName' => $domain_name ) );
+	public function IndexDocuments( $domain_name, $region = false ) {
+		return $this->_make_request( 'IndexDocuments', array( 'DomainName' => $domain_name ), true, $region );
 	}
 
-	public function UpdateServiceAccessPolicies( $domain_name, $policies ) {
+	public function UpdateServiceAccessPolicies( $domain_name, $policies, $region = false ) {
 		$payload = array(
 			'AccessPolicies' => $policies,
 			'DomainName' => $domain_name,
 		);
 
-		return $this->_make_request( 'UpdateServiceAccessPolicies', $payload, false );
+		return $this->_make_request( 'UpdateServiceAccessPolicies', $payload, false, $region );
 	}
 
 	public function __parse_index_options( $field_type, $passed_options = array( ) ) {
