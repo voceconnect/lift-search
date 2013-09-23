@@ -95,7 +95,7 @@ class Lift_Domain_Manager {
 
 		Lift_Search::set_search_domain_name( $domain_name );
 		Lift_Search::set_domain_region( $region );
-		$access_policies = $this->get_default_access_policies( $domain_name );
+		$access_policies = $this->get_default_access_policies( $domain_name, $region );
 
 		TAE_Async_Event::WatchWhen( array( $this, 'domain_is_created' ), array( $domain_name ), 60, 'lift_domain_created_'. $domain_name )
 			->then( array( $this, 'apply_schema' ), array( $domain_name ), true )
@@ -150,8 +150,8 @@ class Lift_Domain_Manager {
 		return true;
 	}
 
-	public function get_default_access_policies( $domain_name ) {
-		$domain = $this->get_domain( $domain_name );
+	public function get_default_access_policies( $domain_name, $region = false ) {
+		$domain = $this->get_domain( $domain_name, $region );
 
 		$search_service = $domain->SearchService;
 		$doc_service = $domain->DocService;

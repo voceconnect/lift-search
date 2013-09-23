@@ -73,6 +73,10 @@ class Cloud_Config_API {
 		$credentials['access-key-id'] = $this->access_key;
 		$credentials['secret-access-key'] = $this->secret_key;
 
+		if ( !$region ) {
+			$region = Lift_Search::get_domain_region();
+		}
+
 		$config = new Cloud_Config_Request( $credentials, $this->http_api, $region );
 
 		$r = $config->send_request( $method, $payload );
@@ -104,9 +108,6 @@ class Cloud_Config_API {
 	 */
 	public function DescribeDomains( $domain_names = array( ), $region = false ) {
 		$payload = array( );
-
-		if ( !$region )
-			$region = Lift_Search::get_domain_region();
 
 		if ( !empty( $domain_names ) ) {
 
