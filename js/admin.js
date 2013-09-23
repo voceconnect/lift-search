@@ -746,6 +746,7 @@
       model.off('sync', this.onCreateDomainSuccess, this);
       model.off('error', this.onCreateDomainError, this);
       if ( errors[0].code === 'domain_exists' ) {
+        this.model.domains.add(model);
         this.showConfirmModal(model);
       } else {
         this.renderErrors(errors).afterSave();
