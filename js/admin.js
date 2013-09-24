@@ -177,19 +177,8 @@
   liftAdmin.templateLoader = {
     templates: {},
     getTemplate: function(name) {
-      return this.templates[name] || this.loadTemplate(name);
-    },
-    loadTemplate: function(name) {
-      var tmpUrl = window.liftData.templateDir + name + '.html';
-      $.ajax({
-        url: tmpUrl,
-        type: 'get',
-        dataType: 'html',
-        async: false,
-        success: function(data) {
-          liftAdmin.templateLoader.templates[name] = data;
-        }
-      });
+      if( !this.templates[name] && $('script#' + name + '-template').is('*') )
+        this.templates[name] = $('script#' + name + '-template').html();
       return this.templates[name] || false;
     }
   };
