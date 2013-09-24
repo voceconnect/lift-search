@@ -233,6 +233,37 @@ if ( !class_exists( 'Lift_Search' ) ) {
         }
 
         /**
+         * Sets the domain region
+         * @param type $value
+         */
+        public static function set_domain_region( $value ) {
+            if ( self::is_valid_region($value) ) {
+                self::__set_setting( 'domain-region', $value );
+            } else {
+                self::__set_setting( 'domain-region', '' );
+            }
+        }
+
+        public static function is_valid_region( $region ) {
+            $regions = array(
+                'us-east-1',
+                'us-west-1',
+                'us-west-2',
+                'eu-west-1',
+                'ap-southeast-1'
+            );
+            return (bool) in_array( $region, $regions );
+        }
+
+        /**
+         * Get domain region
+         * @return string
+         */
+        public static function get_domain_region() {
+            return ( string ) apply_filters( 'lift_domain_region', self::__get_setting( 'domain-region' ) );
+        }
+
+        /**
          * Get search endpoint setting
          * @return string
          */

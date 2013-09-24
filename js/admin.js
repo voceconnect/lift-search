@@ -15,6 +15,7 @@
           .on('unsetDomainName', this.render, this);
       this.settings.on('sync reset', function() {
         var credentials = this.settings.getValue('credentials');
+        this.domains.settings = this.settings;
         if ('' === credentials.accessKey && '' === credentials.secretKey) {
           this.domains.disablePolling();
         } else {
@@ -514,7 +515,8 @@
         _this.fetchWithDeferred();
       };
 
-      this.deferred = this.fetch()
+      var region = this.settings.get('region').get('value');
+      this.deferred = this.fetch({data: {region: region}})
           .always(function() {
         delete _this.deferred;
         if (_this.pollingEnabled) {
@@ -693,22 +695,27 @@
     setDomainname: function() {
       var domainname,
           domain,
-          modalView;
+          region;
       this.beforeSave();
       domainname = $('#domainname').val();
+      region = $('#region').val();
       domain = this.model.domains.get(domainname);
 
       if (!domain) {
         //if domain doesn't exist, create it
-        this.createDomain(domainname);
+        this.createDomain(domainname, region);
       } else {
         //have user confirm to override the existing domain
-        modalView = new liftAdmin.ModalConfirmDomainView({model: this.model.domains.get(domainname)});
+        var model = this.model.domains.get(domainname);
+        this.showConfirmModal(model);
+      }
+      return this;
+    },
+    showConfirmModal: function(model) {
+        var modalView = new liftAdmin.ModalConfirmDomainView({model: model});
         modalView.on('cancelled', this.modalCancelled, this);
         modalView.on('confirmed', this.modalConfirmed, this);
         adminApp.openModal(modalView);
-      }
-      return this;
     },
     modalCancelled: function(view) {
       $('#save_domainname').removeAttr('disabled');
@@ -720,9 +727,9 @@
       this.useDomain(domain);
       return this;
     },
-    createDomain: function(domainname) {
+    createDomain: function(domainname, region) {
       var domain;
-      domain = new liftAdmin.DomainModel({DomainName: domainname});
+      domain = new liftAdmin.DomainModel({DomainName: domainname, Region: region});
       domain.nonce = this.model.domains.nonce;
       domain.on('sync', this.onCreateDomainSuccess, this);
       domain.on('error', this.onCreateDomainError, this);
@@ -740,7 +747,12 @@
       var errors = $.parseJSON(resp.responseText).errors;
       model.off('sync', this.onCreateDomainSuccess, this);
       model.off('error', this.onCreateDomainError, this);
-      this.renderErrors(errors).afterSave();
+      if ( errors[0].code === 'domain_exists' ) {
+        this.model.domains.add(model);
+        this.showConfirmModal(model);
+      } else {
+        this.renderErrors(errors).afterSave();
+      }
 
     },
     renderErrors: function(errors) {
@@ -753,7 +765,7 @@
       return this;
     },
     useDomain: function(domain) {
-      adminApp.settings.get('domainname').save({value: domain.get('DomainName')});
+      adminApp.settings.get('domainname').save({value: domain.get('DomainName'), region: $('#region').val()});
       this.afterSave();
       return this;
     }
