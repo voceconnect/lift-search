@@ -426,8 +426,12 @@ class Lift_Admin {
 				</div>
 			</div>
 		</div>
-
 		<?php
+		foreach( glob( __DIR__ . '/templates/*.html' ) as $template_name ){
+			echo '<script type="text/html" id="' . basename( $template_name, '.html' ) . '-template">';
+				include_once( $template_name );
+			echo '</script>';
+		}
 	}
 
 	public static function _print_configuration_nag() {

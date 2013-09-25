@@ -178,19 +178,8 @@
   liftAdmin.templateLoader = {
     templates: {},
     getTemplate: function(name) {
-      return this.templates[name] || this.loadTemplate(name);
-    },
-    loadTemplate: function(name) {
-      var tmpUrl = window.liftData.templateDir + name + '.html';
-      $.ajax({
-        url: tmpUrl,
-        type: 'get',
-        dataType: 'html',
-        async: false,
-        success: function(data) {
-          liftAdmin.templateLoader.templates[name] = data;
-        }
-      });
+      if( !this.templates[name] && $('script#' + name + '-template').is('*') )
+        this.templates[name] = $('script#' + name + '-template').html();
       return this.templates[name] || false;
     }
   };
@@ -376,7 +365,7 @@
       this.collection.on('all', this.render, this).enablePolling();
     },
     events: {
-      'click #clear-logs': 'onClickClearLogs'
+      'click #error_logs_clear': 'onClickClearLogs'
     },
     render: function() {
       var _this = this;
@@ -387,12 +376,12 @@
           return;
         });
       }
-      $(this.el).html(this.template({errors: this.collection.toJSON(), meta: JSON.stringify(this.collection.meta)}));
+      $(this.el).html(this.template({errors: this.collection.toJSON(), meta: this.collection.meta}));
       return this;
     },
     onClickClearLogs: function(e) {
       e.preventDefault();
-
+      this.collection.fetch({type: 'POST'});
     }
   });
 
