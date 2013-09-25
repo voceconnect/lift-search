@@ -57,7 +57,7 @@
           domain = domainname && this.domains.get(domainname);
           if (!domainname) {
             state = 'set_domainname';
-          } else if (domain && ( domain.get('RequiresIndexDocuments') || !( domain.get('DocService') && domain.get('DocService').Endpoint ) ) ) {
+          } else if ( domain && ( domain.get('Processing') || domain.get('RequiresIndexDocuments') ) ) {
             state = 'processing_setup';
           } else {
             if (!domain) {
