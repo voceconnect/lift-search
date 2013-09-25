@@ -114,6 +114,7 @@ By default, posts and pages are indexed. To modify this, use the `lift_indexed_p
 == Changelog ==
 = 1.7 =
 * Enhancement: Allow for other region options for CloudSearch domain
+* Enhancement: Adding PHP version check on activation
 * Bug Fix: Add loading animation on setup pages while loading
 * Bug Fix: Cross domain issue loading templates from other domains with WP VIP
 * Bug Fix: Fixed clear errors button
@@ -123,7 +124,7 @@ By default, posts and pages are indexed. To modify this, use the `lift_indexed_p
 * Bug Fix: Made sure admin nag only shows for users who can access the settings.
 
 = 1.5.2 =
-* Bug Fix: Fixed unneeded ajax calls when logging is disabled. 
+* Bug Fix: Fixed unneeded ajax calls when logging is disabled.
 
 = 1.5.1 =
 * Bug Fix: Fixed bug with setting endpoint for queue all functionality.
