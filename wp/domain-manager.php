@@ -153,6 +153,10 @@ class Lift_Domain_Manager {
 	public function get_default_access_policies( $domain_name, $region = false ) {
 		$domain = $this->get_domain( $domain_name, $region );
 
+		if ( !$domain ) {
+			return false;
+		}
+
 		$search_service = $domain->SearchService;
 		$doc_service = $domain->DocService;
 
