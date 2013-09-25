@@ -2,8 +2,8 @@
 Contributors: voceplatforms
 Tags: search, cloudsearch, amazon, aws
 Requires at least: 3.4.2
-Tested up to: 3.5
-Stable tag: 1.6.0
+Tested up to: 3.6.1
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -112,6 +112,12 @@ By default, posts and pages are indexed. To modify this, use the `lift_indexed_p
 4. Lift Search Form
 
 == Changelog ==
+= 1.7 =
+* Enhancement: Allow for other region options for CloudSearch domain
+* Bug Fix: Add loading animation on setup pages while loading
+* Bug Fix: Cross domain issue loading templates from other domains with WP VIP
+* Bug Fix: Fixed clear errors button
+
 = 1.6 =
 * Enhancement: Created extendable classes to simplify adding new fields and filters.
 * Bug Fix: Made sure admin nag only shows for users who can access the settings.
