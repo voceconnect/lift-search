@@ -375,7 +375,7 @@
       this.collection.on('all', this.render, this).enablePolling();
     },
     events: {
-      'click #clear-logs': 'onClickClearLogs'
+      'click #error_logs_clear': 'onClickClearLogs'
     },
     render: function() {
       var _this = this;
@@ -386,12 +386,12 @@
           return;
         });
       }
-      $(this.el).html(this.template({errors: this.collection.toJSON(), meta: JSON.stringify(this.collection.meta)}));
+      $(this.el).html(this.template({errors: this.collection.toJSON(), meta: this.collection.meta}));
       return this;
     },
     onClickClearLogs: function(e) {
       e.preventDefault();
-
+      this.collection.fetch({type: 'POST'});
     }
   });
 
