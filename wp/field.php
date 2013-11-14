@@ -15,10 +15,10 @@ interface iLiftField {
 	public function getType();
 
 	/**
-	 * Sets options for the index field. The IndexFieldType indicates which of 
-	 * the options will be present. It is invalid to specify options for a type 
+	 * Sets options for the index field. The IndexFieldType indicates which of
+	 * the options will be present. It is invalid to specify options for a type
 	 * other than the IndexFieldType.
-	 * 
+	 *
 	 * @param string $name The name of the option
 	 * @param mixed $value
 	 * @return iLiftField
@@ -27,7 +27,7 @@ interface iLiftField {
 
 	/**
 	 * Adds one or more request variables to the public query vars accepted during
-	 * a HTTP request.  
+	 * a HTTP request.
 	 * @param array $request_vars
 	 * @return iLiftField
 	 */
@@ -41,12 +41,12 @@ interface iLiftField {
 	public function getDocumentValue( $post_id );
 
 	/**
-	 * Returns the tanslated request variables as key/value array for the given 
-	 * AWS bolean query value for this field.  Default behavior is to return single 
+	 * Returns the tanslated request variables as key/value array for the given
+	 * AWS bolean query value for this field.  Default behavior is to return single
 	 * item array with $this->name as the key and the value as the bq as the value.
-	 * 
+	 *
 	 * @todo Implement full BQ parsing for fallback
-	 * 
+	 *
 	 * @param string $bq_value
 	 * @return array
 	 */
@@ -71,8 +71,8 @@ interface iLiftField {
 abstract class aLiftField implements iLiftField {
 
 	/**
-	 * 
-	 * @var string 
+	 *
+	 * @var string
 	 */
 	protected $name;
 
@@ -100,19 +100,19 @@ abstract class aLiftField implements iLiftField {
 
 	/**
 	 *
-	 * @var array 
+	 * @var array
 	 */
 	protected $type_options;
 
 	/**
 	 *
-	 * @var array 
+	 * @var array
 	 */
 	protected $request_vars;
 
 	/**
 	 *
-	 * @var array 
+	 * @var array
 	 */
 	protected $options;
 
@@ -139,10 +139,10 @@ abstract class aLiftField implements iLiftField {
 	}
 
 	/**
-	 * Sets options for the index field. The IndexFieldType indicates which of 
-	 * the options will be present. It is invalid to specify options for a type 
+	 * Sets options for the index field. The IndexFieldType indicates which of
+	 * the options will be present. It is invalid to specify options for a type
 	 * other than the IndexFieldType.
-	 * 
+	 *
 	 * @param string $name The name of the option
 	 * @param mixed $value
 	 * @return iLiftField
@@ -154,7 +154,7 @@ abstract class aLiftField implements iLiftField {
 
 	/**
 	 * Adds one or more request variables to the public query vars accepted during
-	 * a HTTP request.  
+	 * a HTTP request.
 	 * @param array $request_vars
 	 * @return iLiftField
 	 */
@@ -164,9 +164,9 @@ abstract class aLiftField implements iLiftField {
 	}
 
 	/**
-	 * Registers the needed hooks to add this field to the AWS schema and 
+	 * Registers the needed hooks to add this field to the AWS schema and
 	 * document submission
-	 * 
+	 *
 	 * @return iLiftField
 	 */
 	protected function _registerSchemaHooks() {
@@ -177,8 +177,8 @@ abstract class aLiftField implements iLiftField {
 
 	/**
 	 * Callback during 'wp_loaded' used to apply any filters that should be applied
-	 * after initial construction that. 
-	 * 
+	 * after initial construction that.
+	 *
 	 * @access protected
 	 */
 	public function _registerSearchHooks() {
@@ -194,7 +194,7 @@ abstract class aLiftField implements iLiftField {
 	/**
 	 * Callback to 'lift_domain_schema' to append this field to the schema.
 	 * @access protected
-	 * 
+	 *
 	 * @param array $schema
 	 * @return array
 	 */
@@ -216,7 +216,7 @@ abstract class aLiftField implements iLiftField {
 	/**
 	 * Callback for 'query_vars' to append any extra needed request variables.
 	 * @access protected
-	 * 
+	 *
 	 * @param array $query_vars
 	 * @return array
 	 */
@@ -230,7 +230,7 @@ abstract class aLiftField implements iLiftField {
 	 * Filter callback for 'list_search_bq_parameters' to append new parameters to
 	 * the AWS query.
 	 * @access protected
-	 * 
+	 *
 	 * @param array $bq
 	 * @param Lift_WP_Query $lift_query
 	 * @return array
@@ -244,9 +244,9 @@ abstract class aLiftField implements iLiftField {
 	 * Callback to 'lift_post_changes_to_data' to append this field to the document
 	 * as it's sent to the domain.
 	 * @access protected
-	 * 
+	 *
 	 * @param array $post_data
-	 * @param array $changed_fields Names of 
+	 * @param array $changed_fields Names of
 	 * @param int $post_id
 	 * @return array
 	 */
@@ -269,10 +269,10 @@ abstract class aLiftField implements iLiftField {
 	}
 
 	/**
-	 * Returns the tanslated request variables as key/value array for the given 
-	 * AWS bolean query value for this field.  Default behavior is to return single 
+	 * Returns the tanslated request variables as key/value array for the given
+	 * AWS bolean query value for this field.  Default behavior is to return single
 	 * item array with $this->name as the key and the value as the bq as the value.
-	 * 
+	 *
 	 * @param string $bq_value
 	 * @return array
 	 */
@@ -317,8 +317,10 @@ class LiftTaxonomyField extends aLiftField {
 	public function getDocumentValue( $post_id ) {
 		$terms = get_the_terms( $post_id, $this->taxonomy );
 		$value = array( );
-		foreach ( $terms as $term ) {
-			$value[] = ( int ) $term->term_id;
+		if( is_array( $terms ) && ! empty( $terms ) ) {
+			foreach ( $terms as $term ) {
+				$value[] = ( int ) $term->term_id;
+			}
 		}
 		return $value;
 	}
@@ -443,11 +445,11 @@ class LiftTaxonomyField extends aLiftField {
 
 	/**
 	 * Converts query_vars into a WP_Tax_Query which has a more standardized form
-	 * to work with.  
-	 * 
+	 * to work with.
+	 *
 	 * Technically WP_Query::parse_tax_query is marked as protected.  Hopefully
 	 * a real factory function is created in core before it actually gets set as such.
-	 * 
+	 *
 	 * @param type $query_vars
 	 * @return WP_Tax_Query
 	 */
@@ -513,12 +515,12 @@ class LiftDelegatedField extends aLiftField {
 	}
 
 	/**
-	 * Returns the tanslated request variables as key/value array for the given 
-	 * AWS bolean query value for this field.  Default behavior is to return single 
+	 * Returns the tanslated request variables as key/value array for the given
+	 * AWS bolean query value for this field.  Default behavior is to return single
 	 * item array with $this->name as the key and the value as the bq as the value.
-	 * 
+	 *
 	 * @todo Implement full BQ parsing for fallback
-	 * 
+	 *
 	 * @param string $bq_value
 	 * @return array
 	 */
@@ -530,7 +532,7 @@ class LiftDelegatedField extends aLiftField {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param array $query_vars
 	 * @return string the label
 	 */
