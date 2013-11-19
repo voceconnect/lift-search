@@ -260,13 +260,7 @@ abstract class aLiftField implements iLiftField {
 	 * @param array $query_vars
 	 * @return string The resulting boolean query parameter
 	 */
-	public function wpToBooleanQuery( $query_vars ) {
-		$value = $this->wpToBooleanQueryValue( $query_vars );
-		if ( $value ) {
-			return $this->name . ':' . $value;
-		}
-		return '';
-	}
+	abstract public function wpToBooleanQuery( $query_vars );
 
 	/**
 	 * Returns the tanslated request variables as key/value array for the given
@@ -296,6 +290,9 @@ abstract class aLiftField implements iLiftField {
 
 }
 
+/**
+ * Wrapper to Create a Field for a Taxonomy
+ */
 class LiftTaxonomyField extends aLiftField {
 
 	protected $taxonomy;
@@ -471,6 +468,139 @@ class LiftTaxonomyField extends aLiftField {
 
 }
 
+/**
+ * Custom Field handling for storing postmeta as text
+ */
+class LiftPostMetaTextField extends aLiftField {
+
+	protected $meta_key;
+
+	/**
+	 * Constructor
+	 * @param string $taxonomy
+	 * @param array $options Options
+	 */
+	public function __construct( $name, $options = array( ) ) {
+
+		if ( isset( $options['meta_key'] ) ) {
+			$this->meta_key = $options['meta_key'];
+		}
+		parent::__construct( $name, 'text', $options );
+		$this->addPublicRequestVars( array( $this->name ) );
+	}
+
+	/**
+	 * Converts request variables to WP_Query variables.  Variables used by this
+	 * field should be sanitized here.
+	 * @param array $request_vars
+	 * @return array
+	 */
+	public function requestToWP( $request_vars ) {
+		if ( !empty( $request_vars[$this->name] ) ) {
+			$sub_meta_query = array(
+				'key' => $this->meta_key,
+				'value' => $request_vars[$this->name],
+				'compare' => 'LIKE'
+			);
+			if ( !isset( $request_vars['meta_query'] ) ) {
+				$request_vars['meta_query'] = array( $sub_meta_query );
+			} elseif ( is_array( $request_vars['meta_query'] ) ) {
+				$request_vars['meta_query'][] = $sub_meta_query;
+			} else {
+				$request_vars['meta_query'] = array_merge( $request_vars['meta_query'], $sub_meta_query );
+			}
+			unset( $request_vars[$this->name] );
+		}
+		return $request_vars;
+	}
+
+	/**
+	 * Returns the value to insert in this field for the specified document
+	 * @param int $post_id
+	 * @return mixed The value that should be set in the document for this field
+	 */
+	public function getDocumentValue( $post_id ) {
+		$meta_value = get_post_meta( $post_id, $this->meta_key, true );
+		return ( string ) $meta_value;
+	}
+
+	/**
+	 * Returns a boolean query param based on the current WP_Query
+	 * @param array $query_vars
+	 * @return string The resulting boolean query parameter
+	 */
+	public function wpToBooleanQuery( $query_vars ) {
+		$meta_query = new WP_Meta_Query( );
+		$meta_query->parse_query_vars( $query_vars );
+
+		if ( count( $meta_query->queries ) > 0 ) {
+			$expressionSet = new Lift_Expression_Set( strtolower( $meta_query->relation ) );
+			foreach ( $meta_query->queries as $subquery ) {
+				if ( $subquery['key'] == $this->meta_key ) {
+					if ( $subquery['compare'] === 'LIKE' ) {
+						foreach ( ( array ) $subquery['value'] as $value ) {
+							$expressionSet->addExpression( new Lift_Expression_Field( $this->name, $value ) );
+						}
+					} elseif ( $subquery['compare'] === 'NOT LIKE' ) {
+						$subExpression = new Lift_Expression_Set( 'NOT' );
+						foreach ( ( array ) $subquery['value'] as $value ) {
+							$subExpression->addExpression( new Lift_Expression_Field( $this->name, $value ) );
+						}
+						$expressionSet->addExpression( $subExpression );
+					}
+				}
+			}
+			return $expressionSet;
+		}
+
+		return '';
+	}
+
+	/**
+	 * Returns the tanslated request variables as key/value array for the given
+	 * AWS bolean query value for this field.  Default behavior is to return single
+	 * item array with $this->name as the key and bq as the value.
+	 *
+	 * @param string $bq_value
+	 * @return array
+	 */
+	public function bqToRequest( $bq ) {
+		$request = array( $this->name => false );
+		$expression = liftBqToExpression( $bq );
+		if ( $expression ) {
+			$request[$this->name] = $expression->getValue();
+		}
+		return $request;
+	}
+
+	/**
+	 * Convert WP_Query query_var value into a human readable label
+	 *
+	 * @param array $query_vars WP_Query query vars.
+	 * @return string the label based on the given vars.
+	 */
+	public function wpToLabel( $query_vars ) {
+		$meta_query = new WP_Meta_Query( );
+		$meta_query->parse_query_vars( $query_vars );
+		$label = '';
+		if ( count( $meta_query->queries ) > 0 ) {
+			$expressionSet = new Lift_Expression_Set( strtolower( $meta_query->relation ) );
+			foreach ( $meta_query->queries as $subquery ) {
+				if ( $subquery['key'] == $this->meta_key ) {
+					$label = ( string ) $subquery->value;
+				}
+			}
+		}
+
+		return $label;
+	}
+
+}
+
+
+/**
+ * Wrapper to simplify creating custom fields by using delegate callbacks
+ */
 class LiftDelegatedField extends aLiftField {
 
 	private $delegates = array( );
@@ -499,10 +629,7 @@ class LiftDelegatedField extends aLiftField {
 	 * @return string The resulting boolean query parameter
 	 */
 	public function wpToBooleanQuery( $query_vars ) {
-		if ( $this->getDelegate( __FUNCTION__ ) ) {
-			return $this->execDelegate( __FUNCTION__, $query_vars );
-		}
-		return parent::wpToBooleanQuery( $query_vars );
+		return $this->execDelegate( __FUNCTION__, $query_vars );
 	}
 
 	/**
@@ -532,7 +659,24 @@ class LiftDelegatedField extends aLiftField {
 	}
 
 	/**
+<<<<<<< HEAD
 	 *
+=======
+	 * Converts request variables to WP_Query variables.  Variables used by this
+	 * field should be sanitized here.
+	 * @param array $request_vars
+	 * @return array
+	 */
+	public function requestToWP( $query_vars ) {
+		if ( $this->getDelegate( __FUNCTION__ ) ) {
+			return $this->execDelegate( __FUNCTION__, $query_vars );
+		}
+		return parent::requestToWP( $query_vars );
+	}
+	
+	/**
+	 * 
+>>>>>>> example_post_meta_text_handling
 	 * @param array $query_vars
 	 * @return string the label
 	 */
@@ -541,6 +685,8 @@ class LiftDelegatedField extends aLiftField {
 	}
 
 }
+
+
 
 /**
  * Factory method to allow simplified chaining.
@@ -618,7 +764,7 @@ add_action( 'init', function() {
 					} elseif ( $min ) {
 						return sprintf( __( 'Less than %s ago', 'lift-search' ), human_time_diff( $min ) );
 					} elseif ( $max ) {
-						return sprintf( __('More than %s ago', 'lift-search' ), human_time_diff( $max ) );
+						return sprintf( __( 'More than %s ago', 'lift-search' ), human_time_diff( $max ) );
 					} else {
 						return "Any Time";
 					}
