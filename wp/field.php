@@ -469,7 +469,7 @@ class LiftTaxonomyField extends aLiftField {
 /**
  * Custom Field handling for storing postmeta as text
  */
-class TextPostMetaTextField extends aLiftField {
+class LiftPostMetaTextField extends aLiftField {
 
 	protected $meta_key;
 
