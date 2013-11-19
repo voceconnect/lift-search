@@ -659,9 +659,7 @@ class LiftDelegatedField extends aLiftField {
 	}
 
 	/**
-<<<<<<< HEAD
 	 *
-=======
 	 * Converts request variables to WP_Query variables.  Variables used by this
 	 * field should be sanitized here.
 	 * @param array $request_vars
@@ -676,7 +674,6 @@ class LiftDelegatedField extends aLiftField {
 	
 	/**
 	 * 
->>>>>>> example_post_meta_text_handling
 	 * @param array $query_vars
 	 * @return string the label
 	 */
