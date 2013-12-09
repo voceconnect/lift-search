@@ -113,9 +113,6 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 		public function form() {
 			$search_term = (is_search()) ? get_search_query( false ) : "";
 			$html = '<form role="search" class="lift-search no-js" id="searchform" action="' . esc_url( $this->getSearchBaseURL() ) . '"><div>';
-
-			$html = apply_filters( 'lift_form_before_fields', $html );
-
 			$html .= sprintf( "<input type='text' name='s' id='s' value='%s' />", esc_attr( $search_term ) );
 			$html .= ' <input type="submit" id="searchsubmit" value="' . esc_attr__( 'Search' ) . '" />';
 			$html .= '<fieldset class="lift-search-form-filters"><ul>';
@@ -125,7 +122,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 
 			$html .= $this->form_filters();
 
-			$html = apply_filters( 'lift_form_after_fields', $html );
+			$html = apply_filters( 'lift_form_add_fields', $html );
 
 			$html .= "</ul></fieldset>";
 			$html .= "</div></form>";
