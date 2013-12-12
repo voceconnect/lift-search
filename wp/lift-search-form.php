@@ -124,8 +124,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 
 			$html .= "</ul></fieldset>";
 			$html .= "</div></form>";
-			apply_filters( 'lift_search_form', $html );
-			return $html;
+			return apply_filters( 'lift_search_form', $html );
 		}
 
 		public function loop() {
