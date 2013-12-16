@@ -122,7 +122,7 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 
 			$html .= $this->form_filters();
 
-			$html = apply_filters( 'lift_form_add_fields', $html );
+			$html = apply_filters( 'lift_form_add_hidden_fields', $html );
 
 			$html .= "</ul></fieldset>";
 			$html .= "</div></form>";
