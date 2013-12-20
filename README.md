@@ -4,7 +4,7 @@ Contributors: voceplatforms
 Tags: search, cloudsearch, amazon, aws  
 Requires at least: 3.4.2  
 Tested up to: 3.6.1  
-Stable tag: 1.8.2  
+Stable tag: 1.9.0  
 License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -102,6 +102,9 @@ complete, you will be taken to the Lift Dashboard.
 	* *By default, posts and pages are indexed. To modify this, use the `lift_indexed_post_types` filter which is an array of post types to index.*
 
 ## Changelog
+
+** 1.9.0 **
+* Added 'lift_form_fields_html' filter to allow adding/prefixing form with custom html
 
 ** 1.8.2 ** 
 * Bug Fix: Correctly applied the 'lift_search_form' filter.
