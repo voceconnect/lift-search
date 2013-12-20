@@ -122,6 +122,8 @@ if ( !class_exists( 'Lift_Search_Form' ) ) {
 
 			$html .= $this->form_filters();
 
+			$html = apply_filters( 'lift_form_add_hidden_fields', $html );
+
 			$html .= "</ul></fieldset>";
 			$html .= "</div></form>";
 			return apply_filters( 'lift_search_form', $html );
