@@ -305,18 +305,25 @@ class LiftTaxonomyField extends aLiftField {
 	public function __construct( $taxonomy, $options = array( ) ) {
 		$this->taxonomy = $taxonomy;
 		parent::__construct( "taxonomy_{$taxonomy}_id", 'literal', $options );
-		$this->addTypeOption( 'facet', true );
+		$this->addTypeOption( 'facet', 'true' );
 
 		$this->addPublicRequestVars( $this->name );
 		add_action( 'lift_filter_items_' . $this->getName(), array( $this, '_lift_filter_items' ) );
+		if ( empty($this->options['_built_in'] ) ) {
+			add_filter( 'lift_watched_taxonomies', array( $this, 'filter_watched_taxonomies' ) );
+		}
+	}
+
+	public function filter_watched_taxonomies( $taxonomies ) {
+		return array_merge( $taxonomies, array( $this->taxonomy ) );
 	}
 
 	public function getDocumentValue( $post_id ) {
 		$terms = get_the_terms( $post_id, $this->taxonomy );
 		$value = array( );
-		if( is_array( $terms ) && ! empty( $terms ) ) {
+		if ( is_array( $terms ) && !empty( $terms ) ) {
 			foreach ( $terms as $term ) {
-				$value[] = ( int ) $term->term_id;
+				$value[] = ( string ) $term->term_id;
 			}
 		}
 		return $value;
@@ -597,7 +604,6 @@ class LiftPostMetaTextField extends aLiftField {
 
 }
 
-
 /**
  * Wrapper to simplify creating custom fields by using delegate callbacks
  */
@@ -671,7 +677,7 @@ class LiftDelegatedField extends aLiftField {
 		}
 		return parent::requestToWP( $query_vars );
 	}
-	
+
 	/**
 	 * 
 	 * @param array $query_vars
@@ -682,8 +688,6 @@ class LiftDelegatedField extends aLiftField {
 	}
 
 }
-
-
 
 /**
  * Factory method to allow simplified chaining.
