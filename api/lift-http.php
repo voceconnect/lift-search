@@ -118,6 +118,12 @@ class Lift_HTTP_Curl implements iLift_HTTP {
 		curl_setopt( $this->channel, CURLOPT_SSL_VERIFYPEER, false );
 		curl_setopt( $this->channel, CURLOPT_HEADER, false );
 		curl_setopt( $this->channel, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1 );
+
+		// If proxy is configured for the site use it for search
+		if ( defined('WP_PROXY_HOST') && defined('WP_PROXY_PORT') ) {
+			curl_setopt( $this->channel, CURLOPT_PROXY, WP_PROXY_HOST );
+			curl_setopt( $this->channel, CURLOPT_PROXYPORT, WP_PROXY_PORT );
+		}
 	}
 
 	public function getStatusCode() {
