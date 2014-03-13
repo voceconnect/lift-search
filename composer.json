@@ -1,10 +1,9 @@
 {
     "name": "voceconnect/lift-search",
-    "description": "Lift leverages the search index power of Amazon CloudSearch to improve your
- WordPress-powered site’s search experience. Learn more at: http://getliftsearch.com",
+    "description": "Lift leverages the search index power of Amazon CloudSearch to improve your WordPress-powered site’s search experience. Learn more at: http://getliftsearch.com",
     "keywords": ["wordpress", "cloudsearch", "search"],
     "homepage": "http://getliftsearch.com",
-    "license": "GPLv2+",
+    "license": "GPL-2.0+",
     "type": "library",
     "authors": [
         {
