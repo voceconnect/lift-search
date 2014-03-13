@@ -1,0 +1,59 @@
+{
+    "name": "voceconnect/lift-search",
+    "description": "Lift leverages the search index power of Amazon CloudSearch to improve your
+ WordPress-powered site’s search experience. Learn more at: http://getliftsearch.com",
+    "keywords": ["wordpress", "cloudsearch", "search"],
+    "homepage": "http://getliftsearch.com",
+    "license": "GPLv2+",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Michael Pretty",
+            "email": "mpretty@voceconnect.com"
+        },
+        {
+            "name": "Chris Scott",
+            "email": "cscott@voceconnect.com"
+        },
+        {
+            "name": "Curtis Loisel",
+            "email": "curtis@voceconnect.com"
+        },
+        {
+            "name": "Kevin Langley, Jr.",
+            "email": "kevin@voceconnect.com"
+        },
+        {
+            "name": "Mark Parolisi",
+            "email": "mark@voceconnect.com"
+        },
+        {
+            "name": "Gary Smirny",
+            "email": "gary@voceconnect.com"
+        },
+        {
+            "name": "Mat Gargano",
+            "email": "mat@voceconnect.com"
+        },
+        {
+            "name": "Rob Glazebrook",
+            "email": "rob@voceconnect.com"
+        },
+        {
+            "name": "Pete Schiebel",
+            "email": "pete@voceconnect.com"
+        },
+        {
+            "name": "Jeff Stieler",
+            "email": "jeff@voceconnect.com"
+        },
+        {
+            "name": "Sean McCafferty",
+            "email": "seanmcc@voceconnect.com"
+        },
+        {
+            "name": "John Ciacia",
+            "email": "john@voceconnect.com"
+        }
+    ]
+}
