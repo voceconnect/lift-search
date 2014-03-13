@@ -4,7 +4,7 @@
     "keywords": ["wordpress", "cloudsearch", "search"],
     "homepage": "http://getliftsearch.com",
     "license": "GPL-2.0+",
-    "type": "library",
+    "type": "wordpress-plugin",
     "authors": [
         {
             "name": "Michael Pretty",
