@@ -115,6 +115,8 @@ class Lift_WP_Query {
 			'relevancy' => 'text_relevance',
 		);
 
+		$orderby_values = apply_filters( 'lift_cs_query_orderby_values', $orderby_values, $this );
+
 		// rank
 		$order = $this->wp_query->get( 'order' );
 		$orderby = isset( $orderby_values[$this->wp_query->get( 'orderby' )] ) ? $orderby_values[$this->wp_query->get( 'orderby' )] : $orderby_values['relevancy'];
@@ -125,7 +127,7 @@ class Lift_WP_Query {
 		// return fields
 		$cs_query->add_return_field( 'id' );
 
-		do_action_ref_array( 'get_cs_query', array( $cs_query ) );
+		do_action_ref_array( 'get_cs_query', array( $cs_query, $this ) );
 
 		return $cs_query;
 	}
