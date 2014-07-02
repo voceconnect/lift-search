@@ -157,7 +157,7 @@ class Lift_Admin {
 							Lift_Search::set_search_domain_name( '' );
 							Lift_Batch_Handler::_deactivation_cleanup();
 							$response['model']['value'] = '';
-						} elseif ( $domain = $domain_manager->domain_exists( $setting_value, $region ) ) {
+						} elseif ( $domain_manager->domain_exists( $setting_value, $region ) ) {
 							$changed_fields = array( );
 							if ( !is_wp_error( $result = $domain_manager->apply_schema( $setting_value, null, $changed_fields, $region ) ) ) {
 								if ( $replacing_domain ) {
