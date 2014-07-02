@@ -40,8 +40,9 @@ if ( !class_exists( 'Lift_Search' ) ) {
         }
 
         public static function init() {
-            if ( self::error_logging_enabled() && !class_exists( 'Voce_Error_Logging' ) && file_exists( __DIR__ . '/lib/voce-error-logging/voce-error-logging.php' ) ) {
-                require_once (__DIR__ . '/lib/voce-error-logging/voce-error-logging.php');
+            $autoload_path = implode(DIRECTORY_SEPARATOR, array(__DIR__, 'vendor', 'autoload.php'));
+            if ( file_exists( $autoload_path ) ) {
+                require_once $autoload_path;
             }
 
             if ( self::get_search_endpoint() && self::get_override_search() ) {
@@ -481,7 +482,7 @@ if ( !class_exists( 'Lift_Search' ) ) {
          * @return boolean
          */
         public static function event_log( $message, $error, $tags = array( ) ) {
-            if ( function_exists( 'voce_error_log' ) ) {
+            if ( self::error_logging_enabled() && function_exists( 'voce_error_log' ) ) {
                 return voce_error_log( $message, $error, array_merge( array( 'lift-search' ), ( array ) $tags ) );
             } else {
                 return false;
