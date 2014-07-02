@@ -3,7 +3,7 @@ Contributors: voceplatforms
 Tags: search, cloudsearch, amazon, aws
 Requires at least: 3.4.2
 Tested up to: 3.6.1
-Stable tag: 1.9.3
+Stable tag: 1.9.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -112,6 +112,9 @@ By default, posts and pages are indexed. To modify this, use the `lift_indexed_p
 4. Lift Search Form
 
 == Changelog ==
+
+== 1.9.4 ==
+* Adding Capistrano deploy support
 
 == 1.9.3 ==
 * Bug Fix: Fix type in Lift_Post_Meta_Update_Watcher's `lift_queue_entire_post` hook.
