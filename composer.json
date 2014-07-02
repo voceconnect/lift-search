@@ -54,5 +54,8 @@
             "name": "John Ciacia",
             "email": "john@voceconnect.com"
         }
-    ]
+    ],
+    "require": {
+        "voceconnect/voce-error-logging": "~0.3"
+    }
 }
