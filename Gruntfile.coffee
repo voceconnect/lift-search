@@ -71,16 +71,20 @@ module.exports = (grunt) ->
       production: [
         "uglify"
         "compass:production"
+        "composer:install:no-dev:optimize-autoloader:prefer-dist"
       ]
       uat: [
         "uglify"
         "compass:production"
+        "composer:install:no-dev:optimize-autoloader:prefer-dist"
       ]
       staging: [
         "compass:development"
+        "composer:install"
       ]
       development: [
         "compass:development"
+        "composer:install"
       ]
 
 
