@@ -1,9 +1,6 @@
 {
 	"name": "lift-search",
 	"description": "Lift Search for WordPress",
-	"version": "1.9.4",
-	"wpVersion": "3.5.1.1",
-	"projectTypes": ["plugin"],
 	"repository": "git@github.com:voceconnect/lift-search.git",
 	"devDependencies": {
 		"grunt-voce-plugins": "latest"

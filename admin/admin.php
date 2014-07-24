@@ -88,7 +88,6 @@ class Lift_Admin {
 			'templateDir' => plugins_url( '/templates/', __FILE__ ),
 			'errorLoggingEnabled' => Lift_Search::error_logging_enabled()
 		) );
-		wp_enqueue_script( 'modernizr', plugins_url( 'js/modernizr.min.js', __DIR__ ), array( ), '2.6.2', true );
 		$this->__admin_enqueue_style();
 	}
 

@@ -1,9 +1,9 @@
 .grid {
 	@include box-sizing(border-box);
-	&:after { 
+	&:after {
 		content: "";
 		display: table;
-		clear: both;		
+		clear: both;
 	}
 	& > div:last-of-type {
 		padding-right: 0;
@@ -17,7 +17,7 @@
 %col-base {
 	@include box-sizing(border-box);
 	float: left;
-	padding-right: $pad*2;	
+	padding-right: $pad*2;
 }
 
 .col-1-8 { @extend %col-base; width: 12.5%; }

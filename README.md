@@ -1,12 +1,12 @@
 Lift: Search for WordPress
 =================
-Contributors: voceplatforms  
-Tags: search, cloudsearch, amazon, aws  
-Requires at least: 3.4.2  
-Tested up to: 3.6.1  
-Stable tag: 1.9.4  
-License: GPLv2 or later  
-License URI: http://www.gnu.org/licenses/gpl-2.0.html  
+Contributors: voceplatforms
+Tags: search, cloudsearch, amazon, aws
+Requires at least: 3.4.2
+Tested up to: 3.6.1
+Stable tag: 1.9.4
+License: GPLv2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 
 ## Description
@@ -14,7 +14,7 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Improves WordPress search using Amazon CloudSearch.
 
 Lift leverages the search index power of Amazon CloudSearch to improve your
- WordPress-powered site’s search experience. Learn more at: 
+ WordPress-powered site’s search experience. Learn more at:
 [getliftsearch.com](http://getliftsearch.com/)
 
 **Minimum requirements:**
@@ -25,7 +25,7 @@ Lift leverages the search index power of Amazon CloudSearch to improve your
 
 ## Installation
 
-For full documentation see 
+For full documentation see
 [getliftsearch.com/documentation/](http://getliftsearch.com/documentation/)
 
 ### As standard plugin:
@@ -43,16 +43,16 @@ For full documentation see
 
 3. Enter your Amazon Access Key ID and Secret Access Key.
 
-4. Click "Save Save Amazon Keys." If the test fails, check that both of 
-your keys are entered correctly and that you are connected to Amazon. 
+4. Click "Save Save Amazon Keys." If the test fails, check that both of
+your keys are entered correctly and that you are connected to Amazon.
 
 5. Enter a Search Domain Name. This must be a unique string to your AWS account.
 The domain name string can only contain the following characters: a-z (lowercase),
-0-9, and - (hyphen). Uppercase letters and underscores are not allowed. 
+0-9, and - (hyphen). Uppercase letters and underscores are not allowed.
 The string has a max length of 28 characters.
 
-6. Click "Save Domain Name". Lift will create the new domain for you.  If the 
-domain already exist, Lift will confirm if you would like to override the existing 
+6. Click "Save Domain Name". Lift will create the new domain for you.  If the
+domain already exist, Lift will confirm if you would like to override the existing
 domain before applying it's schema to the existing domain.
 
 7. Lift will display a progress screen while your new domain is setup.  Once
@@ -120,7 +120,7 @@ complete, you will be taken to the Lift Dashboard.
 **1.9.0**
 * Added 'lift_form_fields_html' filter to allow adding/prefixing form with custom html
 
-**1.8.2** 
+**1.8.2**
 * Bug Fix: Correctly applied the 'lift_search_form' filter.
 
 **1.8.1**
