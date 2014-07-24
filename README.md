@@ -104,6 +104,9 @@ complete, you will be taken to the Lift Dashboard.
 ## Changelog
 **1.9.4**
 * Adding Capistrano deploy support
+* Removing enqueue of modernizr
+* Removing all trailing slashes
+* JS Cleanup
 
 **1.9.3**
 * Bug Fix: Fix type in Lift_Post_Meta_Update_Watcher's `lift_queue_entire_post` hook.

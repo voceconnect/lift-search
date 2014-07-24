@@ -115,6 +115,9 @@ By default, posts and pages are indexed. To modify this, use the `lift_indexed_p
 
 == 1.9.4 ==
 * Adding Capistrano deploy support
+* Removing enqueue of modernizr
+* Removing all trailing slashes
+* JS Cleanup
 
 == 1.9.3 ==
 * Bug Fix: Fix type in Lift_Post_Meta_Update_Watcher's `lift_queue_entire_post` hook.
