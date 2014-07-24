@@ -112,6 +112,9 @@ By default, posts and pages are indexed. To modify this, use the `lift_indexed_p
 4. Lift Search Form
 
 == Changelog ==
+== 1.9.6 ==
+* Fixing packagist.org compatibility
+
 == 1.9.5 ==
 * Fixing class_exists check to be compatible whether the plugin is installed via composer or wp.org
 * Code formatting cleanup
