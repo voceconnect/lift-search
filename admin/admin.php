@@ -360,6 +360,7 @@ class Lift_Admin {
 		if ( Lift_Search::error_logging_enabled() ) {
 			$response->view_all_url = esc_url( admin_url( sprintf( 'edit.php?post_type=%s', Voce_Error_Logging::POST_TYPE ) ) );
 			if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
+				check_ajax_referer( 'lift_error_log', 'nonce' );
 				$response = Voce_Error_Logging::delete_logs( array( 'lift-search' ) );
 			} else {
 				$args = array(
