@@ -65,8 +65,6 @@ class CloudSearch_API {
 	public function sendSearch( $query ) {
 		$response = $this->send( 'GET', $query->get_query_string() );
 
-		do_action( 'lift_send_search', $response, $query, $this );
-
 		if ( $response && property_exists( $response, 'error' ) ) {
 			$this->error_messages = $response->messages;
 			return false;

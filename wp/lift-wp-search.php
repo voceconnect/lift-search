@@ -224,6 +224,8 @@ class Lift_WP_Search {
 
 		$lift_results = $lift_api->sendSearch( $cs_query );
 
+		do_action_ref_array( 'lift_search_results', array( $lift_results, $lift_api, $wp_query ) );
+
 		if ( false !== $lift_results && is_object( $lift_results ) ) {
 			$lift_query->set_results( $lift_results );
 		}
