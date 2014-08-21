@@ -4,7 +4,7 @@ Contributors: voceplatforms
 Tags: search, cloudsearch, amazon, aws  
 Requires at least: 3.4.2  
 Tested up to: 3.6.1  
-Stable tag: 1.9.7  
+Stable tag: 1.9.8  
 License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -102,6 +102,9 @@ complete, you will be taken to the Lift Dashboard.
 	* *By default, posts and pages are indexed. To modify this, use the `lift_indexed_post_types` filter which is an array of post types to index.*
 
 ## Changelog
+**1.9.8**
+* Adding `lift_send_search` action to allow logic based upon the results of search
+
 **1.9.7**
 * Bug Fix: Fixing issue with error logs not handling nonce and clearing.
 
