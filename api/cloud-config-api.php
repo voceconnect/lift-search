@@ -304,7 +304,7 @@ class Cloud_Config_Request {
 	const DATE_FORMAT_SIGV4 = 'Ymd\THis\Z';
 
 	private $endpoint = 'https://cloudsearch.us-east-1.amazonaws.com';
-	private $api_version = '2011-02-01';
+	private $api_version = '2013-01-01';
 	private $key;
 	private $secret_key;
 	private $region = false;
