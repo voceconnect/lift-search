@@ -371,7 +371,7 @@ class Lift_Search {
 	 */
 	public static function get_search_api() {
 		$lift_http = self::get_http_api();
-		return new CloudSearch_API( $lift_http, Lift_Search::get_document_endpoint(), Lift_Search::get_search_endpoint(), '2011-02-01' );
+		return new CloudSearch_API( $lift_http, Lift_Search::get_document_endpoint(), Lift_Search::get_search_endpoint(), '2013-01-01' );
 	}
 
 	public static function get_indexed_post_types() {
