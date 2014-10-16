@@ -25,6 +25,8 @@ class Lift_Admin {
 					add_action( 'admin_enqueue_scripts', array( $this, '__admin_enqueue_style' ) );
 					add_action( 'user_admin_notices', array( $this, '_print_configuration_nag' ) );
 					add_action( 'admin_notices', array( $this, '_print_configuration_nag' ) );
+					add_action( 'user_admin_notices', array( $this, '_print_api_nag' ) );
+					add_action( 'admin_notices', array( $this, '_print_api_nag' ) );
 				}
 			}
 		}
@@ -452,7 +454,18 @@ class Lift_Admin {
 				}
 			});
 		</script>
+	<?php
+	}
+
+	public static function _print_api_nag() {
+
+		$api_version = Lift_Search::api_version();
+		if ( ! $api_version || ! strtotime( $api_version ) || date( 'Y', strtotime( $api_version ) ) <= 2011 ) {
+			?>
+			<div class="error"><p>Your search domain is using a deprecated version of the API. Please consider updating to the new version by following these <a target="_BLANK" href="http://docs.aws.amazon.com/cloudsearch/latest/developerguide/migrating.html"><strong>instructions</strong></strong></a>.</p></div>
 		<?php
+		}
+
 	}
 
 }
