@@ -229,6 +229,7 @@ class Lift_Search {
 			TAE_Async_Event::Unwatch( 'lift_needs_indexing_' . $old_domain_name );
 		}
 		self::__set_setting( 'search-domain', $domain_name );
+		self::__set_setting( 'api-version', '2013-01-01' );
 	}
 
 	/**
@@ -371,7 +372,7 @@ class Lift_Search {
 	 */
 	public static function get_search_api() {
 		$lift_http = self::get_http_api();
-		return new CloudSearch_API( $lift_http, Lift_Search::get_document_endpoint(), Lift_Search::get_search_endpoint(), '2011-02-01' );
+		return new CloudSearch_API( $lift_http, Lift_Search::get_document_endpoint(), Lift_Search::get_search_endpoint(), self::api_version() );
 	}
 
 	public static function get_indexed_post_types() {
@@ -536,6 +537,20 @@ class Lift_Search {
 			wp_clear_scheduled_hook( 'lift_set_endpoints' );
 			update_option( 'lift_db_version', 5 );
 		}
+	}
+
+	/**
+	 * If the current option has a value for api-version use that, fallback to original api-version (2011-02-01)
+	 * @return string
+	 */
+	public static function api_version(){
+
+		$api_version = self::__get_setting( 'api-version' );
+		if ( $api_version ) {
+			return $api_version;
+		}
+		return '2011-02-01';
+
 	}
 
 }
