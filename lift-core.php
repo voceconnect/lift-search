@@ -26,6 +26,7 @@ class Lift_Search {
 
 	const INITIAL_SETUP_COMPLETE_OPTION = 'lift-initial-setup-complete';
 	const DB_VERSION = 5;
+	const LATEST_API_VERSION = '2013-01-01';
 
 	/**
 	 * Option name for storing all user based options
@@ -229,7 +230,7 @@ class Lift_Search {
 			TAE_Async_Event::Unwatch( 'lift_needs_indexing_' . $old_domain_name );
 		}
 		self::__set_setting( 'search-domain', $domain_name );
-		self::__set_setting( 'api-version', '2013-01-01' );
+		self::__set_setting( 'api-version', self::LATEST_API_VERSION );
 	}
 
 	/**
@@ -544,6 +545,14 @@ class Lift_Search {
 	 * @return string
 	 */
 	public static function api_version(){
+
+		$search_domain = self::get_search_domain_name();
+		$secret_access_key = self::get_secret_access_key();
+
+		if ( $secret_access_key && ! $search_domain ) {
+			self::__set_setting( 'api-version', self::LATEST_API_VERSION );
+		}
+
 
 		$api_version = self::__get_setting( 'api-version' );
 		if ( $api_version ) {
