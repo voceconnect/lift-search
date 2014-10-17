@@ -8,7 +8,8 @@ class Lift_Admin {
 
 		add_action( 'admin_menu', array( $this, 'action__admin_menu' ) );
 		add_action( 'admin_init', array( $this, 'action__admin_init' ) );
-
+		add_action( 'user_admin_notices', array( $this, '_print_api_nag' ) );
+		add_action( 'admin_notices', array( $this, '_print_api_nag' ) );
 		//setup AJAX handlers
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX && current_user_can( $this->get_manage_capability() ) ) {
 			add_action( 'wp_ajax_lift_domains', array( $this, 'action__wp_ajax_lift_domains' ) );
@@ -25,6 +26,7 @@ class Lift_Admin {
 					add_action( 'admin_enqueue_scripts', array( $this, '__admin_enqueue_style' ) );
 					add_action( 'user_admin_notices', array( $this, '_print_configuration_nag' ) );
 					add_action( 'admin_notices', array( $this, '_print_configuration_nag' ) );
+
 				}
 			}
 		}
@@ -452,7 +454,21 @@ class Lift_Admin {
 				}
 			});
 		</script>
+	<?php
+	}
+
+	public static function _print_api_nag() {
+
+		$api_version = Lift_Search::api_version();
+		$search_domain = Lift_Search::get_search_domain_name();
+		if ( ! $search_domain ) {
+			return false;
+		} elseif ( ! strtotime( $api_version ) || date( 'Y', strtotime( $api_version ) ) <= 2011 ) {
+			?>
+			<div class="error"><p>Your search domain is using a deprecated version of the API. Please consider updating to the new version by following these <a target="_BLANK" href="http://docs.aws.amazon.com/cloudsearch/latest/developerguide/migrating.html"><strong>instructions</strong></strong></a>.</p></div>
 		<?php
+		}
+
 	}
 
 }
