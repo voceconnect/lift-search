@@ -546,10 +546,6 @@ class Lift_Search {
 	public static function api_version(){
 
 		$api_version = self::__get_setting( 'api-version' );
-		$search_domain = self::__get_setting( 'search-domain' );
-		if ( ! $search_domain ) {
-			return false;
-		}
 		if ( $api_version ) {
 			return $api_version;
 		}
