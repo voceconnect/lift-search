@@ -1,5 +1,6 @@
 <?php
 
+
 require_once('lib/functions.php');
 require_once('api/lift-batch.php');
 require_once('api/lift-http.php');
@@ -567,7 +568,7 @@ class Lift_Search {
 add_action( 'after_setup_theme', array( 'Lift_Search', 'init' ) );
 
 
-register_deactivation_hook( __FILE__, '_lift_deactivate' );
+register_deactivation_hook( dirname(__FILE__) . '/lift-search.php', '_lift_deactivate' );
 
 function _lift_deactivate() {
 	$domain_manager = Lift_Search::get_domain_manager();
