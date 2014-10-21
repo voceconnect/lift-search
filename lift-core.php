@@ -1,6 +1,5 @@
 <?php
 
-
 require_once('lib/functions.php');
 require_once('api/lift-batch.php');
 require_once('api/lift-http.php');
@@ -231,7 +230,6 @@ class Lift_Search {
 			TAE_Async_Event::Unwatch( 'lift_needs_indexing_' . $old_domain_name );
 		}
 		self::__set_setting( 'search-domain', $domain_name );
-
 	}
 
 	/**
@@ -561,7 +559,6 @@ class Lift_Search {
 		return '2011-02-01';
 
 	}
-
 }
 
 add_action( 'after_setup_theme', array( 'Lift_Search', 'init' ) );

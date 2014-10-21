@@ -321,7 +321,6 @@ class Cloud_Config_Request {
 		$this->key = $credentials['access-key-id'];
 		$this->secret_key = $credentials['secret-access-key'];
 		$this->http_interface = $http_interface;
-
 		$this->api_version = Lift_Search::api_version();
 		if ( $region ) {
 			$this->endpoint = str_replace('us-east-1', $region, $this->endpoint);
