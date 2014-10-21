@@ -548,9 +548,8 @@ class Lift_Search {
 	public static function api_version(){
 
 		$search_domain = self::get_search_domain_name();
-		$secret_access_key = self::get_secret_access_key();
 
-		if ( $secret_access_key && ! $search_domain ) {
+		if ( ! $search_domain ) {
 			self::__set_setting( 'api-version', self::LATEST_API_VERSION );
 		}
 
