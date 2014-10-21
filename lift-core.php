@@ -231,7 +231,7 @@ class Lift_Search {
 			TAE_Async_Event::Unwatch( 'lift_needs_indexing_' . $old_domain_name );
 		}
 		self::__set_setting( 'search-domain', $domain_name );
-		self::__set_setting( 'api-version', self::api_version() );
+
 	}
 
 	/**
