@@ -1,6 +1,11 @@
+
+
 (function($) {
   "use strict";
-  var liftAdmin = liftAdmin || {};
+  var liftAdmin = liftAdmin || {},
+  	confirmDialog = function(text){
+		return confirm(text );
+	};
 
   liftAdmin.App = Backbone.Router.extend({
     el: '#lift-status-page',
@@ -463,7 +468,9 @@
       return this;
     },
     resetLift: function() {
-      adminApp.resetLift();
+	  if ( confirmDialog( 'Are you sure you want to reset Lift?' ) ) {
+	      adminApp.resetLift();
+	  }
       return this;
     }
   });
