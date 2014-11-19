@@ -236,6 +236,27 @@ class Cloud_Config_API {
 						'default' => 'false'
 					)
 				)
+			),
+			'literal-array' => array(
+				'option_name' => 'LiteralOptions',
+				'options' => array(
+					'default' => array(
+						'name' => 'DefaultValue',
+						'default' => null
+					),
+					'facet' => array(
+						'name' => 'FacetEnabled',
+						'default' => 'false'
+					),
+					'result' => array(
+						'name' => 'ResultEnabled',
+						'default' => 'false'
+					),
+					'search' => array(
+						'name' => 'SearchEnabled',
+						'default' => 'false'
+					)
+				)
 			)
 		);
 
@@ -271,7 +292,7 @@ class Cloud_Config_API {
 	 * @return bool
 	 */
 	public function DefineIndexField( $domain_name, $field_name, $field_type, $options = array( ) ) {
-		if ( !in_array( $field_type, array( 'int', 'text', 'literal' ) ) ) {
+		if ( !in_array( $field_type, array( 'int', 'text', 'literal', 'literal-array' ) ) ) {
 
 			return false;
 		}
