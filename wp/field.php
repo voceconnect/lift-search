@@ -205,7 +205,7 @@ abstract class aLiftField implements iLiftField {
 		);
 
 		if ( count( $this->type_options ) ) {
-			$map = array( 'int' => 'IntOptions', 'literal' => 'LiteralOptions', 'literal-array' => 'LiteralOptions', 'text' => 'TextOptions' );
+			$map = array( 'int' => 'IntOptions', 'literal' => 'LiteralOptions', 'literal-array' => 'LiteralArrayOptions', 'text' => 'TextOptions' );
 			$field[$map[$this->type]] = $this->type_options;
 		}
 

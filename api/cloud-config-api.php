@@ -238,7 +238,7 @@ class Cloud_Config_API {
 				)
 			),
 			'literal-array' => array(
-				'option_name' => 'LiteralOptions',
+				'option_name' => 'LiteralArrayOptions',
 				'options' => array(
 					'default' => array(
 						'name' => 'DefaultValue',
