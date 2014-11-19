@@ -190,8 +190,8 @@ class Cloud_Config_API {
 
 	public function __parse_index_options( $field_type, $passed_options = array( ) ) {
 		$field_types = array(
-			'uint' => array(
-				'option_name' => 'UIntOptions',
+			'int' => array(
+				'option_name' => 'IntOptions',
 				'options' => array(
 					'default' => array(
 						'name' => 'DefaultValue',
@@ -271,7 +271,7 @@ class Cloud_Config_API {
 	 * @return bool
 	 */
 	public function DefineIndexField( $domain_name, $field_name, $field_type, $options = array( ) ) {
-		if ( !in_array( $field_type, array( 'uint', 'text', 'literal' ) ) ) {
+		if ( !in_array( $field_type, array( 'int', 'text', 'literal' ) ) ) {
 
 			return false;
 		}
@@ -321,7 +321,6 @@ class Cloud_Config_Request {
 		$this->key = $credentials['access-key-id'];
 		$this->secret_key = $credentials['secret-access-key'];
 		$this->http_interface = $http_interface;
-
 		$this->api_version = Lift_Search::api_version();
 		if ( $region ) {
 			$this->endpoint = str_replace('us-east-1', $region, $this->endpoint);

@@ -1,6 +1,5 @@
 <?php
 
-
 require_once('lib/functions.php');
 require_once('api/lift-batch.php');
 require_once('api/lift-http.php');
@@ -231,7 +230,6 @@ class Lift_Search {
 			TAE_Async_Event::Unwatch( 'lift_needs_indexing_' . $old_domain_name );
 		}
 		self::__set_setting( 'search-domain', $domain_name );
-		self::__set_setting( 'api-version', self::LATEST_API_VERSION );
 	}
 
 	/**
@@ -548,9 +546,8 @@ class Lift_Search {
 	public static function api_version(){
 
 		$search_domain = self::get_search_domain_name();
-		$secret_access_key = self::get_secret_access_key();
 
-		if ( $secret_access_key && ! $search_domain ) {
+		if ( ! $search_domain ) {
 			self::__set_setting( 'api-version', self::LATEST_API_VERSION );
 		}
 
@@ -562,7 +559,6 @@ class Lift_Search {
 		return '2011-02-01';
 
 	}
-
 }
 
 add_action( 'after_setup_theme', array( 'Lift_Search', 'init' ) );
