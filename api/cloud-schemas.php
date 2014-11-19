@@ -29,7 +29,7 @@ class Cloud_Schemas {
 			),
 			array(
 				'field_name' => 'taxonomy_category_id',
-				'field_type' => 'literal',
+				'field_type' => 'literal-array',
 				'options' => array(
 					'facet' => 'true'
 				),
