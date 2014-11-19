@@ -169,7 +169,9 @@ class Lift_Domain_Manager {
 				$statement[] = array(
 					'Effect' => 'Allow',
 					'Action' => '*',
-					'Resource' => $service->Arn,
+					"Principal" => array(
+						"AWS" => '*'
+					),
 					'Condition' => array(
 						'IpAddress' => array(
 							'aws:SourceIp' => array( $net ),
@@ -183,7 +185,7 @@ class Lift_Domain_Manager {
 			return false;
 		}
 
-		$policies = array( 'Statement' => $statement );
+		$policies = array( 'Version' => '2012-10-17', 'Statement' => $statement );
 
 		return $policies;
 	}
