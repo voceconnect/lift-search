@@ -74,7 +74,7 @@ class Cloud_Schemas {
 			),
 			array(
 				'field_name' => 'taxonomy_post_tag_id',
-				'field_type' => 'literal',
+				'field_type' => 'literal-array',
 				'options' => array(
 					'facet' => 'true',
 				),
