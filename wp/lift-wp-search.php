@@ -82,7 +82,9 @@ class Lift_WP_Query {
 
 		$cs_query->add_facet( apply_filters( 'lift_search_facets', array( ) ) );
 
-		$parameters = apply_filters( 'list_search_bq_parameters', array( sprintf( "(label '%s')", $this->wp_query->get( 's' ) ) ), $this );
+		//$parameters = apply_filters( 'list_search_bq_parameters', array( sprintf( "(label '%s')", $this->wp_query->get( 's' ) ) ), $this );
+		//@todo fix -- removed "(label '%s')"
+		$parameters = apply_filters( 'list_search_bq_parameters', array( sprintf( "", $this->wp_query->get( 's' ) ) ), $this );
 
 		//filter to the current blog/site
 		$parameters[] = new Lift_Expression_Set( 'and', array(
@@ -112,7 +114,7 @@ class Lift_WP_Query {
 
 		$orderby_values = array(
 			'date' => 'post_date_gmt',
-			'relevancy' => 'text_relevance',
+			'relevancy' => '',  //Removed text_relevance "If no fields are specified in a search and this option is not specified, all text and text-array fields are searched." < from amazon's docs
 		);
 
 		$orderby_values = apply_filters( 'lift_cs_query_orderby_values', $orderby_values, $this );
@@ -128,7 +130,6 @@ class Lift_WP_Query {
 		$cs_query->add_return_field( 'id' );
 
 		do_action_ref_array( 'get_cs_query', array( $cs_query, $this ) );
-
 		return $cs_query;
 	}
 

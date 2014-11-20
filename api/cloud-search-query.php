@@ -34,7 +34,9 @@ class Cloud_Search_Query {
 	}
 
 	public function add_facet( $field ) {
-		$this->facets = array_merge( $this->facets, ( array ) $field );
+		if ( $field ) {
+			$this->facets[] = $field;
+		}
 	}
 
 	public function add_facet_contraint( $field, $constraints ) {
@@ -72,7 +74,8 @@ class Cloud_Search_Query {
 	}
 
 	public function add_rank( $field, $order ) {
-		$order = ('DESC' === strtoupper( $order )) ? 'DESC' : 'ASC';
+		//http://docs.aws.amazon.com/cloudsearch/latest/developerguide/migrating.html shows asc/desc as lowercase
+		$order = ('DESC' === strtoupper( $order )) ? 'desc' : 'asc';
 		$this->ranks[$field] = $order;
 	}
 
@@ -80,18 +83,33 @@ class Cloud_Search_Query {
 		$ranks = array( );
 
 		foreach ( $this->ranks as $field => $order ) {
-			$ranks[] = ('DESC' === $order) ? "-{$field}" : $field;
+			//Use the sort parameter to specify the fields or expressions you want to use for sorting. You must explicitly specify the sort direction in the sort parameter. For example, sort=rank asc, date desc. The rank parameter is no longer supported.
+			$ranks[] = sprintf('%s %s', $field, $order);
 		}
 
 		$params = array_filter( array(
-			'bq' => $this->boolean_query,
-			'facet' => implode( ',', $this->facets ),
-			'return-fields' => implode( ',', $this->return_fields ),
+			'q' => $this->boolean_query,
+			'return' => implode( ',', $this->return_fields ), //Parameter 'return-fields' is no longer valid. Use 'return' instead.
 			'size' => $this->size,
 			'start' => $this->start,
-			'rank' => implode( ',', $ranks )
+			'sort' => implode( ',', $ranks )  //Use the sort parameter to specify the fields or expressions you want to use for sorting. You must explicitly specify the sort direction in the sort parameter. For example, sort=rank asc, date desc. The rank parameter is no longer supported.
 			) );
 
+
+		// build the facet fields ( see http://docs.aws.amazon.com/cloudsearch/latest/developerguide/faceting.html)
+		foreach ( $this->facets as $field ) {
+			$params[ 'facet.' . $field ] = '{}';
+		}
+
+
+		// from amazon docs (migration guide) "Use the q parameter to specify search criteria for all requests. The bq parameter is no longer supported. To use the structured (Boolean) search syntax, specify q.parser=structured in the request."
+		// from error received from cloudsearch "[*Deprecated*: Use the outer message field] Parameter 'bq' is no longer valid. Replace 'bq=query' with 'q.parser=structured&q=query'."
+		if ( $this->boolean_query ) {
+			$params = array_merge( $params, array( 'q.parser' => 'structured' ) );
+		}
+
+
+		//@todo this doesn't conform to the new API see: Use the facet.FIELD parameter to specify all facet options. The facet-FIELD-top-N, facet-FIELD-sort, and facet-FIELD-constraints parameters are no longer supported.
 		if ( count( $this->facet_constraints ) ) {
 			foreach ( $this->facet_constraints as $field => $constraints ) {
 				$params['facet-' . $field . '-constraints'] = implode( ',', $constraints );
@@ -103,6 +121,7 @@ class Cloud_Search_Query {
 				$params['facet-' . $field . '-top-n'] = $limit;
 			}
 		}
+
 		return http_build_query( $params );
 	}
 
