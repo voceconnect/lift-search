@@ -129,7 +129,6 @@ class Lift_Domain_Manager {
 			$index = array_merge( array( 'options' => array( ) ), $index );
 			if ( !isset( $current_schema[$index['field_name']] ) || $current_schema[$index['field_name']]->Options->IndexFieldType != $index['field_type'] ) {
 				$response = $this->config_api->DefineIndexField( $domain_name, $index['field_name'], $index['field_type'], $index['options'] );
-$x=1;
 				if ( false === $response ) {
 					Lift_Search::event_log( 'There was an error while applying the schema to the domain.', $this->config_api->get_last_error(), array( 'schema', 'error' ) );
 					continue;
