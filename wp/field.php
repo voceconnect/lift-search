@@ -752,8 +752,11 @@ add_action( 'init', function() {
 						$date_end = get_gmt_from_date( $str_date_end );
 					}
 
-					if ( $date_start || $date_end )
-						$value = "post_date_gmt:{$date_start}..{$date_end}";
+					if ( $date_start || $date_end ) {
+						$date_start = ( $date_start == 0 ) ? '' : $date_start;
+						$date_end = ( $date_end == 0 ) ? '' : $date_end;
+						$value = "post_date_gmt:{{$date_start},{$date_end}}";
+					}
 
 					return $value;
 				} )
@@ -774,8 +777,8 @@ add_action( 'init', function() {
 				$query_vars = array( 'date_start' => false, 'date_end' => false );
 				$bq_parts = explode( ':', $bq );
 				if ( count( $bq_parts ) > 1 ) {
-					if ( strpos( $bq_parts[1], '..' ) !== false ) {
-						list($query_vars['date_start'], $query_vars['date_end']) = explode( '..', $bq_parts[1] );
+					if ( strpos( $bq_parts[1], ',' ) !== false ) {
+						list($query_vars['date_start'], $query_vars['date_end']) = explode( ',', $bq_parts[1] );
 					} else {
 						$query_vars['date_start'] = $bq_parts[1];
 					}
