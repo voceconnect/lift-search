@@ -57,8 +57,8 @@ class Lift_WP_Query {
 			// include response post ids in query
 			$hits = array( );
 			array_map( function($hit) use (&$hits) {
-					if ( property_exists( $hit, 'data' ) && property_exists( $hit->data, 'id' ) ) {
-						$hits[] = (is_array( $hit->data->id )) ? array_shift( $hit->data->id ) : $hit->data->id;
+					if ( property_exists( $hit, 'fields' ) && property_exists( $hit->fields, 'id' ) ) {
+						$hits[] = (is_array( $hit->fields->id )) ? array_shift( $hit->fields->id ) : $hit->fields->id;
 					}
 				}, $this->results->hits->hit
 			);
