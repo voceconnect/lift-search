@@ -67,6 +67,7 @@ class Lift_Domain_Manager {
 	 * @var Lift_Cloud_Config_API
 	 */
 	private $config_api;
+	private $net;
 
 	public function __construct( $access_key, $secret_key, $http_api ) {
 		$this->config_api = new Lift_Cloud_Config_API( $access_key, $secret_key, $http_api );
@@ -155,13 +156,8 @@ class Lift_Domain_Manager {
 
 		$services = array( $search_service, $doc_service );
 		$statement = array( );
-		$net = '0.0.0.0/0';
-		$warn = true; // for future error handling to warn of wide open access
-		// try to get the IP address external services see to be more restrictive
-		if ( $ip = $this->config_api->http_api->get( 'http://ifconfig.me/ip' ) ) {
-			$net = sprintf( '%s/32', str_replace( "\n", '', $ip ) );
-			$warn = false;
-		}
+		// $warn for future error handling to warn of wide open access
+		$warn = $this->set_external_ip();
 
 		foreach ( $services as $service ) {
 			if ( $service ) {
@@ -173,7 +169,7 @@ class Lift_Domain_Manager {
 					),
 					'Condition' => array(
 						'IpAddress' => array(
-							'aws:SourceIp' => array( $net ),
+							'aws:SourceIp' => array( $this->net ),
 						)
 					)
 				);
@@ -289,6 +285,18 @@ class Lift_Domain_Manager {
 			return ( bool ) (!$domain->Deleted && !$domain->Processing && !$domain->RequiresIndexDocuments && $domain->SearchInstanceCount > 0 );
 		}
 		return false;
+	}
+
+	private function set_external_ip(){
+		$this->net = '0.0.0.0/0';
+		// try to get the IP address external services see to be more restrictive
+		if ( $ip = $this->config_api->http_api->get( 'http://ifconfig.me/ip' ) ) {
+			$this->net = sprintf( '%s/32', str_replace( "\n", '', $ip ) );
+			return true;
+		}
+
+		return false;
+
 	}
 
 }
