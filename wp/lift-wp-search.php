@@ -81,10 +81,8 @@ class Lift_WP_Query {
 		$cs_query = new Cloud_Search_Query();
 
 		$cs_query->add_facet( apply_filters( 'lift_search_facets', array( ) ) );
-
-		//$parameters = apply_filters( 'list_search_bq_parameters', array( sprintf( "(label '%s')", $this->wp_query->get( 's' ) ) ), $this );
-		//@todo fix -- removed "(label '%s')"
-		$parameters = apply_filters( 'list_search_bq_parameters', array( sprintf( "", $this->wp_query->get( 's' ) ) ), $this );
+		//removed label from first argument of sprintf on next line, the documentation did not reference this anywhere and i was getting syntax errors from AWS with it in there
+		$parameters = apply_filters( 'list_search_bq_parameters', array( sprintf( "'%s'", $this->wp_query->get( 's' ) ) ), $this );
 
 		//filter to the current blog/site
 		$parameters[] = new Lift_Expression_Set( 'and', array(

@@ -65,7 +65,7 @@ class CloudSearch_API {
 	 * @param Cloud_Search_Query $query
 	 */
 	public function sendSearch( $query ) {
-		$q = $query->get_query_string();
+
 		$response = $this->send( 'GET', $query->get_query_string() );
 
 
