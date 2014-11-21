@@ -119,15 +119,13 @@ class Cloud_Search_Query {
 
 		//@todo this doesn't conform to the new API see: Use the facet.FIELD parameter to specify all facet options. The facet-FIELD-top-N, facet-FIELD-sort, and facet-FIELD-constraints parameters are no longer supported.
 		if ( count( $this->facet_constraints ) ) {
-			$constraint_field = array();
-			foreach ( $this->facet_constraints as $field => $constraints ) {
 
-				$constraint_field[] = json_encode( (array) $constraints );
-			}
+			$field             = array_shift( array_keys( $this->facet_constraints ) );
+			$constraint_fields = array_map( function ( $val ) {
+				return array($val);
+			}, $this->facet_constraints[ $field ] );
+			$params[ 'facet.' . $field ] = json_encode( (object)array('buckets'=> $constraint_fields ) );
 
-			if ( count( $constraint_field ) ) {
-				$params[ 'facet.' . $field ] = $constraint_field;
-			}
 		}
 
 		if ( count( $this->facet_top_n ) ) {
