@@ -128,9 +128,12 @@ class Cloud_Search_Query {
 
 		}
 
+		//The sort and size options are not valid if you specify buckets. from http://docs.aws.amazon.com/cloudsearch/latest/developerguide/search-api.html#search-request-parameters
+		//To this if there's a count on $this->facet_top_n it will overwrite the $params['facet.'.$field] value
 		if ( count( $this->facet_top_n ) ) {
 			foreach ( $this->facet_top_n as $field => $limit ) {
-				$params[ 'facet-' . $field . '-top-n' ] = $limit;
+				// @todo is count the right sort value?
+				$params[ 'facet' . $field ] = json_encode( (object) array( 'size' => $limit, 'sort' => 'count' ) );
 			}
 		}
 
