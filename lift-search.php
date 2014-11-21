@@ -22,5 +22,8 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			}
 	}
 
-	register_activation_hook( __FILE__, '_lift_php_version_check' );
+	// check to see if .com functions exist, if not, run php version check on activation - with .com environments we can assume PHP 5.3 or higher
+	if ( !function_exists( 'wpcom_is_vip' ) ) {
+		register_activation_hook( __FILE__, '_lift_php_version_check' );
+	}
 }
