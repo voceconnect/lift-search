@@ -16,14 +16,14 @@
 
 class Cloud_Search_Query {
 
-	protected $facets = array( );
-	protected $facet_constraints = array( );
-	protected $facet_top_n = array( );
-	protected $return_fields = array( );
+	protected $facets = array();
+	protected $facet_constraints = array();
+	protected $facet_top_n = array();
+	protected $return_fields = array();
 	protected $size = 10;
 	protected $start = 0;
 	protected $boolean_query = '';
-	protected $ranks = array( );
+	protected $ranks = array();
 
 	public function __construct( $boolean_query = '' ) {
 		$this->boolean_query = $boolean_query;
@@ -40,11 +40,17 @@ class Cloud_Search_Query {
 	}
 
 	public function add_facet_contraint( $field, $constraints ) {
-		$this->facet_constraints[$field] = ( array ) $constraints;
+		// fix for old style facet constraints (i.e. 1..2 => 1,2)
+		if ( is_array( $constraints ) ) {
+			$constraints = array_map( function ( $n ) {
+				return str_replace( '..', ',', $n );
+			}, $constraints );
+		}
+		$this->facet_constraints[ $field ] = ( array ) $constraints;
 	}
 
 	public function add_facet_top_n( $field, $limit ) {
-		$this->facet_top_n[$field] = $limit;
+		$this->facet_top_n[ $field ] = $limit;
 	}
 
 	public function add_return_field( $field ) { // string or array
@@ -75,30 +81,32 @@ class Cloud_Search_Query {
 
 	public function add_rank( $field, $order ) {
 		//http://docs.aws.amazon.com/cloudsearch/latest/developerguide/migrating.html shows asc/desc as lowercase
-		$order = ('DESC' === strtoupper( $order )) ? 'desc' : 'asc';
-		$this->ranks[$field] = $order;
+		$order                 = ( 'DESC' === strtoupper( $order ) ) ? 'desc' : 'asc';
+		$this->ranks[ $field ] = $order;
 	}
 
 	public function get_query_string() {
-		$ranks = array( );
+		$ranks = array();
 
 		foreach ( $this->ranks as $field => $order ) {
 			//Use the sort parameter to specify the fields or expressions you want to use for sorting. You must explicitly specify the sort direction in the sort parameter. For example, sort=rank asc, date desc. The rank parameter is no longer supported.
-			$ranks[] = sprintf('%s %s', $field, $order);
+			$ranks[] = sprintf( '%s %s', $field, $order );
 		}
 
 		$params = array_filter( array(
-			'q' => $this->boolean_query,
-			'return' => implode( ',', $this->return_fields ), //Parameter 'return-fields' is no longer valid. Use 'return' instead.
-			'size' => $this->size,
-			'start' => $this->start,
-			'sort' => implode( ',', $ranks )  //Use the sort parameter to specify the fields or expressions you want to use for sorting. You must explicitly specify the sort direction in the sort parameter. For example, sort=rank asc, date desc. The rank parameter is no longer supported.
-			) );
+			'q'      => $this->boolean_query,
+			'return' => implode( ',', $this->return_fields ),
+			//Parameter 'return-fields' is no longer valid. Use 'return' instead.
+			'size'   => $this->size,
+			'start'  => $this->start,
+			'sort'   => implode( ',', $ranks )
+			//Use the sort parameter to specify the fields or expressions you want to use for sorting. You must explicitly specify the sort direction in the sort parameter. For example, sort=rank asc, date desc. The rank parameter is no longer supported.
+		) );
 
 
 		// build the facet fields ( see http://docs.aws.amazon.com/cloudsearch/latest/developerguide/faceting.html)
 		foreach ( $this->facets as $field ) {
-			$params[ 'facet.' . $field ] = '{}';
+			$params[ 'facet.' . $field ] = json_encode( (object) array() );
 		}
 
 
@@ -111,14 +119,20 @@ class Cloud_Search_Query {
 
 		//@todo this doesn't conform to the new API see: Use the facet.FIELD parameter to specify all facet options. The facet-FIELD-top-N, facet-FIELD-sort, and facet-FIELD-constraints parameters are no longer supported.
 		if ( count( $this->facet_constraints ) ) {
+			$constraint_field = array();
 			foreach ( $this->facet_constraints as $field => $constraints ) {
-				$params['facet-' . $field . '-constraints'] = implode( ',', $constraints );
+
+				$constraint_field[] = json_encode( (array) $constraints );
+			}
+
+			if ( count( $constraint_field ) ) {
+				$params[ 'facet.' . $field ] = $constraint_field;
 			}
 		}
 
 		if ( count( $this->facet_top_n ) ) {
 			foreach ( $this->facet_top_n as $field => $limit ) {
-				$params['facet-' . $field . '-top-n'] = $limit;
+				$params[ 'facet-' . $field . '-top-n' ] = $limit;
 			}
 		}
 
