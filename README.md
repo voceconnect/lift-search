@@ -104,6 +104,7 @@ complete, you will be taken to the Lift Dashboard.
 ## Changelog
 ** 1.9.10 **
 * Cancel original WP core search when Lift returns results
+* Fix PHP strict static warnings
 
 **1.9.9**
 * Adding changes per WP VIP

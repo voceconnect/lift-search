@@ -114,6 +114,7 @@ By default, posts and pages are indexed. To modify this, use the `lift_indexed_p
 == Changelog ==
 == 1.9.10 ==
 * Cancel original WP core search when Lift returns results
+* Fix PHP strict static warnings
 
 == 1.9.9 ==
 * Adding changes per WP VIP
