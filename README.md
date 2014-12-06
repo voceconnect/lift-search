@@ -102,6 +102,9 @@ complete, you will be taken to the Lift Dashboard.
 	* *By default, posts and pages are indexed. To modify this, use the `lift_indexed_post_types` filter which is an array of post types to index.*
 
 ## Changelog
+** 1.9.10 **
+* Cancel original WP core search when Lift returns results
+
 **1.9.9**
 * Adding changes per WP VIP
 
