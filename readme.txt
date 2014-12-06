@@ -2,8 +2,8 @@
 Contributors: voceplatforms
 Tags: search, cloudsearch, amazon, aws
 Requires at least: 3.4.2
-Tested up to: 3.6.1
-Stable tag: 1.9.9
+Tested up to: 4.0.1
+Stable tag: 1.9.10
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -112,6 +112,10 @@ By default, posts and pages are indexed. To modify this, use the `lift_indexed_p
 4. Lift Search Form
 
 == Changelog ==
+== 1.9.10 ==
+* Cancel original WP core search when Lift returns results
+* Fix PHP strict static warnings
+
 == 1.9.9 ==
 * Adding changes per WP VIP
 

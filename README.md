@@ -3,8 +3,8 @@ Lift: Search for WordPress
 Contributors: voceplatforms  
 Tags: search, cloudsearch, amazon, aws  
 Requires at least: 3.4.2  
-Tested up to: 3.6.1  
-Stable tag: 1.9.8  
+Tested up to: 4.0.1  
+Stable tag: 1.9.10  
 License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -102,6 +102,10 @@ complete, you will be taken to the Lift Dashboard.
 	* *By default, posts and pages are indexed. To modify this, use the `lift_indexed_post_types` filter which is an array of post types to index.*
 
 ## Changelog
+** 1.9.10 **
+* Cancel original WP core search when Lift returns results
+* Fix PHP strict static warnings
+
 **1.9.9**
 * Adding changes per WP VIP
 

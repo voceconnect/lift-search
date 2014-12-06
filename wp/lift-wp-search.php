@@ -228,6 +228,9 @@ class Lift_WP_Search {
 
 		if ( false !== $lift_results && is_object( $lift_results ) ) {
 			$lift_query->set_results( $lift_results );
+
+			// Since lift results exists, we no longer need to run the wp search
+			return '';
 		}
 		return $request;
 	}
