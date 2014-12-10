@@ -248,9 +248,9 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 				global $wpdb;
 				if($wp_query === $query) { //make sure we're not messing with any other queries
 					//making sure all post_statii are used since wp_query overrides the requested statii
-					$where = $wpdb->prepare(" AND post_type in ('" . implode( "','", $wp_query->get('post_type') ) . "') ".
-						"AND ID > %d ".
-						"AND post_status <> 'auto-draft'", $id_from);
+					$where = $wpdb->prepare(" AND $wpdb->posts.post_type in ('" . implode( "','", $wp_query->get('post_type') ) . "') ".
+						"AND $wpdb->posts.ID > %d ".
+						"AND $wpdb->posts.post_status <> 'auto-draft'", $id_from);
 				}
 				return $where;
 			};

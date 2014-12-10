@@ -4,7 +4,7 @@ Contributors: voceplatforms
 Tags: search, cloudsearch, amazon, aws  
 Requires at least: 3.4.2  
 Tested up to: 4.0.1  
-Stable tag: 1.9.10  
+Stable tag: 1.9.11
 License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -102,6 +102,9 @@ complete, you will be taken to the Lift Dashboard.
 	* *By default, posts and pages are indexed. To modify this, use the `lift_indexed_post_types` filter which is an array of post types to index.*
 
 ## Changelog
+** 1.9.11 **
+* Prefix where replacement query clauses with $wpdb->posts to prevent conflicts with tables using identifical field names
+
 ** 1.9.10 **
 * Cancel original WP core search when Lift returns results
 * Fix PHP strict static warnings
