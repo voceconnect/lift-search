@@ -410,7 +410,7 @@ class Lift_Admin {
 	 * @param string $page
 	 * @return array
 	 */
-	public function filter__plugin_row_meta( $links, $page ) {
+	public static function filter__plugin_row_meta( $links, $page ) {
 		if ( $page == self::OPTIONS_SLUG ) {
 			$links[] = '<a href="' . admin_url( 'options-general.php?page=' . self::OPTIONS_SLUG ) . '">Settings</a>';
 		}

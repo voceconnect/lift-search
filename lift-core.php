@@ -436,9 +436,9 @@ class Lift_Search {
 		if ( $query->have_posts() ) {
 			while ( $query->have_posts() ) : $query->the_post();
 				$html .= '<tr>';
-				$html .= '<td class="column-date">' . get_the_ID() . '</td>';
-				$html .= '<td class="column-title"><a href="' . get_admin_url() . 'post.php?post=' . get_the_ID() . '&action=edit' . '">' . get_the_title() . '</a></td>';
-				$html .= '<td class="column-categories">' . get_the_time( 'D. M d Y g:ia' ) . '</td>';
+				$html .= '<td class="column-date">' . esc_html( get_the_ID() ) . '</td>';
+				$html .= '<td class="column-title"><a href="' . sprintf( '%spost.php?post=%s&action=edit', esc_url( trailingslashit( get_admin_url() ) ), esc_attr( get_the_ID() ) ) . '">' . esc_html( get_the_title() ) . '</a></td>';
+				$html .= '<td class="column-categories">' . esc_html( get_the_time( 'D. M d Y g:ia' ) ) . '</td>';
 				$html .= '</tr>';
 			endwhile;
 		} else {
@@ -489,54 +489,62 @@ class Lift_Search {
 	}
 
 	public static function _upgrade_check() {
-		global $wpdb;
 
-		$current_db_version = get_option( 'lift_db_version', 0 );
-		$queue_all = false;
-		$changed_schema_fields = array( );
+		if ( is_admin() ) {
 
-		if ( $current_db_version < 2 ) {
-			//queue storage changes
-			$post_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM $wpdb->posts " .
-					"WHERE post_type = %s", Lift_Document_Update_Queue::STORAGE_POST_TYPE ) );
+			$current_db_version = get_option( 'lift_db_version', 0 );
+			$queue_all = false;
+			$changed_schema_fields = array( );
 
-			$queue_id = Lift_Document_Update_Queue::get_active_queue_id();
+			if ( $current_db_version < 2 ) {
+				//queue storage changes
+				$lift_storage_posts = new WP_Query( array(
+					'post_type' => Lift_Document_Update_Queue::STORAGE_POST_TYPE,
+					'fields'    => 'ids'
+				) );
 
-			foreach ( $post_ids as $post_id ) {
-				if ( $update_meta = get_post_meta( $post_id, 'lift_content', true ) ) {
-					if ( is_string( $update_meta ) )
-						$update_meta = maybe_unserialize( $update_meta ); //previous versions double serialized meta
+				$queue_id = Lift_Document_Update_Queue::get_active_queue_id();
 
-					$meta_key = 'lift_update_' . $update_meta['document_type'] . '_' . $update_meta['document_id'];
-					$new_meta = array(
-						'document_id' => $update_meta['document_id'],
-						'document_type' => $update_meta['document_type'],
-						'action' => $update_meta['action'],
-						'fields' => $update_meta['fields'],
-						'update_date_gmt' => get_post_time( 'Y-m-d H:i:s', true, $post_id ),
-						'update_date' => get_post_time( 'Y-m-d H:i:s', false, $post_id )
-					);
-					update_post_meta( $queue_id, $meta_key, $new_meta );
+				if ( $lift_storage_posts->have_posts() ) {
+					foreach ( $lift_storage_posts->posts as $post_id ) {
+						if ( $update_meta = get_post_meta( $post_id, 'lift_content', true ) ) {
+							if ( is_string( $update_meta ) )
+								$update_meta = maybe_unserialize( $update_meta ); //previous versions double serialized meta
 
-					wp_delete_post( $post_id );
+							$meta_key = 'lift_update_' . $update_meta['document_type'] . '_' . $update_meta['document_id'];
+							$new_meta = array(
+								'document_id' => $update_meta['document_id'],
+								'document_type' => $update_meta['document_type'],
+								'action' => $update_meta['action'],
+								'fields' => $update_meta['fields'],
+								'update_date_gmt' => get_post_time( 'Y-m-d H:i:s', true, $post_id ),
+								'update_date' => get_post_time( 'Y-m-d H:i:s', false, $post_id )
+							);
+							update_post_meta( $queue_id, $meta_key, $new_meta );
+
+							wp_delete_post( $post_id );
+						}
+					}
 				}
+
+				update_option( 'lift_db_version', 2 );
 			}
 
-			update_option( 'lift_db_version', 2 );
+			if ( $current_db_version < 4 && self::get_search_domain_name() ) {
+				//schema changes
+				self::update_schema();
+
+				update_option( 'lift_db_version', 4 );
+			}
+
+			if ( $current_db_version < 5 ) {
+				wp_clear_scheduled_hook( 'lift_index_documents' );
+				wp_clear_scheduled_hook( 'lift_set_endpoints' );
+				update_option( 'lift_db_version', 5 );
+			}
+
 		}
 
-		if ( $current_db_version < 4 && self::get_search_domain_name() ) {
-			//schema changes
-			self::update_schema();
-
-			update_option( 'lift_db_version', 4 );
-		}
-
-		if ( $current_db_version < 5 ) {
-			wp_clear_scheduled_hook( 'lift_index_documents' );
-			wp_clear_scheduled_hook( 'lift_set_endpoints' );
-			update_option( 'lift_db_version', 5 );
-		}
 	}
 
 	/**

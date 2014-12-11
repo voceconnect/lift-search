@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Lift Search
-Version: 1.9.8
+Version: 1.9.11
 Plugin URI: http://getliftsearch.com/
 Description: Improves WordPress search using Amazon CloudSearch
 Author: Voce Platforms
@@ -22,7 +22,12 @@ if ( !class_exists( 'Lift_Search' ) ) {
 			}
 	}
 
-	register_activation_hook( __FILE__, '_lift_php_version_check' );
+
+	// check to see if .com functions exist, if not, run php version check on activation - with .com environments we can assume PHP 5.3 or higher
+	if ( !function_exists( 'wpcom_is_vip' ) ) {
+		register_activation_hook( __FILE__, '_lift_php_version_check' );
+	}
+
 
 	function _lift_deactivate() {
 		if(class_exists('Left_Search')) {
