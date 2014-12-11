@@ -32,7 +32,7 @@
             ],
             "authors": [
                 {
-                    "name": "Michael Pretty",
+                    "name": "Mike Pretty",
                     "email": "mpretty@voceconnect.com"
                 },
                 {
@@ -54,6 +54,7 @@
     "stability-flags": [
 
     ],
+    "prefer-stable": false,
     "platform": [
 
     ],

@@ -6,7 +6,6 @@ class CloudSearch_API {
 	private $submission_uri;
 	private $search_uri;
 
-	const API_VERSION = '2011-02-01';
 
 	/**
 	 *
@@ -19,8 +18,11 @@ class CloudSearch_API {
 	 * @param string $search_domain_uri
 	 * @param iLift_HTTP $http_interface
 	 */
-	public function __construct( $http_interface, $document_endpoint, $search_endpoint, $version = '2011-02-01' ) {
+	public function __construct( $http_interface, $document_endpoint, $search_endpoint, $version = null ) {
 
+		if ( is_null( $version ) ){
+			$version = Lift_Search::api_version();
+		}
 		$this->http_interface = $http_interface;
 
 		$this->submission_uri = sprintf( 'http://%s/%s/documents/batch', $document_endpoint, $version );
@@ -63,7 +65,9 @@ class CloudSearch_API {
 	 * @param Cloud_Search_Query $query
 	 */
 	public function sendSearch( $query ) {
+
 		$response = $this->send( 'GET', $query->get_query_string() );
+
 
 		if ( $response && property_exists( $response, 'error' ) ) {
 			$this->error_messages = $response->messages;

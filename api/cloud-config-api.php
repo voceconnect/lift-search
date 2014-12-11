@@ -190,8 +190,8 @@ class Cloud_Config_API {
 
 	public function __parse_index_options( $field_type, $passed_options = array( ) ) {
 		$field_types = array(
-			'uint' => array(
-				'option_name' => 'UIntOptions',
+			'int' => array(
+				'option_name' => 'IntOptions',
 				'options' => array(
 					'default' => array(
 						'name' => 'DefaultValue',
@@ -218,6 +218,27 @@ class Cloud_Config_API {
 			),
 			'literal' => array(
 				'option_name' => 'LiteralOptions',
+				'options' => array(
+					'default' => array(
+						'name' => 'DefaultValue',
+						'default' => null
+					),
+					'facet' => array(
+						'name' => 'FacetEnabled',
+						'default' => 'false'
+					),
+					'result' => array(
+						'name' => 'ResultEnabled',
+						'default' => 'false'
+					),
+					'search' => array(
+						'name' => 'SearchEnabled',
+						'default' => 'false'
+					)
+				)
+			),
+			'literal-array' => array(
+				'option_name' => 'LiteralArrayOptions',
 				'options' => array(
 					'default' => array(
 						'name' => 'DefaultValue',
@@ -271,7 +292,7 @@ class Cloud_Config_API {
 	 * @return bool
 	 */
 	public function DefineIndexField( $domain_name, $field_name, $field_type, $options = array( ) ) {
-		if ( !in_array( $field_type, array( 'uint', 'text', 'literal' ) ) ) {
+		if ( !in_array( $field_type, array( 'int', 'text', 'literal', 'literal-array' ) ) ) {
 
 			return false;
 		}
@@ -304,7 +325,7 @@ class Cloud_Config_Request {
 	const DATE_FORMAT_SIGV4 = 'Ymd\THis\Z';
 
 	private $endpoint = 'https://cloudsearch.us-east-1.amazonaws.com';
-	private $api_version = '2011-02-01';
+	private $api_version;
 	private $key;
 	private $secret_key;
 	private $region = false;
@@ -321,6 +342,7 @@ class Cloud_Config_Request {
 		$this->key = $credentials['access-key-id'];
 		$this->secret_key = $credentials['secret-access-key'];
 		$this->http_interface = $http_interface;
+		$this->api_version = Lift_Search::api_version();
 		if ( $region ) {
 			$this->endpoint = str_replace('us-east-1', $region, $this->endpoint);
 			$this->region   = $region;

@@ -16,14 +16,14 @@
 
 class Cloud_Search_Query {
 
-	protected $facets = array( );
-	protected $facet_constraints = array( );
-	protected $facet_top_n = array( );
-	protected $return_fields = array( );
+	protected $facets = array();
+	protected $facet_constraints = array();
+	protected $facet_top_n = array();
+	protected $return_fields = array();
 	protected $size = 10;
 	protected $start = 0;
 	protected $boolean_query = '';
-	protected $ranks = array( );
+	protected $ranks = array();
 
 	public function __construct( $boolean_query = '' ) {
 		$this->boolean_query = $boolean_query;
@@ -34,15 +34,23 @@ class Cloud_Search_Query {
 	}
 
 	public function add_facet( $field ) {
-		$this->facets = array_merge( $this->facets, ( array ) $field );
+		if ( $field ) {
+			$this->facets[] = $field;
+		}
 	}
 
 	public function add_facet_contraint( $field, $constraints ) {
-		$this->facet_constraints[$field] = ( array ) $constraints;
+		// fix for old style facet constraints (i.e. 1..2 => 1,2)
+		if ( is_array( $constraints ) ) {
+			$constraints = array_map( function ( $n ) {
+				return str_replace( '..', ',', $n );
+			}, $constraints );
+		}
+		$this->facet_constraints[ $field ] = ( array ) $constraints;
 	}
 
 	public function add_facet_top_n( $field, $limit ) {
-		$this->facet_top_n[$field] = $limit;
+		$this->facet_top_n[ $field ] = $limit;
 	}
 
 	public function add_return_field( $field ) { // string or array
@@ -72,37 +80,63 @@ class Cloud_Search_Query {
 	}
 
 	public function add_rank( $field, $order ) {
-		$order = ('DESC' === strtoupper( $order )) ? 'DESC' : 'ASC';
-		$this->ranks[$field] = $order;
+		//http://docs.aws.amazon.com/cloudsearch/latest/developerguide/migrating.html shows asc/desc as lowercase
+		$order                 = ( 'DESC' === strtoupper( $order ) ) ? 'desc' : 'asc';
+		$this->ranks[ $field ] = $order;
 	}
 
 	public function get_query_string() {
-		$ranks = array( );
+		$ranks = array();
 
 		foreach ( $this->ranks as $field => $order ) {
-			$ranks[] = ('DESC' === $order) ? "-{$field}" : $field;
+			//Use the sort parameter to specify the fields or expressions you want to use for sorting. You must explicitly specify the sort direction in the sort parameter. For example, sort=rank asc, date desc. The rank parameter is no longer supported.
+			$ranks[] = sprintf( '%s %s', $field, $order );
 		}
 
 		$params = array_filter( array(
-			'bq' => $this->boolean_query,
-			'facet' => implode( ',', $this->facets ),
-			'return-fields' => implode( ',', $this->return_fields ),
-			'size' => $this->size,
-			'start' => $this->start,
-			'rank' => implode( ',', $ranks )
-			) );
+			'q'      => $this->boolean_query,
+			'return' => implode( ',', $this->return_fields ),
+			//Parameter 'return-fields' is no longer valid. Use 'return' instead.
+			'size'   => $this->size,
+			'start'  => $this->start,
+			'sort'   => implode( ',', $ranks )
+			//Use the sort parameter to specify the fields or expressions you want to use for sorting. You must explicitly specify the sort direction in the sort parameter. For example, sort=rank asc, date desc. The rank parameter is no longer supported.
+		) );
 
-		if ( count( $this->facet_constraints ) ) {
-			foreach ( $this->facet_constraints as $field => $constraints ) {
-				$params['facet-' . $field . '-constraints'] = implode( ',', $constraints );
-			}
+
+		// build the facet fields ( see http://docs.aws.amazon.com/cloudsearch/latest/developerguide/faceting.html)
+		foreach ( $this->facets as $field ) {
+			$params[ 'facet.' . $field ] = json_encode( (object) array() );
 		}
 
+
+		// from amazon docs (migration guide) "Use the q parameter to specify search criteria for all requests. The bq parameter is no longer supported. To use the structured (Boolean) search syntax, specify q.parser=structured in the request."
+		// from error received from cloudsearch "[*Deprecated*: Use the outer message field] Parameter 'bq' is no longer valid. Replace 'bq=query' with 'q.parser=structured&q=query'."
+		if ( $this->boolean_query ) {
+			$params = array_merge( $params, array( 'q.parser' => 'structured' ) );
+		}
+
+
+		//@todo this doesn't conform to the new API see: Use the facet.FIELD parameter to specify all facet options. The facet-FIELD-top-N, facet-FIELD-sort, and facet-FIELD-constraints parameters are no longer supported.
+		if ( count( $this->facet_constraints ) ) {
+
+			$field             = array_shift( array_keys( $this->facet_constraints ) );
+			$constraint_fields = array_map( function ( $val ) {
+				return array($val);
+			}, $this->facet_constraints[ $field ] );
+			$params[ 'facet.' . $field ] = json_encode( (object)array('buckets'=> $constraint_fields ) );
+
+		}
+
+		//The sort and size options are not valid if you specify buckets. from http://docs.aws.amazon.com/cloudsearch/latest/developerguide/search-api.html#search-request-parameters
+		//To this if there's a count on $this->facet_top_n it will overwrite the $params['facet.'.$field] value
 		if ( count( $this->facet_top_n ) ) {
 			foreach ( $this->facet_top_n as $field => $limit ) {
-				$params['facet-' . $field . '-top-n'] = $limit;
+				// @todo is count the right sort value?
+				$params[ 'facet' . $field ] = json_encode( (object) array( 'size' => $limit, 'sort' => 'count' ) );
 			}
 		}
+
 		return http_build_query( $params );
 	}
 

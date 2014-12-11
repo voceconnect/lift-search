@@ -57,8 +57,8 @@ class Lift_WP_Query {
 			// include response post ids in query
 			$hits = array( );
 			array_map( function($hit) use (&$hits) {
-					if ( property_exists( $hit, 'data' ) && property_exists( $hit->data, 'id' ) ) {
-						$hits[] = (is_array( $hit->data->id )) ? array_shift( $hit->data->id ) : $hit->data->id;
+					if ( property_exists( $hit, 'fields' ) && property_exists( $hit->fields, 'id' ) ) {
+						$hits[] = (is_array( $hit->fields->id )) ? array_shift( $hit->fields->id ) : $hit->fields->id;
 					}
 				}, $this->results->hits->hit
 			);
@@ -81,8 +81,8 @@ class Lift_WP_Query {
 		$cs_query = new Cloud_Search_Query();
 
 		$cs_query->add_facet( apply_filters( 'lift_search_facets', array( ) ) );
-
-		$parameters = apply_filters( 'list_search_bq_parameters', array( sprintf( "(label '%s')", $this->wp_query->get( 's' ) ) ), $this );
+		//removed label from first argument of sprintf on next line, the documentation did not reference this anywhere and i was getting syntax errors from AWS with it in there
+		$parameters = apply_filters( 'list_search_bq_parameters', array( sprintf( "'%s'", $this->wp_query->get( 's' ) ) ), $this );
 
 		//filter to the current blog/site
 		$parameters[] = new Lift_Expression_Set( 'and', array(
@@ -112,7 +112,7 @@ class Lift_WP_Query {
 
 		$orderby_values = array(
 			'date' => 'post_date_gmt',
-			'relevancy' => 'text_relevance',
+			'relevancy' => '',  //Removed text_relevance "If no fields are specified in a search and this option is not specified, all text and text-array fields are searched." < from amazon's docs
 		);
 
 		$orderby_values = apply_filters( 'lift_cs_query_orderby_values', $orderby_values, $this );
@@ -128,7 +128,6 @@ class Lift_WP_Query {
 		$cs_query->add_return_field( 'id' );
 
 		do_action_ref_array( 'get_cs_query', array( $cs_query, $this ) );
-
 		return $cs_query;
 	}
 
