@@ -563,31 +563,6 @@ class Lift_Search {
 
 add_action( 'after_setup_theme', array( 'Lift_Search', 'init' ) );
 
-
-register_deactivation_hook( dirname(__FILE__) . '/lift-search.php', '_lift_deactivate' );
-
-function _lift_deactivate() {
-	$domain_manager = Lift_Search::get_domain_manager();
-	if ( $domain_name = Lift_Search::get_search_domain_name() ) {
-		TAE_Async_Event::Unwatch( 'lift_domain_created_' . $domain_name );
-		TAE_Async_Event::Unwatch( 'lift_needs_indexing_' . $domain_name );
-	}
-
-
-	//clean up options
-	delete_option( Lift_Search::INITIAL_SETUP_COMPLETE_OPTION );
-	delete_option( Lift_Search::SETTINGS_OPTION );
-	delete_option( 'lift_db_version' );
-	delete_option( Lift_Document_Update_Queue::QUEUE_IDS_OPTION );
-
-	if ( class_exists( 'Voce_Error_Logging' ) ) {
-		Voce_Error_Logging::delete_logs( array( 'lift-search' ) );
-	}
-
-	Lift_Batch_Handler::_deactivation_cleanup();
-	Lift_Document_Update_Queue::_deactivation_cleanup();
-}
-
 function _lift_activation() {
 	//register the queue posts
 	Lift_Document_Update_Queue::init();
