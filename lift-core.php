@@ -26,6 +26,7 @@ class Lift_Search {
 
 	const INITIAL_SETUP_COMPLETE_OPTION = 'lift-initial-setup-complete';
 	const DB_VERSION = 5;
+	const LATEST_API_VERSION = '2013-01-01';
 
 	/**
 	 * Option name for storing all user based options
@@ -371,7 +372,7 @@ class Lift_Search {
 	 */
 	public static function get_search_api() {
 		$lift_http = self::get_http_api();
-		return new CloudSearch_API( $lift_http, Lift_Search::get_document_endpoint(), Lift_Search::get_search_endpoint(), '2011-02-01' );
+		return new CloudSearch_API( $lift_http, Lift_Search::get_document_endpoint(), Lift_Search::get_search_endpoint(), self::api_version() );
 	}
 
 	public static function get_indexed_post_types() {
@@ -546,34 +547,29 @@ class Lift_Search {
 
 	}
 
+	/**
+	 * If the current option has a value for api-version use that, fallback to original api-version (2011-02-01)
+	 * @return string
+	 */
+	public static function api_version(){
+
+		$search_domain = self::get_search_domain_name();
+
+		if ( ! $search_domain ) {
+			self::__set_setting( 'api-version', self::LATEST_API_VERSION );
+		}
+
+
+		$api_version = self::__get_setting( 'api-version' );
+		if ( $api_version ) {
+			return $api_version;
+		}
+		return '2011-02-01';
+
+	}
 }
 
 add_action( 'after_setup_theme', array( 'Lift_Search', 'init' ) );
-
-
-register_deactivation_hook( __FILE__, '_lift_deactivate' );
-
-function _lift_deactivate() {
-	$domain_manager = Lift_Search::get_domain_manager();
-	if ( $domain_name = Lift_Search::get_search_domain_name() ) {
-		TAE_Async_Event::Unwatch( 'lift_domain_created_' . $domain_name );
-		TAE_Async_Event::Unwatch( 'lift_needs_indexing_' . $domain_name );
-	}
-
-
-	//clean up options
-	delete_option( Lift_Search::INITIAL_SETUP_COMPLETE_OPTION );
-	delete_option( Lift_Search::SETTINGS_OPTION );
-	delete_option( 'lift_db_version' );
-	delete_option( Lift_Document_Update_Queue::QUEUE_IDS_OPTION );
-
-	if ( class_exists( 'Voce_Error_Logging' ) ) {
-		Voce_Error_Logging::delete_logs( array( 'lift-search' ) );
-	}
-
-	Lift_Batch_Handler::_deactivation_cleanup();
-	Lift_Document_Update_Queue::_deactivation_cleanup();
-}
 
 function _lift_activation() {
 	//register the queue posts

@@ -86,7 +86,7 @@ abstract class aLiftField implements iLiftField {
 
 	/**
 	 * The type of field.
-	 * @var string one of 'uint', 'literal', 'text'
+	 * @var string one of 'int', 'literal', 'text'
 	 */
 	protected $type;
 
@@ -119,7 +119,7 @@ abstract class aLiftField implements iLiftField {
 	/**
 	 * Constructor.
 	 * @param string $name
-	 * @param string $type one of 'uint', 'literal', 'text'
+	 * @param string $type one of 'int', 'literal', 'text'
 	 * @param array $options Options
 	 */
 	public function __construct( $name, $type, $options = array( ) ) {
@@ -205,7 +205,7 @@ abstract class aLiftField implements iLiftField {
 		);
 
 		if ( count( $this->type_options ) ) {
-			$map = array( 'uint' => 'UIntOptions', 'literal' => 'LiteralOptions', 'text' => 'TextOptions' );
+			$map = array( 'int' => 'IntOptions', 'literal' => 'LiteralOptions', 'literal-array' => 'LiteralArrayOptions', 'text' => 'TextOptions' );
 			$field[$map[$this->type]] = $this->type_options;
 		}
 
@@ -710,7 +710,7 @@ add_action( 'init', function() {
 			array( 'date_start' => $eodTime - (90 * DAY_IN_SECONDS) )
 		);
 
-		$post_date_field = liftDelegatedField( 'post_date_gmt', 'uint', array( '_built_in' => true ) )
+		$post_date_field = liftDelegatedField( 'post_date_gmt', 'int', array( '_built_in' => true ) )
 			->addPublicRequestVars( array( 'date_start', 'date_end' ) )
 			->delegate( 'requestToWP', function($request) {
 					if ( isset( $request['date_start'] ) ) {
@@ -752,8 +752,11 @@ add_action( 'init', function() {
 						$date_end = get_gmt_from_date( $str_date_end );
 					}
 
-					if ( $date_start || $date_end )
-						$value = "post_date_gmt:{$date_start}..{$date_end}";
+					if ( $date_start || $date_end ) {
+						$date_start = ( $date_start == 0 ) ? '' : $date_start;
+						$date_end = ( $date_end == 0 ) ? '' : $date_end;
+						$value = "post_date_gmt:{{$date_start},{$date_end}}";
+					}
 
 					return $value;
 				} )
@@ -774,8 +777,8 @@ add_action( 'init', function() {
 				$query_vars = array( 'date_start' => false, 'date_end' => false );
 				$bq_parts = explode( ':', $bq );
 				if ( count( $bq_parts ) > 1 ) {
-					if ( strpos( $bq_parts[1], '..' ) !== false ) {
-						list($query_vars['date_start'], $query_vars['date_end']) = explode( '..', $bq_parts[1] );
+					if ( strpos( $bq_parts[1], ',' ) !== false ) {
+						list($query_vars['date_start'], $query_vars['date_end']) = explode( ',', $bq_parts[1] );
 					} else {
 						$query_vars['date_start'] = $bq_parts[1];
 					}

@@ -6,19 +6,19 @@ class Cloud_Schemas {
 		return array(
 			array(
 				'field_name' => 'id',
-				'field_type' => 'uint',
+				'field_type' => 'int',
 			),
 			array(
 				'field_name' => 'site_id',
-				'field_type' => 'uint',
+				'field_type' => 'int',
 			),
 			array(
 				'field_name' => 'blog_id',
-				'field_type' => 'uint',
+				'field_type' => 'int',
 			),
 			array(
 				'field_name' => 'post_author',
-				'field_type' => 'uint',
+				'field_type' => 'int',
 			),
 			array(
 				'field_name' => 'post_author_name',
@@ -29,7 +29,7 @@ class Cloud_Schemas {
 			),
 			array(
 				'field_name' => 'taxonomy_category_id',
-				'field_type' => 'literal',
+				'field_type' => 'literal-array',
 				'options' => array(
 					'facet' => 'true'
 				),
@@ -43,8 +43,12 @@ class Cloud_Schemas {
 				'field_type' => 'text',
 			),
 			array(
+				'field_name' => 'post_excerpt',
+				'field_type' => 'text',
+			),
+			array(
 				'field_name' => 'post_date_gmt',
-				'field_type' => 'uint',
+				'field_type' => 'int',
 			),
 			array(
 				'field_name' => 'post_status',
@@ -70,7 +74,7 @@ class Cloud_Schemas {
 			),
 			array(
 				'field_name' => 'taxonomy_post_tag_id',
-				'field_type' => 'literal',
+				'field_type' => 'literal-array',
 				'options' => array(
 					'facet' => 'true',
 				),
