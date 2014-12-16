@@ -317,6 +317,12 @@ if ( !class_exists( 'Lift_Batch_Handler' ) ) {
 				Lift_Search::event_log( 'CloudSearch Not Ready for Batch ' . time(), 'The batch is locked or the search domain is either currently processing, needs indexing, or your domain does not have indexes set up.', array( 'send-queue', 'response-false', 'notice' ) );
 				return;
 			}
+			
+			if(Lift_Search::LATEST_API_VERSION !== Lift_Search::api_version()) {
+				//document submission is turned off on deprecated versions. 
+				return;
+			}
+			
 
 			$lock_key = md5( uniqid( microtime() . mt_rand(), true ) );
 			if ( !get_transient( self::BATCH_LOCK ) ) {

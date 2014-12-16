@@ -56,12 +56,22 @@ class Lift_WP_Query {
 		if ( $this->has_valid_result() ) {
 			// include response post ids in query
 			$hits = array( );
-			array_map( function($hit) use (&$hits) {
-					if ( property_exists( $hit, 'fields' ) && property_exists( $hit->fields, 'id' ) ) {
-						$hits[] = (is_array( $hit->fields->id )) ? array_shift( $hit->fields->id ) : $hit->fields->id;
-					}
-				}, $this->results->hits->hit
-			);
+			if('2011-02-01' === Lift_Search::api_version()) {
+				//maintain 2011 compat for now
+				array_map( function($hit) use (&$hits) {
+						if ( property_exists( $hit, 'data' ) && property_exists( $hit->data, 'id' ) ) {
+							$hits[] = (is_array( $hit->data->id )) ? array_shift( $hit->data->id ) : $hit->data->id;
+						}
+					}, $this->results->hits->hit
+				);
+			} else {
+				array_map( function($hit) use (&$hits) {
+						if ( property_exists( $hit, 'fields' ) && property_exists( $hit->fields, 'id' ) ) {
+							$hits[] = (is_array( $hit->fields->id )) ? array_shift( $hit->fields->id ) : $hit->fields->id;
+						}
+					}, $this->results->hits->hit
+				);
+			}
 
 			_prime_post_caches( $hits );
 			$posts = array_values( array_map( 'get_post', $hits ) );
@@ -78,7 +88,11 @@ class Lift_WP_Query {
 	 * @return Cloud_Search_Query
 	 */
 	public function get_cs_query() {
-		$cs_query = new Cloud_Search_Query();
+		if ( Lift_Search::api_version() === '2011-02-01' ) {
+			$cs_query = new Cloud_Search_Query_2011_02_01();
+		} else {
+			$cs_query = new Cloud_Search_Query();
+		}
 
 		$cs_query->add_facet( apply_filters( 'lift_search_facets', array( ) ) );
 		//removed label from first argument of sprintf on next line, the documentation did not reference this anywhere and i was getting syntax errors from AWS with it in there

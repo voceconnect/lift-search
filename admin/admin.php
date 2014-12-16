@@ -465,7 +465,10 @@ class Lift_Admin {
 			return false;
 		} elseif ( ! strtotime( $api_version ) || date( 'Y', strtotime( $api_version ) ) <= 2011 ) {
 			?>
-			<div class="error"><p>Your search domain is using a deprecated version of the API. Please consider updating to the new version by following these <a target="_BLANK" href="http://docs.aws.amazon.com/cloudsearch/latest/developerguide/migrating.html"><strong>instructions</strong></strong></a>.</p></div>
+			<div class="error"><p>Your search domain is using a deprecated version of the CloudSearch API. Search will continue to work, 
+					however, you must update to the latest version for new or updated posts to be be sent to your CloudSearch domain.  
+					Please review these <a target="_BLANK" href="http://docs.aws.amazon.com/cloudsearch/latest/developerguide/migrating.html"><strong>instructions</strong></strong></a>
+					on how to update your domain.</p></div>
 		<?php
 		}
 	}

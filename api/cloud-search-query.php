@@ -39,7 +39,7 @@ class Cloud_Search_Query {
 		}
 	}
 
-	public function add_facet_contraint( $field, $constraints ) {
+	public function add_facet_constraint( $field, $constraints ) {
 		// fix for old style facet constraints (i.e. 1..2 => 1,2)
 		if ( is_array( $constraints ) ) {
 			$constraints = array_map( function ( $n ) {
@@ -47,6 +47,10 @@ class Cloud_Search_Query {
 			}, $constraints );
 		}
 		$this->facet_constraints[ $field ] = ( array ) $constraints;
+	}
+	
+	public function add_facet_contraint( $field, $constraints) {
+		$this->add_facet_constraint($field, $constraints);
 	}
 
 	public function add_facet_top_n( $field, $limit ) {

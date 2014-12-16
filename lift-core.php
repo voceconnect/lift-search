@@ -1,23 +1,23 @@
 <?php
 
-require_once('lib/functions.php');
-require_once('api/lift-batch.php');
-require_once('api/lift-http.php');
-require_once('api/cloud-search-api.php');
-require_once('api/cloud-search-query.php');
-require_once('api/cloud-config-api.php');
-require_once('lib/posts-to-sdf.php');
-require_once('wp/domain-manager.php');
-require_once('wp/field.php');
-require_once('wp/form-controls.php');
-require_once('wp/form-filters.php');
-require_once('wp/lift-batch-handler.php');
-require_once('wp/lift-health.php');
-require_once('wp/lift-wp-search.php');
-require_once('wp/lift-search-form.php');
-require_once('wp/lift-update-queue.php');
-require_once('wp/update-watchers/post.php');
-require_once('lib/wp-asynch-events.php');
+require_once(__DIR__ . '/lib/functions.php');
+require_once(__DIR__ . '/api/lift-batch.php');
+require_once(__DIR__ . '/api/lift-http.php');
+require_once(__DIR__ . '/api/cloud-search-api.php');
+require_once(__DIR__ . '/api/cloud-search-query.php');
+require_once(__DIR__ . '/api/cloud-config-api.php');
+require_once(__DIR__ . '/lib/posts-to-sdf.php');
+require_once(__DIR__ . '/wp/domain-manager.php');
+require_once(__DIR__ . '/wp/field.php');
+require_once(__DIR__ . '/wp/form-controls.php');
+require_once(__DIR__ . '/wp/form-filters.php');
+require_once(__DIR__ . '/wp/lift-batch-handler.php');
+require_once(__DIR__ . '/wp/lift-health.php');
+require_once(__DIR__ . '/wp/lift-wp-search.php');
+require_once(__DIR__ . '/wp/lift-search-form.php');
+require_once(__DIR__ . '/wp/lift-update-queue.php');
+require_once(__DIR__ . '/wp/update-watchers/post.php');
+require_once(__DIR__ . '/lib/wp-asynch-events.php');
 
 class Lift_Search {
 	/**
@@ -581,4 +581,8 @@ function _lift_activation() {
 function lift_get_current_site_id() {
 	global $wpdb;
 	return ($wpdb->siteid) ? intval( $wpdb->siteid ) : 1;
+}
+
+if(Lift_Search::api_version() === '2011-02-01') {
+	require_once __DIR__ . '/api/deprecated/2011-02-01/cloud-search-query.php';
 }
