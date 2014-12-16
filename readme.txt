@@ -3,7 +3,7 @@ Contributors: voceplatforms
 Tags: search, cloudsearch, amazon, aws
 Requires at least: 3.4.2
 Tested up to: 4.0.1
-Stable tag: 1.10.0
+Stable tag: 1.11.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -112,6 +112,9 @@ By default, posts and pages are indexed. To modify this, use the `lift_indexed_p
 4. Lift Search Form
 
 == Changelog ==
+== 1.11.0 ==
+* Providing limited search support for '2011-02-01' API.  The '2011-02-01' CloudSearch API has been deprecated.  Search will still work however, no new updates to site content will be indexed until the search domain is migrated to the '2013-01-01' API.
+
 == 1.10.0 ==
 * Added support for '2013-01-01' API version
 
