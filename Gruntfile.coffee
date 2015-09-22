@@ -89,7 +89,7 @@ module.exports = (grunt) ->
 
 
   #load the tasks
-  grunt.loadNpmTasks "grunt-voce-plugins"
+  require('matchdep').filterDev('grunt-*').forEach(grunt.loadNpmTasks);
 
   #set the default task as the development build
   grunt.registerTask "default", ["build:development"]

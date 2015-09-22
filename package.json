@@ -2,7 +2,24 @@
 	"name": "lift-search",
 	"description": "Lift Search for WordPress",
 	"repository": "git@github.com:voceconnect/lift-search.git",
+	"engines": {
+	    "node": ">= 0.8.0"
+	  },
 	"devDependencies": {
-		"grunt-voce-plugins": "latest"
+		"matchdep": "~0.3.0",
+		"grunt": "~0.4.0",
+	    "grunt-coffeelint": "~0.0.13",
+	    "grunt-contrib-coffee": "~0.11",
+	    "grunt-contrib-compass": "~0.9",
+	    "grunt-contrib-concat": "~0.5",
+	    "grunt-contrib-imagemin": "~0.8",
+	    "grunt-contrib-jshint": "~0.10",
+	    "grunt-contrib-uglify": "~0.9",
+	    "grunt-contrib-watch": "~0.6",
+	    "grunt-peon-build": "~0.1",
+	    "grunt-peon-gui": "~1.0",
+	    "grunt-composer": "~0.4",
+	    "grunt-shell": "~1.1",
+	    "grunt-hub": "~0.7"
 	}
 }
