@@ -56,7 +56,7 @@
         }
     ],
     "require": {
-        "voceconnect/voce-error-logging": "~0.3"
+        "voceconnect/voce-error-logging": "~0.4"
     },
     "autoload": {
         "files": ["lift-search.php"]

@@ -1,29 +1,33 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "ee62c27ba59f56de0fd3098f2dcb79b5",
+    "hash": "3d387a7d7e1829108e68ce72022c7aa9",
+    "content-hash": "7298e36f6799a84f00dcbb4286d3e769",
     "packages": [
         {
             "name": "voceconnect/voce-error-logging",
-            "version": "0.3",
+            "version": "0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/voceconnect/voce-error-logging.git",
-                "reference": "a855a2c8610ed15ec59b3195dda09b65908cf4b2"
+                "reference": "bf91b484f8db48b93672fb5884b4a578903c92fc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/voceconnect/voce-error-logging/zipball/a855a2c8610ed15ec59b3195dda09b65908cf4b2",
-                "reference": "a855a2c8610ed15ec59b3195dda09b65908cf4b2",
+                "url": "https://api.github.com/repos/voceconnect/voce-error-logging/zipball/bf91b484f8db48b93672fb5884b4a578903c92fc",
+                "reference": "bf91b484f8db48b93672fb5884b4a578903c92fc",
                 "shasum": ""
             },
             "type": "library",
             "autoload": {
-                "files": [
+                "classmap": [
                     "voce-error-logging.php"
+                ],
+                "files": [
+                    "bootstrap.php"
                 ]
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -32,32 +36,24 @@
             ],
             "authors": [
                 {
-                    "name": "Michael Pretty",
-                    "email": "mpretty@voceconnect.com"
-                },
-                {
                     "name": "Jeff Stieler",
                     "email": "jeff@voceconnect.com"
+                },
+                {
+                    "name": "Michael Pretty",
+                    "email": "mpretty@voceconnect.com"
                 }
             ],
             "description": "Allows error logging as a post type.",
-            "time": "2014-07-02 19:38:16"
+            "time": "2016-02-23 14:42:22"
         }
     ],
-    "packages-dev": [
-
-    ],
-    "aliases": [
-
-    ],
+    "packages-dev": [],
+    "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [
-
-    ],
-    "platform": [
-
-    ],
-    "platform-dev": [
-
-    ]
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": []
 }
