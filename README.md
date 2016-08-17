@@ -1,5 +1,8 @@
+### Please note: This plugin is no longer being actively maintained or supported.
+
 Lift: Search for WordPress
 =================
+
 Contributors: voceplatforms  
 Tags: search, cloudsearch, amazon, aws  
 Requires at least: 3.4.2  
