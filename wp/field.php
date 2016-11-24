@@ -353,7 +353,7 @@ class LiftTaxonomyField extends aLiftField {
 
 	public function wpToBooleanQuery( $query_vars ) {
 		$bq = '';
-		$terms = get_terms( $this->taxonomy );
+		$terms = null;
 		$wp_tax_query = $this->parseTaxQuery( $query_vars );
 		foreach ( $wp_tax_query->queries as $tax_query ) {
 			if ( $tax_query['taxonomy'] == $this->taxonomy && !empty( $tax_query['terms'] ) ) {
@@ -363,6 +363,10 @@ class LiftTaxonomyField extends aLiftField {
 				} else {
 					$term_ids = array( );
 					foreach ( $tax_query['terms'] as $term_val ) {
+						if ( null === $terms ) {
+							$terms = get_terms( $this->taxonomy );
+						}
+
 						foreach ( $terms as $term ) {
 							if ( $term->$field == $term_val ) {
 								$term_ids[] = $term->term_id;
